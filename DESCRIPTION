@@ -40,5 +40,10 @@ Imports:
     ShortRead,
     stringr,
     data.table,
-    zip
+    zip,
+    shiny,
+    bslib,
+    shinyjs,
+    spsComps,
+    markdown
 RoxygenNote: 7.3.3
