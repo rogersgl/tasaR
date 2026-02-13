@@ -1,11 +1,11 @@
 #!/usr/bin/env zsh
-# run_pandaseq.command — even more robust for double-click use
-# Place in same folder as NGS_Input.csv and unpaired/, etc.
+# Place in same folder as Input.csv and unpaired reads
+# DO NOT CHANGE COLUMN ORDER in Input.csv (is crude and checks positions, not column names)
 
 set -uo pipefail
 
 DIR="${0:A:h}"
-INPUT_FILE="${DIR}/NGS_Input.csv"
+INPUT_FILE="${DIR}/Input.csv"
 LOGFILE="${DIR}/run_pandaseq.log"
 
 : > "$LOGFILE"
@@ -99,6 +99,24 @@ do
   if output=$("$PANDASEQ_BIN" "${args[@]}" 2>&1); then
     echo "  OK: pandaseq finished for $sample" | tee -a "$LOGFILE"
     echo "$output" >> "$LOGFILE"
+
+    # -------------------------
+    # gzip merged FASTQ output
+    # -------------------------
+
+    if [[ -s "$merged_path" ]]; then
+      # Use pigz if available (faster), otherwise gzip
+      if (( $+commands[pigz] )); then
+        print -r -- "  Compressing with pigz: ${merged_path:t}" | tee -a -- "$LOGFILE"
+        pigz -f -- "$merged_path"
+      else
+        print -r -- "  Compressing with gzip: ${merged_path:t}" | tee -a -- "$LOGFILE"
+        gzip -f -- "$merged_path"
+      fi
+      print -r -- "  Created: ${merged_path:t}.gz" | tee -a -- "$LOGFILE"
+    else
+      print -r -- "  WARNING: merged FASTQ missing or empty — not compressing" | tee -a -- "$LOGFILE"
+    fi
     (( processed++ ))
   else
     status=$?

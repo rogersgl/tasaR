@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
-# run_pandaseq.sh — portable Bash version for Linux
-# Place in same folder as NGS_Input.csv and unpaired/, etc.
+# Bash version for Linux
+# Place in same folder as Input.csv and unpaired reads
+# DO NOT CHANGE COLUMN ORDER in Input.csv (is crude and checks positions, not column names)
 
 set -euo pipefail
 
 # Get script directory (portable)
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-INPUT_FILE="${DIR}/NGS_Input.csv"
+INPUT_FILE="${DIR}/Input.csv"
 LOGFILE="${DIR}/run_pandaseq.log"
 
 # Start fresh log
@@ -73,8 +74,8 @@ do
   minlen=$(( len - maxdel ))
   maxlen=$(( len + maxins ))
 
-  forward_path="$DIR/unpaired/$forward_file"
-  reverse_path="$DIR/unpaired/$reverse_file"
+  forward_path="$DIR/$forward_file"
+  reverse_path="$DIR/$reverse_file"
   log_path="$DIR/logs/${sample}-pandaseq-log.txt"
   merged_path="$DIR/merged/${sample}-merged.fastq"
 
