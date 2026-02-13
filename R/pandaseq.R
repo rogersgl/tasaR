@@ -1,0 +1,219 @@
+#' @name tas_pandaseq_terminal
+#' @title Runs PANDAseq to merge paired end reads on systems with a Unix terminal (Linux and MacOS).
+#' @description
+#' Uses information in the input .xlsx file to construct arguments for PANDAseq for each sample as specified. Writes commands to terminal for execution. Compresses the output .fastq files as .gz. Only supported on Linux and MacOS systems with a Unix terminal.
+#' @param Sample.Names A character vector with names of all samples.
+#' @param Input.DataFrame A data frame imported from the .xlsx file specifying details of each sample.
+#' @param Config.List A list containing configuration parameters for tasAnalyzer.
+#' @param WD A character vector indicating the file path to the working directory containing input files.
+#' @param shiny.env A logical (TRUE/FALSE) identifying whether processing is being perfomed by the Shiny app. Assigned by parent functions.
+#' @param shiny.fileTable A data.table with information about uploaded files in the Shiny app. Assigned automatically by parent functions.
+#' @returns No returns within R. Writes files to disk.
+#' @export
+tas_pandaseq_terminal <- function(Sample.Names, Input.DataFrame, Config.List, WD, shiny.env, shiny.fileTable){
+  Input.Columns <- c("SampleName",
+                     "ForwardFASTQFileName",
+                     "ReverseFASTQFileName",
+                     "AmpliconLength",
+                     "MaxDeletion",
+                     "MaxInsertion")
+
+  Config.Entries <- c("WorkingDirectory",
+                      "PandaseqDirectory",
+                      "OperatingSystem",
+                      "nCores",
+                      "merge.reads")
+
+  if(FALSE %in% (Input.Columns %in% colnames(Input.DataFrame))){
+    stop(c("The following columns were not found in the input file: ",
+           str_flatten(Input.Columns[!Input.Columns %in% colnames(Input.DataFrame)],collapse = ", ")))
+    }
+
+  if(FALSE %in% (Config.Entries %in% names(Config.List))){
+    stop(c("The following columns were not found in the input file: ",
+           str_flatten(Config.Entries[!Config.Entries %in% names(Config.List)],collapse = ", ")))
+  }
+
+  panda.check <- suppressWarnings(system2("pandaseq",stderr = TRUE))
+  if (panda.check[1] != "You must supply both forward and reverse reads."){
+    if (Input.DataFrame$OperatingSystem == "MacOS"){
+      stop("Did not detect pandaseq installation. Please install the PANDAseq.pkg file from the following website: https://github.com/neufeld/pandaseq/releases")
+    }else if (Input.DataFrame$OperatingSystem == "Linux"){
+      stop("Did not detect pandaseq installation. Please install as appropriate for your distribution following instructions at: https://github.com/neufeld/pandaseq/wiki/Installation")
+    }
+  }
+
+  #check if export directories exist and create if needed
+  if (dir.exists(str_c(WD,"unpaired"))==FALSE){
+    dir.create(str_c(WD,"unpaired"))
+  }
+  if (dir.exists(str_c(WD,"merged"))==FALSE){
+    dir.create(str_c(WD,"merged"))
+  }
+  if (dir.exists(str_c(WD,"logs"))==FALSE){
+    dir.create(str_c(WD,"logs"))
+  }
+  if (shiny.env){
+    file.rename(shiny.fileTable$datapath[str_detect(shiny.fileTable$name,".fastq")],
+                str_c(WD,"unpaired/",shiny.fileTable$name[str_detect(shiny.fileTable$name,".fastq")]))
+  }else if (all(file.exists(str_c(WD,c(Input.DataFrame$ForwardFASTQFileName, Input.DataFrame$ReverseFASTQFileName))))){
+    file.rename(str_c(WD,c(Input.DataFrame$ForwardFASTQFileName, Input.DataFrame$ReverseFASTQFileName)),
+                str_c(WD,"unpaired/",c(Input.DataFrame$ForwardFASTQFileName, Input.DataFrame$ReverseFASTQFileName)))
+  }
+
+  #generate arguments list to process in pandaseq
+
+  Pandaseq_Args <- list()
+  Pandaseq_Args[Sample.Names] <- lapply(seq_along(Sample.Names),function(x){
+    c(str_c("-f '",WD,"unpaired/",Input.DataFrame$ForwardFASTQFileName[[x]],"'"),
+      str_c("-r '",WD,"unpaired/",Input.DataFrame$ReverseFASTQFileName[[x]],"'"),
+      str_c("-g '",WD,"logs/",Sample.Names[[x]],"-pandaseq-log.txt'"),
+      "-F",
+      "-d bFSrk",
+      str_c("-l ",(Input.DataFrame$AmpliconLength[[x]]-Input.DataFrame$MaxDeletion[[x]])),
+      str_c("-L ",(Input.DataFrame$AmpliconLength[[x]]+Input.DataFrame$MaxInsertion[[x]])),
+      str_c("-w '",WD,"merged/",Sample.Names[[x]],"-merged.fastq'"))
+  })
+
+  #run pandaseq to merge paired end reads
+  invisible(lapply(Sample.Names,function(x){system2("pandaseq",args=Pandaseq_Args[[x]])}))
+
+  #compress output of pandaseq
+  invisible(mclapply(Sample.Names,function(x){
+    R.utils::gzip(str_c(WD,"merged/",x,"-merged.fastq"), destname = str_c(WD,"merged/",x,"-merged.fastq.gz"), remove = TRUE, overwrite = TRUE)
+  },mc.cores = Config.List$nCores))
+}
+
+#' @name tas_pandaseq_windows
+#' @title Runs PANDAseq to merge paired end reads on Windows systems.
+#' @description
+#' Uses information in the input .xlsx file to construct arguments for PANDAseq for each sample as specified. Writes commands to terminal for execution. Compresses the output .fastq files as .gz. Only supported on Windows systems.
+#' @param Sample.Names A character vector with names of all samples.
+#' @param Input.DataFrame A data frame imported from the .xlsx file specifying details of each sample.
+#' @param Config.List A list containing configuration parameters for tasAnalyzer.
+#' @param WD A character vector indicating the file path to the working directory containing input files.
+#' @param shiny.env A logical (TRUE/FALSE) identifying whether processing is being perfomed by the Shiny app. Assigned by parent functions.
+#' @param shiny.fileTable A data.table with information about uploaded files in the Shiny app. Assigned automatically by parent functions.
+#' @param original.WD A character vector with the pathway of the original working directory the package was launched from. Is packaged with necessary files to run pandaseq on Windows. If these are not found, will automatically download them from GitHub.
+#' @returns No returns within R. Writes files to disk.
+#' @export
+tas_pandaseq_windows <- function(Sample.Names, Input.DataFrame, Config.List, WD, shiny.env, shiny.fileTable, original.WD){
+  Input.Columns <- c("SampleName",
+                     "ForwardFASTQFileName",
+                     "ReverseFASTQFileName",
+                     "AmpliconLength",
+                     "MaxDeletion",
+                     "MaxInsertion")
+
+  Config.Entries <- c("WorkingDirectory",
+                      "PandaseqDirectory",
+                      "OperatingSystem",
+                      "nCores",
+                      "merge.reads")
+
+  if(FALSE %in% (Input.Columns %in% colnames(Input.DataFrame))){
+    stop(c("The following columns were not found in the input file: ",
+           str_flatten(Input.Columns[!Input.Columns %in% colnames(Input.DataFrame)],collapse = ", ")))
+  }
+
+  if(FALSE %in% (Config.Entries %in% names(Config.List))){
+    stop(c("The following columns were not found in the input file: ",
+           str_flatten(Config.Entries[!Config.Entries %in% names(Config.List)],collapse = ", ")))
+  }
+
+  pandaseq.files <- c("after.dll",
+                      "before.dll",
+                      "completely_miss_the_point.dll",
+                      "empty.dll",
+                      "filter.dll",
+                      "libbz2-2.dll",
+                      "libcurl.dll",
+                      "libgcc_s_sjlj-1.dll",
+                      "libltdl-7.dll",
+                      "libpandaseq-7.dll",
+                      "libpandaseq-url-0.dll",
+                      "libz-1.dll",
+                      "min_overlapbits.dll",
+                      "min_phred.dll",
+                      "other_primer.dll",
+                      "overlap_stat.dll",
+                      "pandaseq-checkid.exe",
+                      "pandaseq-diff.exe",
+                      "pandaseq-hang.exe",
+                      "pandaseq.exe",
+                      "pandaxs",
+                      "pear_test.dll",
+                      "pthreadGC2.dll",
+                      "validtag.dll")
+
+  #check if export directories exist and create if needed
+  if (dir.exists(str_c(WD,"unpaired"))==FALSE){
+    dir.create(str_c(WD,"unpaired"))
+  }
+  if (dir.exists(str_c(WD,"merged"))==FALSE){
+    dir.create(str_c(WD,"merged"))
+  }
+  if (dir.exists(str_c(WD,"logs"))==FALSE){
+    dir.create(str_c(WD,"logs"))
+  }
+  if (shiny.env){
+    file.rename(shiny.fileTable$datapath[str_detect(shiny.fileTable$name,".fastq")],
+                str_c(WD,"unpaired/",shiny.fileTable$name[str_detect(shiny.fileTable$name,".fastq")]))
+  }else if (all(file.exists(str_c(WD,c(Input.DataFrame$ForwardFASTQFileName, Input.DataFrame$ReverseFASTQFileName))))){
+    file.rename(str_c(WD,c(Input.DataFrame$ForwardFASTQFileName, Input.DataFrame$ReverseFASTQFileName)),
+                str_c(WD,"unpaired/",c(Input.DataFrame$ForwardFASTQFileName, Input.DataFrame$ReverseFASTQFileName)))
+  }
+
+  #check for pandaseq files and download if not found
+  panda.check <- file.exists(str_c(original.WD,"/pandaseq/Windows/pandaseq-2.11/",pandaseq.files))
+
+  if (!all(panda.check)){
+    download.file("https://github.com/neufeld/pandaseq/releases/download/v2.11/pandaseq-2.11.zip",
+                  str_c(original.WD,"/pandaseq/Windows/pandaseq-2.11.zip"), quiet = TRUE)
+    zip::unzip(str_c(original.WD,"/pandaseq/Windows/pandaseq-2.11.zip"),
+               exdir = str_c(original.WD,"/pandaseq/Windows/pandaseq-2.11"))
+    file.remove(str_c(original.WD,"/pandaseq/Windows/pandaseq-2.11.zip"))
+  }
+
+  #move pandaseq files to same directory that the unpaired read files will go
+  file.copy(str_c(original.WD,"/pandaseq/Windows/pandaseq-2.11/",pandaseq.files),
+            str_c(WD,"unpaired/",pandaseq.files))
+
+  #generate arguments list to process in pandaseq
+  Pandaseq_Args <- list()
+  Pandaseq_Args[Sample.Names] <- lapply(seq_along(Sample.Names),function(x){
+    c(str_c("-f '",WD,"unpaired/",Input.DataFrame$ForwardFASTQFileName[[x]],"'"),
+      str_c("-r '",WD,"unpaired/",Input.DataFrame$ReverseFASTQFileName[[x]],"'"),
+      str_c("-g '",WD,"logs/",Sample.Names[[x]],"-pandaseq-log.txt'"),
+      "-F",
+      "-d bFSrk",
+      str_c("-l ",(Input.DataFrame$AmpliconLength[[x]]-Input.DataFrame$MaxDeletion[[x]])),
+      str_c("-L ",(Input.DataFrame$AmpliconLength[[x]]+Input.DataFrame$MaxInsertion[[x]])),
+      str_c("-w '",WD,"merged/",Sample.Names[[x]],"-merged.fastq'"))
+  })
+
+  #run pandaseq to merge paired end reads
+  invisible(lapply(Sample.Names,function(x){system2(str_c("cd ",WD,"unpaired/") && "pandaseq",args=Pandaseq_Args[[x]])}))
+
+  #compress output of pandaseq
+  invisible(mclapply(Sample.Names,function(x){
+    R.utils::gzip(str_c(WD,"merged/",x,"-merged.fastq"), destname = str_c(WD,"merged/",x,"-merged.fastq.gz"), remove = TRUE, overwrite = TRUE)
+  },mc.cores = Config.List$nCores))
+}
+
+
+
+#' @name tas_import_fastq
+#' @title Reads .fastq files of merged paired end reads.
+#' @description
+#' Reads the output .fastq files containing paired end reads created by tas_pandaseq_terminal for all samples. Imports as ShortRead format.
+#' @param Sample.Names A character vector with names of all samples.
+#' @param Fastq.File.Path A character vector with file paths for each of the merged .fastq.gz files. Names must be identical to Sample.Names.
+#' @returns A list of merged reads for each sample, in ShortRead format.
+#' @export
+tas_import_fastq <- function(Sample.Names,Fastq.File.Path){
+  Input.Reads <- list()
+  Input.Reads[Sample.Names] <- lapply(Fastq.File.Path,readFastq)
+  return(Input.Reads)
+}
+

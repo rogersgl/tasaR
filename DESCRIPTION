@@ -1,0 +1,44 @@
+Package: tasAnalyzer
+Type: Package
+Title: Analyzes Targeted Amplicon Sequencing Experiments
+Version: 0.1.0
+Authors@R: c(
+    person(
+      "Geoffrey", "Rogers",
+      email = "rogersg@usc.edu",
+      role = c("aut", "cre")
+    )
+  )
+Description: Starts with unpaired R1 and R2 reads from Illumina NGS. 
+    Settings are provided by an Excel spreadsheet for accessibility. 
+    Automatically merges paired ends using PANDAseq.
+    Filters merged reads by primer sequence. Supports 5' and 3' additions for either indexing barcodes or unique molecular identifiers.
+    Generates tables of each unique sequence counted by shared read sequence or pileup by UMI if included.
+    Identifies the type of mutation for each sequence as wild-type, insertion, deletion, or base change.
+    Measures mutations across the bulk population.
+    Optionally identifies AID hotspots and analyzes somatic hypermutation of antibody or non-antibody sequences.
+    Optionally measures mutations of the translated amino acid sequence.
+    Performs multiple sequence alignments of top DNA sequences. Protein msa is optional. Can also make phylogenetic trees.
+    Exports graphs, images, and spreadsheets of the analyzed results for interpretation or analyses using other softwares.
+License: GPL (>= 3)
+Encoding: UTF-8
+LazyData: true
+Imports: 
+    ape,
+    BiocManager,
+    Biostrings,
+    ggmsa,
+    ggplot2,
+    ggseqlogo,
+    msa,
+    openxlsx,
+    parallel,
+    parallelly,
+    pwalign,
+    R.utils,
+    seqinr,
+    ShortRead,
+    stringr,
+    data.table,
+    zip
+RoxygenNote: 7.3.3
