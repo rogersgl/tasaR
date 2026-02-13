@@ -168,7 +168,7 @@ The tool outputs a variety of files, tables, and graphs that may be of use to th
 
 ## **Change log**
 
-**v0.1** - 1/16/2026 - Released
+**v0.1** - 2/12/2026 - First commit, still in development
 
 ## **Appendix A: Experimental Procedures**
 
