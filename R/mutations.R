@@ -215,6 +215,39 @@ tas_measure_mutations <- function(Sample.Names,Sequence.Table.List,AID.Targets,I
     return(Output)
   }) #single threaded due to potential for high memory usage
 
+  #measure mutation types as likely DNA repair pathways
+  if (Config.List$dna.repair.pathways==1){
+    mut_label <- c("WT","NHEJ","MMEJ","Base Change","Indel + Base Change","Other")
+    mut.types <- data.frame(sapply(Sample.Names,function(x){
+      idx_wt <- which(Sequence.Table.List[[x]]$Indels=="WT")
+      idx_nhej <- which(suppressWarnings(as.numeric(Sequence.Table.List[[x]]$Indels) >= -2))
+      idx_mmej <- which(suppressWarnings(as.numeric(Sequence.Table.List[[x]]$Indels) < -2))
+      idx_change <- which(suppressWarnings(as.numeric(Sequence.Table.List[[x]]$BasesChanged) > 0))
+      idx_indel_bc <- intersect(c(idx_nhej,idx_mmej),idx_change)
+      idx_nhej <- idx_nhej[!idx_nhej %in% idx_indel_bc]
+      idx_mmej <- idx_mmej[!idx_mmej %in% idx_indel_bc]
+      idx_change <- idx_change[!idx_change %in% idx_indel_bc]
+      idx_other <- which(!1:nrow(Sequence.Table.List[[x]]) %in% c(idx_wt,idx_nhej,idx_mmej,idx_change,idx_indel_bc))
+
+      sums <- c(sum(Sequence.Table.List[[x]]$Percent[idx_wt]),
+                sum(Sequence.Table.List[[x]]$Percent[idx_nhej]),
+                sum(Sequence.Table.List[[x]]$Percent[idx_mmej]),
+                sum(Sequence.Table.List[[x]]$Percent[idx_change]),
+                sum(Sequence.Table.List[[x]]$Percent[idx_indel_bc]),
+                sum(Sequence.Table.List[[x]]$Percent[idx_other]))
+      names(sums) <- mut_label
+      if (abs(sum(sums)-100)>1e-7){
+        stop(str_c("Frequency summation error detected in indel types for sample: "),x)
+      }
+      return(sums)
+    }))
+    colnames(mut.types) <- Sample.Names
+    rownames(mut.types) <- mut_label
+    mut_types_wb <- createWorkbook("Mutation Types.xlsx")
+    addWorksheet(mut_types_wb, "Sheet1")
+    writeData(mut_types_wb,"Sheet1",mut.types)
+  }
+
   #summary mutation data compilation
 
   if (Config.List$measure.shm==1){
@@ -281,7 +314,6 @@ tas_measure_mutations <- function(Sample.Names,Sequence.Table.List,AID.Targets,I
 
   Sequences_wb <- createWorkbook("Sequences.xlsx")
 
-
   for(i in Sample.Names){
     #output sequence tables
     addWorksheet(Sequences_wb,i)
@@ -295,12 +327,17 @@ tas_measure_mutations <- function(Sample.Names,Sequence.Table.List,AID.Targets,I
       writeData(WRCH_wb,i,Output.Mutagenesis[[i]]$AID$WRCH$Positions)
     }
   }
+
+
+
   Output.Mutagenesis$Workbooks <- list()
   Output.Mutagenesis$Workbooks <- list(Mut_pos_wb = Mut_pos_wb, Sequences_wb = Sequences_wb)
   if (Config.List$measure.shm==1){
     Output.Mutagenesis$Workbooks <- c(Output.Mutagenesis$Workbooks, list(WRCY_wb = WRCY_wb, WRCH_wb = WRCH_wb))
   }
-
+  if (Config.List$dna.repair.pathways==1){
+    Output.Mutagenesis$Workbooks <- c(Output.Mutagenesis$Workbooks, list(mut_types_wb = mut_types_wb))
+  }
   return(Output.Mutagenesis)
 }
 

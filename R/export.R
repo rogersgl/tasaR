@@ -379,32 +379,34 @@ tas_export_mutations <- function(Sample.Names, Output.Mutations.List, Sequence.T
 
   if (Config.List$dna.repair.pathways==1){
     #stacked bar graph of mutation types
-    mut_label <- c("WT","NHEJ","MMEJ","Base Change","Indel + Base Change","Other")
-    mut.types <- data.frame(sapply(Sample.Names,function(x){
-      idx_wt <- which(Sequence.Table.List[[x]]$Indels=="WT")
-      idx_nhej <- which(suppressWarnings(as.numeric(Sequence.Table.List[[x]]$Indels) >= -2))
-      idx_mmej <- which(suppressWarnings(as.numeric(Sequence.Table.List[[x]]$Indels) < -2))
-      idx_change <- which(suppressWarnings(as.numeric(Sequence.Table.List[[x]]$BasesChanged) > 0))
-      idx_indel_bc <- intersect(c(idx_nhej,idx_mmej),idx_change)
-      idx_nhej <- idx_nhej[!idx_nhej %in% idx_indel_bc]
-      idx_mmej <- idx_mmej[!idx_mmej %in% idx_indel_bc]
-      idx_change <- idx_change[!idx_change %in% idx_indel_bc]
-      idx_other <- which(!1:nrow(Sequence.Table.List[[x]]) %in% c(idx_wt,idx_nhej,idx_mmej,idx_change,idx_indel_bc))
 
-      sums <- c(sum(Sequence.Table.List[[x]]$Percent[idx_wt]),
-                sum(Sequence.Table.List[[x]]$Percent[idx_nhej]),
-                sum(Sequence.Table.List[[x]]$Percent[idx_mmej]),
-                sum(Sequence.Table.List[[x]]$Percent[idx_change]),
-                sum(Sequence.Table.List[[x]]$Percent[idx_indel_bc]),
-                sum(Sequence.Table.List[[x]]$Percent[idx_other]))
-      names(sums) <- mut_label
-      if (abs(sum(sums)-100)>1e-7){
-        stop(str_c("Frequency summation error detected in indel types for sample: "),x)
-      }
-      return(sums)
-    }))
-    colnames(mut.types) <- Sample.Names
-    df <- data.frame(Samples = unlist(lapply(Sample.Names,function(x){
+    # mut.types <- data.frame(sapply(Sample.Names,function(x){
+    #   idx_wt <- which(Sequence.Table.List[[x]]$Indels=="WT")
+    #   idx_nhej <- which(suppressWarnings(as.numeric(Sequence.Table.List[[x]]$Indels) >= -2))
+    #   idx_mmej <- which(suppressWarnings(as.numeric(Sequence.Table.List[[x]]$Indels) < -2))
+    #   idx_change <- which(suppressWarnings(as.numeric(Sequence.Table.List[[x]]$BasesChanged) > 0))
+    #   idx_indel_bc <- intersect(c(idx_nhej,idx_mmej),idx_change)
+    #   idx_nhej <- idx_nhej[!idx_nhej %in% idx_indel_bc]
+    #   idx_mmej <- idx_mmej[!idx_mmej %in% idx_indel_bc]
+    #   idx_change <- idx_change[!idx_change %in% idx_indel_bc]
+    #   idx_other <- which(!1:nrow(Sequence.Table.List[[x]]) %in% c(idx_wt,idx_nhej,idx_mmej,idx_change,idx_indel_bc))
+    #
+    #   sums <- c(sum(Sequence.Table.List[[x]]$Percent[idx_wt]),
+    #             sum(Sequence.Table.List[[x]]$Percent[idx_nhej]),
+    #             sum(Sequence.Table.List[[x]]$Percent[idx_mmej]),
+    #             sum(Sequence.Table.List[[x]]$Percent[idx_change]),
+    #             sum(Sequence.Table.List[[x]]$Percent[idx_indel_bc]),
+    #             sum(Sequence.Table.List[[x]]$Percent[idx_other]))
+    #   names(sums) <- mut_label
+    #   if (abs(sum(sums)-100)>1e-7){
+    #     stop(str_c("Frequency summation error detected in indel types for sample: "),x)
+    #   }
+    #   return(sums)
+    # }))
+    # colnames(mut.types) <- Sample.Names
+    mut_label <- c("WT","NHEJ","MMEJ","Base Change","Indel + Base Change","Other")
+    mut.types <- readWorkbook(Output.Mutations.List$Workbooks$mut_types_wb, sheet = "Sheet1")
+    df <- data.frame(Sample = unlist(lapply(Sample.Names,function(x){
                         rep(x,length(mut_label))
                       }),use.names = FALSE),
                      MutationTypes = rep(rownames(mut.types),length(Sample.Names)),
@@ -413,7 +415,7 @@ tas_export_mutations <- function(Sample.Names, Output.Mutations.List, Sequence.T
     df$MutationTypes <- factor(df$MutationTypes, levels = mut_label)
     mut.types.graph <- ggplot(df,aes(x = Samples, y = Percentage, fill = MutationTypes)) +
       geom_col(position = position_stack(reverse = TRUE),stat = "identity")+
-      #labs(y = "% Mutation at AID Cytosines")+
+      labs(y = "% Mutation")+
       theme_classic()+
       theme(axis.line = element_line(linewidth = 0.3, linetype = "solid",
                                      colour = "black"))+
@@ -425,7 +427,6 @@ tas_export_mutations <- function(Sample.Names, Output.Mutations.List, Sequence.T
       labs(x = "Sample",
            fill = "Mutation Type")
     ggsave(str_c(WD,"Export/graphs/Summary/Mutation Types.pdf"), plot = mut.types.graph, width = 4.5, height = 3, units = "in")
-    write.xlsx(mut.types,str_c(WD,"Export/results/Mutation Types.xlsx"),overwrite = TRUE,colNames = TRUE, rowNames = TRUE)
     Output.Mutations.List$SummaryGraphs <- c(Output.Mutations.List$SummaryGraphs,list(MutTypes=mut.types.graph))
   }
 
@@ -434,6 +435,9 @@ tas_export_mutations <- function(Sample.Names, Output.Mutations.List, Sequence.T
   if (Config.List$measure.shm==1){
     saveWorkbook(Output.Mutations.List$Workbooks$WRCY_wb,str_c(WD,"Export/results/WRCY Tables.xlsx"),overwrite = TRUE)
     saveWorkbook(Output.Mutations.List$Workbooks$WRCH_wb,str_c(WD,"Export/results/WRCH Tables.xlsx"),overwrite = TRUE)
+  }
+  if (Config.List$dna.repair.pathways==1){
+    saveWorkbook(Output.Mutations.List$Workbooks$mut_types_wb,str_c(WD,"Export/results/Mutation Types.xlsx",overwrite = TRUE))
   }
 
   return(Output.Mutations.List)
