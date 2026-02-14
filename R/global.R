@@ -54,11 +54,16 @@ tas_analyze <- function(InputFilePath,
 
   original.WD <- getwd()
 
+
   ###############################
   #### LOAD/INSTALL PACKAGES ####
   ###############################
 
-  cat("Loading dependencies  (step 1 of 8)...\n")
+  if (dir.exists(str_c(WD,"logs"))==FALSE){
+    dir.create(str_c(WD,"logs"))
+  }
+
+  cat("Loading dependencies  (step 1 of 8)...", file = "logs/tasAnalyzer logs.txt", sep = "\n", append = TRUE)
 
   suppressMessages(tas_load_dependencies())
 
@@ -68,15 +73,13 @@ tas_analyze <- function(InputFilePath,
 
   input.dir <- substr(InputFilePath,1,str_locate(InputFilePath,"Input.csv")[,"start"]-1)
 
+  cat("Dependencies loaded.", file = "logs/tasAnalyzer logs.txt", sep = "\n", append = TRUE)
+
   ################
   #### IMPORT ####
   ################
 
-  cat("Importing  (step 2 of 8)...\n")
-  print(config)
-  print(class(config))
-  print(shiny.settings)
-  print(class(shiny.settings))
+  cat("Importing  (step 2 of 8)...", file = "logs/tasAnalyzer logs.txt", sep = "\n", append = TRUE)
 
   NGS <- list()
   NGS <- tas_import(InputFilePath,config)
@@ -96,7 +99,7 @@ tas_analyze <- function(InputFilePath,
   }
 
   if (config == 'shiny'){
-    print("setting shiny settings")
+    cat("Setting shiny settings", file = "logs/tasAnalyzer logs.txt", sep = "\n", append = TRUE)
     #fix the import that changes logical values into character vectors
     if (is.null(shiny.settings$PandaseqDirectory)){
       shiny.settings$PandaseqDirectory <- NA
@@ -106,21 +109,18 @@ tas_analyze <- function(InputFilePath,
     shiny.settings[idx_logical] <- lapply(shiny.settings[idx_logical],as.logical)
     shiny.settings["PandaseqDirectory"] <- list(NULL)
     NGS$Config <- shiny.settings
-  }else{print("shiny.settings not set")}
+  }else{cat("Non-shiny environment. Shiny settings not set.", file = "logs/tasAnalyzer logs.txt", sep = "\n", append = TRUE)}
 
   #work in directory specified by NGS_Config
   WD <- NGS$Config$WorkingDirectory
   if (substr(WD,nchar(WD),nchar(WD)) != "/"){
     WD <- str_c(WD,"/")
   }
-  print("WD set?")
-  print(WD)
+  cat("Working directory set.", file = "logs/tasAnalyzer logs.txt", sep = "\n", append = TRUE)
 
   if (NGS$Config$multicore!=TRUE){
     NGS$Config$nCores <- 1
   }
-  print("check NGS$Config")
-  print(NGS$Config)
 
   Sample.Names <- NGS$Input$SampleName
   row.names(NGS$Input) <- Sample.Names
@@ -132,39 +132,40 @@ tas_analyze <- function(InputFilePath,
     incProgress(amount = 1/90, message = 'Checking files (step 3 of 8)')
   }
 
-  print("import done")
+  cat("Import done.", file = "logs/tasAnalyzer logs.txt", sep = "\n", append = TRUE)
 
   ############################
   #### INPUT FORMAT CHECK ####
   ############################
 
-  cat("Checking files (step 3 of 8)...\n")
+  cat("Checking files (step 3 of 8)...", file = "logs/tasAnalyzer logs.txt", sep = "\n", append = TRUE)
 
   tas_check(InputFilePath,NGS$Input, NGS$Config, shiny.env, shiny.fileTable, WD)
 
   if (shiny.env){
     incProgress(amount = 1/90, message = 'Merging paired-end reads (step 4 of 8)')
   }
-  print("input format check passed")
+  cat("Input format check passed.", file = "logs/tasAnalyzer logs.txt", sep = "\n", append = TRUE)
 
   ####################
   ##### PANDASEQ #####
   ####################
 
-  cat("Merging paired-end reads  (step 4 of 8)...\n")
+  cat("Merging paired-end reads  (step 4 of 8)...", file = "logs/tasAnalyzer logs.txt", sep = "\n", append = TRUE)
 
   if (NGS$Config$merge.reads==1){
     if (NGS$Config$OperatingSystem %in% c("MacOS","Linux")){
-      print("trying tas_pandaseq_terminal")
+      print("Attempting PANDAseq through shell terminal...")
       tas_pandaseq_terminal(Sample.Names, NGS$Input, NGS$Config, WD, shiny.env, shiny.fileTable)
-      print("tas_pandaseq_terminal done")
+      print("PANDAseq complete.")
       Fastq_File_Path <- sapply(Sample.Names,function(x){str_c(WD,"merged/",x,"-merged.fastq.gz")})
-      print("fastqfilepath done")
+      print("Names of merged files generated.")
     }else if (NGS$Config$OperatingSystem=="Windows"){
-      tas_pandaseq_windows(Sample.Names, NGS$Input, NGS$Config, WD, shiny.env, shiny.fileTable, original.WD)
-      print("tas_pandaseq_windows done")
-      Fastq_File_Path <- sapply(Sample.Names,function(x){str_c(WD,"merged/",x,"-merged.fastq.gz")})
-      print("fastqfilepath windows done")
+      stop("PANDAseq is not functional on Windows. Please find an alternative approach to merge unpaired reads. See README.md for more information.")
+      # tas_pandaseq_windows(Sample.Names, NGS$Input, NGS$Config, WD, shiny.env, shiny.fileTable, original.WD)
+      # print("tas_pandaseq_windows done")
+      # Fastq_File_Path <- sapply(Sample.Names,function(x){str_c(WD,"merged/",x,"-merged.fastq.gz")})
+      # print("fastqfilepath windows done")
     }
   }else if (NGS$Config$merge.reads==FALSE){
     if (dir.exists(str_c(WD,"merged"))==FALSE){
@@ -176,14 +177,14 @@ tas_analyze <- function(InputFilePath,
     }
     file.copy(str_c(input.dir,NGS$Input$MergedFASTQFileName),str_c(WD,NGS$Input$MergedFASTQFileName))
     Fastq_File_Path <- sapply(seq_along(Sample.Names),function(x){str_c(WD,NGS$Input$MergedFASTQFileName[x])})
-    print("fastqfilepath without pandaseq done")
+    cat("PANDAseq bypassed. Names of merged files generated.")
   }else{
     stop("merge.reads is not a logical vector. Too confused to continue.")
   }
-  print("reading fastq.gz files")
+  cat("Reading merged files...", file = "logs/tasAnalyzer logs.txt", sep = "\n", append = TRUE)
 
   Reads.List <- tas_import_fastq(Sample.Names, Fastq_File_Path)
-  print("reads.list done")
+  cat("Merged FASTQ files imported.", file = "logs/tasAnalyzer logs.txt", sep = "\n", append = TRUE)
 
   if (shiny.env){
     incProgress(amount = 2/30, message = 'Filtering, counting, and aligning sequences (step 5 of 8)')
@@ -193,16 +194,22 @@ tas_analyze <- function(InputFilePath,
   ##### FILTER READS #####
   ########################
 
-  cat("Filtering, counting, and aligning sequences  (step 5 of 8)...\n")
+  cat("Filtering, counting, and aligning sequences  (step 5 of 8)...", file = "logs/tasAnalyzer logs.txt", sep = "\n", append = TRUE)
 
+  cat("Performing initial filtering by primers (and/or barcode and/or UMI pattern)...", file = "logs/tasAnalyzer logs.txt", sep = "\n", append = TRUE)
   Reads.Filtered.List <- tas_filter(Sample.Names, Reads.List, NGS$Input, NGS$Config)
   Reads.List <- NULL
+  cat("Initial filtering complete.", file = "logs/tasAnalyzer logs.txt", sep = "\n", append = TRUE)
   Sequence.Table.List <- tas_seq_table(Sample.Names, Reads.Filtered.List, NGS$Input, NGS$Config)
+  cat("Filtering complete and sequence tables generated.", file = "logs/tasAnalyzer logs.txt", sep = "\n", append = TRUE)
   tas_write_filtered(Sample.Names, Reads.Filtered.List, NGS$Config, WD)
+  cat("Filtered FASTQ files written and compressed.", file = "logs/tasAnalyzer logs.txt", sep = "\n", append = TRUE)
   Sequence.Table.List <- tas_label_table(Sample.Names, Sequence.Table.List, Reference.Sequences.DNA, NGS$Input, NGS$Config)
+  cat("Sequence tables labeled.", file = "logs/tasAnalyzer logs.txt", sep = "\n", append = TRUE)
   Read.Filter.Count <- tas_filter_count(Sample.Names, Reads.Filtered.List, Sequence.Table.List, NGS$Input, NGS$Config, WD)
   write.xlsx(Read.Filter.Count,str_c(WD,"logs/Filtering.xlsx"),rowNames=TRUE,overwrite = TRUE)
   Reads.Filtered.List <- NULL
+  cat("Read filtration counted and written to logs/Filtering.xlsx.", file = "logs/tasAnalyzer logs.txt", sep = "\n", append = TRUE)
 
   if (shiny.env){
     incProgress(amount = 12/30, message = 'Measuring mutations (step 6 of 8)')
@@ -213,14 +220,18 @@ tas_analyze <- function(InputFilePath,
   ##### MEASURE MUTATIONS #####
   #############################
 
-  cat("Measuring mutations  (step 6 of 8)...\n")
+  cat("Measuring mutations  (step 6 of 8)...", file = "logs/tasAnalyzer logs.txt", sep = "\n", append = TRUE)
   if (NGS$Config$measure.shm==1){
     AID.Targets <- tas_find_AID_Targets(Sample.Names, Reference.Sequences.DNA, NGS$Config)
+    cat("AID targets identified.", file = "logs/tasAnalyzer logs.txt", sep = "\n", append = TRUE)
   }else{
     AID.Targets <- list()
+    cat("AID targets not identified due to settings.", file = "logs/tasAnalyzer logs.txt", sep = "\n", append = TRUE)
   }
 
+  cat("Measuring mutations...", file = "logs/tasAnalyzer logs.txt", sep = "\n", append = TRUE)
   Output.Mutations.List <- tas_measure_mutations(Sample.Names, Sequence.Table.List, AID.Targets, NGS$Input, NGS$Config)
+  cat("Mutations measured.", file = "logs/tasAnalyzer logs.txt", sep = "\n", append = TRUE)
 
   if (shiny.env){
     incProgress(amount = 2/30, message = 'Performing multiple sequence alignments (step 7 of 8)')
@@ -231,8 +242,9 @@ tas_analyze <- function(InputFilePath,
   ##### SEQUENCE ALIGNMENTS #####
   ###############################
 
-  cat("Performing multiple sequence alignments  (step 7 of 8)...\n")
+  cat("Performing multiple sequence alignments  (step 7 of 8)...", file = "logs/tasAnalyzer logs.txt", sep = "\n", append = TRUE)
   Output.MSA.List <- tas_msa(Sample.Names, Sequence.Table.List, NGS$Input, NGS$Config)
+  cat("MSA complete.", file = "logs/tasAnalyzer logs.txt", sep = "\n", append = TRUE)
 
   if (shiny.env){
     incProgress(amount = 5/30, message = 'Exporting (step 8 of 8)')
@@ -242,7 +254,7 @@ tas_analyze <- function(InputFilePath,
   ##### GRAPHS AND EXPORT #####
   #############################
 
-  cat("Exporting (step 8 of 8)...\n")
+  cat("Exporting (step 8 of 8)...", file = "logs/tasAnalyzer logs.txt", sep = "\n", append = TRUE)
   tas_export_msa(Sample.Names, Output.MSA.List, NGS$Config,WD)
   Output.Mutations.List <- tas_export_mutations(Sample.Names, Output.Mutations.List, Sequence.Table.List, Reference.Sequences.DNA, NGS$Input, NGS$Config, WD)
   Results <- list(Sequences=Sequence.Table.List, Mutations=Output.Mutations.List, MSA=Output.MSA.List)
@@ -258,7 +270,9 @@ tas_analyze <- function(InputFilePath,
                 str_c(substr(InputFilePath,1,str_locate(InputFilePath,"Input.csv")[,"start"]-1),"analyzed.zip"))
   }
 
-  cat("Done!\n")
+  cat("ZIP archive of results generated.", file = "logs/tasAnalyzer logs.txt", sep = "\n", append = TRUE)
+
+  cat("Done!", file = "logs/tasAnalyzer logs.txt", sep = "\n", append = TRUE)
 
   return(Results)
 }
