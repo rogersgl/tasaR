@@ -52,17 +52,21 @@ tas_analyze <- function(InputFilePath,
 
   t0 <- Sys.time()
   original.WD <- getwd()
+  #work in temp directory
+  WD <- paste0(tempdir(),"/")
+  if (dir.exists(paste0(WD,"logs"))==FALSE){
+    dir.create(paste0(WD,"logs"))
+  }
+  file.create(paste0(WD,"logs/tasAnalyzer logs.txt"))
+  cat("Working directory set.", file = paste0(WD,"logs/tasAnalyzer logs.txt"), sep = "\n", append = TRUE)
+
 
 
   ###############################
   #### LOAD/INSTALL PACKAGES ####
   ###############################
 
-  if (dir.exists(str_c(WD,"logs"))==FALSE){
-    dir.create(str_c(WD,"logs"))
-  }
-
-  cat("Loading dependencies  (step 1 of 8)...", file = "logs/tasAnalyzer logs.txt", sep = "\n", append = TRUE)
+  cat("Loading dependencies  (step 1 of 8)...", file = paste0(WD,"logs/tasAnalyzer logs.txt"), sep = "\n", append = TRUE)
 
   suppressMessages(tas_load_dependencies())
 
@@ -73,13 +77,13 @@ tas_analyze <- function(InputFilePath,
   input.dir <- substr(InputFilePath,1,str_locate(InputFilePath,"Input.csv")[,"start"]-1)
 
   t1 <- Sys.time()
-  cat(str_c("Dependencies loaded. Elapsed time: ",t1-t0), file = "logs/tasAnalyzer logs.txt", sep = "\n", append = TRUE)
+  cat(str_c("Dependencies loaded. Elapsed time: ",t1-t0), file = paste0(WD,"logs/tasAnalyzer logs.txt"), sep = "\n", append = TRUE)
 
   ################
   #### IMPORT ####
   ################
 
-  cat("Importing  (step 2 of 8)...", file = "logs/tasAnalyzer logs.txt", sep = "\n", append = TRUE)
+  cat("Importing  (step 2 of 8)...", file = paste0(WD,"logs/tasAnalyzer logs.txt"), sep = "\n", append = TRUE)
 
   NGS <- list()
   NGS <- tas_import(InputFilePath,config)
@@ -98,20 +102,13 @@ tas_analyze <- function(InputFilePath,
   }
 
   if (config == 'shiny'){
-    cat("Setting shiny settings", file = "logs/tasAnalyzer logs.txt", sep = "\n", append = TRUE)
+    cat("Setting shiny settings", file = paste0(WD,"logs/tasAnalyzer logs.txt"), sep = "\n", append = TRUE)
     #fix the import that changes logical values into character vectors
     idx_logical <- intersect(which(!is.na(unlist(lapply(shiny.settings,as.logical)))),
                              suppressWarnings(which(is.na(unlist(lapply(shiny.settings,as.numeric))))))
     shiny.settings[idx_logical] <- lapply(shiny.settings[idx_logical],as.logical)
     NGS$Config <- shiny.settings
-  }else{cat("Non-shiny environment. Shiny settings not set.", file = "logs/tasAnalyzer logs.txt", sep = "\n", append = TRUE)}
-
-  #work in directory specified by NGS_Config
-  WD <- NGS$Config$WorkingDirectory
-  if (substr(WD,nchar(WD),nchar(WD)) != "/"){
-    WD <- str_c(WD,"/")
-  }
-  cat("Working directory set.", file = "logs/tasAnalyzer logs.txt", sep = "\n", append = TRUE)
+  }else{cat("Non-shiny environment. Shiny settings not set.", file = paste0(WD,"logs/tasAnalyzer logs.txt"), sep = "\n", append = TRUE)}
 
   if (NGS$Config$multicore!=TRUE){
     NGS$Config$nCores <- 1
@@ -129,13 +126,13 @@ tas_analyze <- function(InputFilePath,
 
   t2 <- Sys.time()
 
-  cat(str_c("Import done. Elapsed time: ",t2-1), file = "logs/tasAnalyzer logs.txt", sep = "\n", append = TRUE)
+  cat(str_c("Import done. Elapsed time: ",t2-1), file = paste0(WD,"logs/tasAnalyzer logs.txt"), sep = "\n", append = TRUE)
 
   ############################
   #### INPUT FORMAT CHECK ####
   ############################
 
-  cat("Checking files (step 3 of 8)...", file = "logs/tasAnalyzer logs.txt", sep = "\n", append = TRUE)
+  cat("Checking files (step 3 of 8)...", file = paste0(WD,"logs/tasAnalyzer logs.txt"), sep = "\n", append = TRUE)
 
   tas_check(InputFilePath,NGS$Input, NGS$Config, shiny.env, shiny.fileTable, WD)
 
@@ -143,13 +140,13 @@ tas_analyze <- function(InputFilePath,
     incProgress(amount = 1/90, message = 'Merging paired-end reads (step 4 of 8)')
   }
   t3 <- Sys.time()
-  cat(str_c("Input format check passed. Elapsed time: ", t3-t2), file = "logs/tasAnalyzer logs.txt", sep = "\n", append = TRUE)
+  cat(str_c("Input format check passed. Elapsed time: ", t3-t2), file = paste0(WD,"logs/tasAnalyzer logs.txt"), sep = "\n", append = TRUE)
 
   ####################
   ##### PANDASEQ #####
   ####################
 
-  cat("Merging paired-end reads  (step 4 of 8)...", file = "logs/tasAnalyzer logs.txt", sep = "\n", append = TRUE)
+  cat("Merging paired-end reads  (step 4 of 8)...", file = paste0(WD,"logs/tasAnalyzer logs.txt"), sep = "\n", append = TRUE)
 
   if (NGS$Config$merge.reads==1){
     if (NGS$Config$OperatingSystem %in% c("MacOS","Linux")){
@@ -179,11 +176,11 @@ tas_analyze <- function(InputFilePath,
   }else{
     stop("merge.reads is not a logical vector. Too confused to continue.")
   }
-  cat("Reading merged files...", file = "logs/tasAnalyzer logs.txt", sep = "\n", append = TRUE)
+  cat("Reading merged files...", file = paste0(WD,"logs/tasAnalyzer logs.txt"), sep = "\n", append = TRUE)
 
   Reads.List <- tas_import_fastq(Sample.Names, Fastq_File_Path)
   t4 <- Sys.time()
-  cat(str_c("Merged FASTQ files imported. Elapsed time: ",t4-t3), file = "logs/tasAnalyzer logs.txt", sep = "\n", append = TRUE)
+  cat(str_c("Merged FASTQ files imported. Elapsed time: ",t4-t3), file = paste0(WD,"logs/tasAnalyzer logs.txt"), sep = "\n", append = TRUE)
 
   if (shiny.env){
     incProgress(amount = 2/30, message = 'Filtering, counting, and aligning sequences (step 5 of 8)')
@@ -193,52 +190,52 @@ tas_analyze <- function(InputFilePath,
   ##### FILTER READS #####
   ########################
 
-  cat("Filtering, counting, and aligning sequences  (step 5 of 8)...", file = "logs/tasAnalyzer logs.txt", sep = "\n", append = TRUE)
+  cat("Filtering, counting, and aligning sequences  (step 5 of 8)...", file = paste0(WD,"logs/tasAnalyzer logs.txt"), sep = "\n", append = TRUE)
 
-  cat("Performing initial filtering by primers (and/or barcode and/or UMI pattern)...", file = "logs/tasAnalyzer logs.txt", sep = "\n", append = TRUE)
+  cat("Performing initial filtering by primers (and/or barcode and/or UMI pattern)...", file = paste0(WD,"logs/tasAnalyzer logs.txt"), sep = "\n", append = TRUE)
   Reads.Filtered.List <- tas_filter(Sample.Names, Reads.List, NGS$Input, NGS$Config)
   Reads.List <- NULL
   t5 <- Sys.time()
-  cat(str_c("Initial filtering complete. Elapsed time: ",t5-t4), file = "logs/tasAnalyzer logs.txt", sep = "\n", append = TRUE)
+  cat(str_c("Initial filtering complete. Elapsed time: ",t5-t4), file = paste0(WD,"logs/tasAnalyzer logs.txt"), sep = "\n", append = TRUE)
 
   Sequence.Table.List <- tas_seq_table(Sample.Names, Reads.Filtered.List, NGS$Input, NGS$Config)
   t6 <- Sys.time()
-  cat(str_c("Filtering complete and sequence tables generated. Elapsed time: ",t6-t5), file = "logs/tasAnalyzer logs.txt", sep = "\n", append = TRUE)
+  cat(str_c("Filtering complete and sequence tables generated. Elapsed time: ",t6-t5), file = paste0(WD,"logs/tasAnalyzer logs.txt"), sep = "\n", append = TRUE)
   tas_write_filtered(Sample.Names, Reads.Filtered.List, NGS$Config, WD)
   t7 <- Sys.time()
-  cat(str_c("Filtered FASTQ files written and compressed. Elapsed time: ",t7-t6), file = "logs/tasAnalyzer logs.txt", sep = "\n", append = TRUE)
+  cat(str_c("Filtered FASTQ files written and compressed. Elapsed time: ",t7-t6), file = paste0(WD,"logs/tasAnalyzer logs.txt"), sep = "\n", append = TRUE)
   Sequence.Table.List <- tas_label_table(Sample.Names, Sequence.Table.List, Reference.Sequences.DNA, NGS$Input, NGS$Config)
   t8 <- Sys.time()
-  cat(str_c("Sequence tables labeled. Elapsed time: ",t8-t7), file = "logs/tasAnalyzer logs.txt", sep = "\n", append = TRUE)
+  cat(str_c("Sequence tables labeled. Elapsed time: ",t8-t7), file = paste0(WD,"logs/tasAnalyzer logs.txt"), sep = "\n", append = TRUE)
   Read.Filter.Count <- tas_filter_count(Sample.Names, Reads.Filtered.List, Sequence.Table.List, NGS$Input, NGS$Config, WD)
   write.xlsx(Read.Filter.Count,str_c(WD,"logs/Filtering.xlsx"),rowNames=TRUE,overwrite = TRUE)
   Reads.Filtered.List <- NULL
   t9 <- Sys.time()
-  cat(str_c("Read filtration counted and written to logs/Filtering.xlsx. Elapsed time: ",t9-t8), file = "logs/tasAnalyzer logs.txt", sep = "\n", append = TRUE)
+  cat(str_c("Read filtration counted and written to logs/Filtering.xlsx. Elapsed time: ",t9-t8), file = paste0(WD,"logs/tasAnalyzer logs.txt"), sep = "\n", append = TRUE)
 
   if (shiny.env){
     incProgress(amount = 12/30, message = 'Measuring mutations (step 6 of 8)')
   }
 
-  cat(str_c("Step 5 complete. Total elapsed time: ",t9-t4), file = "logs/tasAnalyzer logs.txt", sep = "\n", append = TRUE)
+  cat(str_c("Step 5 complete. Total elapsed time: ",t9-t4), file = paste0(WD,"logs/tasAnalyzer logs.txt"), sep = "\n", append = TRUE)
 
 
   #############################
   ##### MEASURE MUTATIONS #####
   #############################
 
-  cat("Measuring mutations  (step 6 of 8)...", file = "logs/tasAnalyzer logs.txt", sep = "\n", append = TRUE)
+  cat("Measuring mutations  (step 6 of 8)...", file = paste0(WD,"logs/tasAnalyzer logs.txt"), sep = "\n", append = TRUE)
   if (NGS$Config$measure.shm==1){
     AID.Targets <- tas_find_AID_Targets(Sample.Names, Reference.Sequences.DNA, NGS$Config)
-    cat("AID targets identified.", file = "logs/tasAnalyzer logs.txt", sep = "\n", append = TRUE)
+    cat("AID targets identified.", file = paste0(WD,"logs/tasAnalyzer logs.txt"), sep = "\n", append = TRUE)
   }else{
     AID.Targets <- list()
-    cat("AID targets not identified due to settings.", file = "logs/tasAnalyzer logs.txt", sep = "\n", append = TRUE)
+    cat("AID targets not identified due to settings.", file = paste0(WD,"logs/tasAnalyzer logs.txt"), sep = "\n", append = TRUE)
   }
 
   Output.Mutations.List <- tas_measure_mutations(Sample.Names, Sequence.Table.List, AID.Targets, NGS$Input, NGS$Config)
   t10 <- Sys.time()
-  cat(str_c("Mutations measured. Elapsed time: ",t10-t9), file = "logs/tasAnalyzer logs.txt", sep = "\n", append = TRUE)
+  cat(str_c("Mutations measured. Elapsed time: ",t10-t9), file = paste0(WD,"logs/tasAnalyzer logs.txt"), sep = "\n", append = TRUE)
 
   if (shiny.env){
     incProgress(amount = 2/30, message = 'Performing multiple sequence alignments (step 7 of 8)')
@@ -249,10 +246,10 @@ tas_analyze <- function(InputFilePath,
   ##### SEQUENCE ALIGNMENTS #####
   ###############################
 
-  cat("Performing multiple sequence alignments  (step 7 of 8)...", file = "logs/tasAnalyzer logs.txt", sep = "\n", append = TRUE)
+  cat("Performing multiple sequence alignments  (step 7 of 8)...", file = paste0(WD,"logs/tasAnalyzer logs.txt"), sep = "\n", append = TRUE)
   Output.MSA.List <- tas_msa(Sample.Names, Sequence.Table.List, NGS$Input, NGS$Config)
   t11 <- Sys.time()
-  cat(str_c("MSA complete. Elapsed time: ",t11-t10), file = "logs/tasAnalyzer logs.txt", sep = "\n", append = TRUE)
+  cat(str_c("MSA complete. Elapsed time: ",t11-t10), file = paste0(WD,"logs/tasAnalyzer logs.txt"), sep = "\n", append = TRUE)
 
   if (shiny.env){
     incProgress(amount = 5/30, message = 'Exporting (step 8 of 8)')
@@ -262,13 +259,13 @@ tas_analyze <- function(InputFilePath,
   ##### GRAPHS AND EXPORT #####
   #############################
 
-  cat("Exporting (step 8 of 8)...", file = "logs/tasAnalyzer logs.txt", sep = "\n", append = TRUE)
+  cat("Exporting (step 8 of 8)...", file = paste0(WD,"logs/tasAnalyzer logs.txt"), sep = "\n", append = TRUE)
   tas_export_msa(Sample.Names, Output.MSA.List, NGS$Config,WD)
   t12 <- Sys.time()
-  cat(str_c("MSA files generated. Elapsed time: ",t12-t11), file = "logs/tasAnalyzer logs.txt", sep = "\n", append = TRUE)
+  cat(str_c("MSA files generated. Elapsed time: ",t12-t11), file = paste0(WD,"logs/tasAnalyzer logs.txt"), sep = "\n", append = TRUE)
   Output.Mutations.List <- tas_export_mutations(Sample.Names, Output.Mutations.List, Sequence.Table.List, Reference.Sequences.DNA, NGS$Input, NGS$Config, WD)
   t13 <- Sys.time()
-  cat(str_c("Graphs generated and tables exported. Elapsed time: ",t13-t12), file = "logs/tasAnalyzer logs.txt", sep = "\n", append = TRUE)
+  cat(str_c("Graphs generated and tables exported. Elapsed time: ",t13-t12), file = paste0(WD,"logs/tasAnalyzer logs.txt"), sep = "\n", append = TRUE)
   Results <- list(Sequences=Sequence.Table.List, Mutations=Output.Mutations.List, MSA=Output.MSA.List)
 
   zip::zipr(zipfile = "analyzed.zip",
@@ -283,9 +280,9 @@ tas_analyze <- function(InputFilePath,
   }
   t14 <- Sys.time()
 
-  cat(str_c("ZIP archive of results generated. Elapsed time: ",t14-t13), file = "logs/tasAnalyzer logs.txt", sep = "\n", append = TRUE)
+  cat(str_c("ZIP archive of results generated. Elapsed time: ",t14-t13), file = paste0(WD,"logs/tasAnalyzer logs.txt"), sep = "\n", append = TRUE)
   tf <- Sys.time()
-  cat(str_c("Analysis complete. Total elapsed time: ",tf-t0), file = "logs/tasAnalyzer logs.txt", sep = "\n", append = TRUE)
+  cat(str_c("Analysis complete. Total elapsed time: ",tf-t0), file = paste0(WD,"logs/tasAnalyzer logs.txt"), sep = "\n", append = TRUE)
 
   return(Results)
 }
