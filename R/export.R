@@ -412,7 +412,7 @@ tas_export_mutations <- function(Sample.Names, Output.Mutations.List, Sequence.T
     saveWorkbook(Output.Mutations.List$Workbooks$WRCH_wb,str_c(WD,"Export/results/WRCH Tables.xlsx"),overwrite = TRUE)
   }
   if (Config.List$dna.repair.pathways==1){
-    saveWorkbook(Output.Mutations.List$Workbooks$mut_types_wb,str_c(WD,"Export/results/Mutation Types.xlsx",overwrite = TRUE))
+    saveWorkbook(Output.Mutations.List$Workbooks$mut_types_wb,str_c(WD,"Export/results/Mutation Types.xlsx"),overwrite = TRUE)
   }
 
   return(Output.Mutations.List)
