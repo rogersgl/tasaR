@@ -379,37 +379,12 @@ tas_export_mutations <- function(Sample.Names, Output.Mutations.List, Sequence.T
 
   if (Config.List$dna.repair.pathways==1){
     #stacked bar graph of mutation types
-
-    # mut.types <- data.frame(sapply(Sample.Names,function(x){
-    #   idx_wt <- which(Sequence.Table.List[[x]]$Indels=="WT")
-    #   idx_nhej <- which(suppressWarnings(as.numeric(Sequence.Table.List[[x]]$Indels) >= -2))
-    #   idx_mmej <- which(suppressWarnings(as.numeric(Sequence.Table.List[[x]]$Indels) < -2))
-    #   idx_change <- which(suppressWarnings(as.numeric(Sequence.Table.List[[x]]$BasesChanged) > 0))
-    #   idx_indel_bc <- intersect(c(idx_nhej,idx_mmej),idx_change)
-    #   idx_nhej <- idx_nhej[!idx_nhej %in% idx_indel_bc]
-    #   idx_mmej <- idx_mmej[!idx_mmej %in% idx_indel_bc]
-    #   idx_change <- idx_change[!idx_change %in% idx_indel_bc]
-    #   idx_other <- which(!1:nrow(Sequence.Table.List[[x]]) %in% c(idx_wt,idx_nhej,idx_mmej,idx_change,idx_indel_bc))
-    #
-    #   sums <- c(sum(Sequence.Table.List[[x]]$Percent[idx_wt]),
-    #             sum(Sequence.Table.List[[x]]$Percent[idx_nhej]),
-    #             sum(Sequence.Table.List[[x]]$Percent[idx_mmej]),
-    #             sum(Sequence.Table.List[[x]]$Percent[idx_change]),
-    #             sum(Sequence.Table.List[[x]]$Percent[idx_indel_bc]),
-    #             sum(Sequence.Table.List[[x]]$Percent[idx_other]))
-    #   names(sums) <- mut_label
-    #   if (abs(sum(sums)-100)>1e-7){
-    #     stop(str_c("Frequency summation error detected in indel types for sample: "),x)
-    #   }
-    #   return(sums)
-    # }))
-    # colnames(mut.types) <- Sample.Names
     mut_label <- c("WT","NHEJ","MMEJ","Base Change","Indel + Base Change","Other")
     mut.types <- readWorkbook(Output.Mutations.List$Workbooks$mut_types_wb, sheet = "Sheet1")
-    df <- data.frame(Sample = unlist(lapply(Sample.Names,function(x){
+    df <- data.frame(Samples = unlist(lapply(Sample.Names,function(x){
                         rep(x,length(mut_label))
                       }),use.names = FALSE),
-                     MutationTypes = rep(rownames(mut.types),length(Sample.Names)),
+                     MutationTypes = rep(mut_label,length(Sample.Names)),
                      Percentage = unlist(mut.types,use.names = FALSE))
     df$Samples <- factor(df$Samples,levels = Sample.Names)
     df$MutationTypes <- factor(df$MutationTypes, levels = mut_label)

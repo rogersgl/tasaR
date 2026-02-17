@@ -39,16 +39,17 @@ tas_analyze <- function(InputFilePath,
     stop("Specified input file not found.")
   }
 
-  # manual.settings <- list(WorkingDirectory=tempdir(),
-  #                         PandaseqDirectory = NULL,
-  #                         merge.reads = TRUE,
-  #                         measure.shm = FALSE,
-  #                         sequence.alignment.count = 10,
-  #                         read.frequency.limit = 0.001,
-  #                         protein.mutations = FALSE,
-  #                         PhyloTree = FALSE,
-  #                         dna.repair.pathways = FALSE,
-  #                         multicore = TRUE)
+  #quick set used during debugging
+  manual.settings <- list(WorkingDirectory=tempdir(),
+                          PandaseqDirectory = NULL,
+                          merge.reads = TRUE,
+                          measure.shm = TRUE,
+                          sequence.alignment.count = 10,
+                          read.frequency.limit = 0.001,
+                          protein.mutations = TRUE,
+                          PhyloTree = TRUE,
+                          dna.repair.pathways = TRUE,
+                          multicore = TRUE)
 
   t0 <- Sys.time()
   original.WD <- getwd()
