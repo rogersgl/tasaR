@@ -136,7 +136,7 @@ tas_seq_table <- function(Sample.Names,Reads.Filtered.List,Input.DataFrame,Confi
       umi_pileup <- function(i){
         t <- ShortRead::tables(i, n = length(i))
         d <- t$distribution$nOccurrences[order(t$distribution$nOccurrences,decreasing = TRUE)]
-        if((length(d)==1) | (d[1]>=(d[2]+2) & (d[2]<d[1]*0.7))){
+        if((length(d)==1) || (d[1]>=(d[2]+2) && (d[2]<d[1]*0.7))){
           return(names(t$top[1]))
         }else{
           return("Rejected")
