@@ -19,7 +19,6 @@ tas_pandaseq_terminal <- function(Sample.Names, Input.DataFrame, Config.List, WD
                      "MaxInsertion")
 
   Config.Entries <- c("WorkingDirectory",
-                      "PandaseqDirectory",
                       "OperatingSystem",
                       "nCores",
                       "merge.reads")

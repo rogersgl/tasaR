@@ -178,7 +178,6 @@ tas_check <- function(InputFilePath,Input.DataFrame, Config.List, shiny.env, shi
                      "FR4Start")
 
   Config.Entries <- c("WorkingDirectory",
-                      "PandaseqDirectory",
                       "OperatingSystem",
                       "nCores",
                       "merge.reads",

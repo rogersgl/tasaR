@@ -215,7 +215,6 @@ server <- function(input, output) {
 
    settings <- eventReactive(input$run,{
      list(WorkingDirectory = tempdir(),
-          PandaseqDirectory = NULL,
           merge.reads = input$merge.reads,
           measure.shm = input$measure.shm,
           protein.mutations = input$protein.mutations,

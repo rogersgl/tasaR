@@ -9,7 +9,6 @@
 #' @param shiny.env A logical (TRUE/FALSE) to tell whether the function is being executed by the shiny app (TRUE) or not (FALSE).
 #' @param shiny.fileTable A character vector containing names of files uploaded to the shiny app.
 #' @param WorkingDirectory Optional. The path to the folder containing the input .xlsx file and all input .fastq files.
-#' @param PandaseqDirectory Optional. The path to the folder containing the pandaseq.exe files for use on Windows. Not currently implemented.
 #' @param merge.reads A logical (TRUE/FALSE) to tell whether PANDAseq should be used to merge paired end read files.
 #' @param measure.shm A logical (TRUE/FALSE) to tell whether the somatic hypermutation analysis module should be run.
 #' @param sequence.alignment.count Enter a whole number value to determine how many sequences to display as multiple sequence alignments. Default value of 10 is recommended, can require significant resources for larger alignments.
@@ -26,7 +25,6 @@ tas_analyze <- function(InputFilePath,
                         shiny.env = FALSE,
                         shiny.fileTable = character(),
                         WorkingDirectory = NULL,
-                        PandaseqDirectory = NULL,
                         merge.reads = TRUE,
                         measure.shm = FALSE,
                         sequence.alignment.count = 10,
@@ -88,7 +86,6 @@ tas_analyze <- function(InputFilePath,
 
   if (config == 'manual'){
     NGS$Config <- c(NGS$Config,list(
-                       PandaseqDirectory=PandaseqDirectory,
                        merge.reads=merge.reads,
                        measure.shm=measure.shm,
                        sequence.alignment.count=sequence.alignment.count,
@@ -103,13 +100,9 @@ tas_analyze <- function(InputFilePath,
   if (config == 'shiny'){
     cat("Setting shiny settings", file = "logs/tasAnalyzer logs.txt", sep = "\n", append = TRUE)
     #fix the import that changes logical values into character vectors
-    if (is.null(shiny.settings$PandaseqDirectory)){
-      shiny.settings$PandaseqDirectory <- NA
-    }
     idx_logical <- intersect(which(!is.na(unlist(lapply(shiny.settings,as.logical)))),
                              suppressWarnings(which(is.na(unlist(lapply(shiny.settings,as.numeric))))))
     shiny.settings[idx_logical] <- lapply(shiny.settings[idx_logical],as.logical)
-    shiny.settings["PandaseqDirectory"] <- list(NULL)
     NGS$Config <- shiny.settings
   }else{cat("Non-shiny environment. Shiny settings not set.", file = "logs/tasAnalyzer logs.txt", sep = "\n", append = TRUE)}
 
