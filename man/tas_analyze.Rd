@@ -11,7 +11,6 @@ tas_analyze(
   shiny.env = FALSE,
   shiny.fileTable = character(),
   WorkingDirectory = NULL,
-  PandaseqDirectory = NULL,
   merge.reads = TRUE,
   measure.shm = FALSE,
   sequence.alignment.count = 10,
@@ -34,8 +33,6 @@ tas_analyze(
 \item{shiny.fileTable}{A character vector containing names of files uploaded to the shiny app.}
 
 \item{WorkingDirectory}{Optional. The path to the folder containing the input .xlsx file and all input .fastq files.}
-
-\item{PandaseqDirectory}{Optional. The path to the folder containing the pandaseq.exe files for use on Windows. Not currently implemented.}
 
 \item{merge.reads}{A logical (TRUE/FALSE) to tell whether PANDAseq should be used to merge paired end read files.}
 
