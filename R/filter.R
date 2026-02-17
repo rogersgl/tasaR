@@ -378,7 +378,7 @@ tas_write_filtered <- function(Sample.Names,Reads.Filtered.List,Config.List,WD){
 
   invisible(mclapply(seq_along(Reads.Filtered.List),function(x){
     if (file.exists(str_c(WD,"filtered/",Sample.Names[x],"-filtered.fastq.gz"))==TRUE){
-      print(str_c("The following file was replaced: ",str_c(WD,"filtered/",Sample.Names[x],"-filtered.fastq.gz")))
+      cat(str_c("The following file was replaced: ",str_c(WD,"filtered/",Sample.Names[x],"-filtered.fastq.gz")))
       file.remove(str_c(WD,"filtered/",Sample.Names[x],"-filtered.fastq.gz"))
     }
     writeFastq(Reads.Filtered.List[[x]],str_c(WD,"filtered/",Sample.Names[x],"-filtered.fastq.gz"))
