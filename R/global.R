@@ -150,11 +150,11 @@ tas_analyze <- function(InputFilePath,
 
   if (NGS$Config$merge.reads==1){
     if (NGS$Config$OperatingSystem %in% c("MacOS","Linux")){
-      print("Attempting PANDAseq through shell terminal...")
+      cat("Attempting PANDAseq through shell terminal...", file = paste0(WD,"logs/tasAnalyzer logs.txt"), sep = "\n", append = TRUE)
       tas_pandaseq_terminal(Sample.Names, NGS$Input, NGS$Config, WD, shiny.env, shiny.fileTable)
-      print("PANDAseq complete.")
+      cat("PANDAseq complete.", file = paste0(WD,"logs/tasAnalyzer logs.txt"), sep = "\n", append = TRUE)
       Fastq_File_Path <- sapply(Sample.Names,function(x){str_c(WD,"merged/",x,"-merged.fastq.gz")})
-      print("Names of merged files generated.")
+      cat("Names of merged files generated.", file = paste0(WD,"logs/tasAnalyzer logs.txt"), sep = "\n", append = TRUE)
     }else if (NGS$Config$OperatingSystem=="Windows"){
       stop("PANDAseq is not functional on Windows. Please find an alternative approach to merge unpaired reads. See README.md for more information.")
       # tas_pandaseq_windows(Sample.Names, NGS$Input, NGS$Config, WD, shiny.env, shiny.fileTable, original.WD)
@@ -180,7 +180,7 @@ tas_analyze <- function(InputFilePath,
 
   Reads.List <- tas_import_fastq(Sample.Names, Fastq_File_Path)
   t4 <- Sys.time()
-  cat(str_c("Merged FASTQ files imported. Elapsed time: ",t4-t3), file = paste0(WD,"logs/tasAnalyzer logs.txt"), sep = "\n", append = TRUE)
+  cat(str_c("FASTQ files merged and imported. Elapsed time: ",t4-t3), file = paste0(WD,"logs/tasAnalyzer logs.txt"), sep = "\n", append = TRUE)
 
   if (shiny.env){
     incProgress(amount = 2/30, message = 'Filtering, counting, and aligning sequences (step 5 of 8)')
