@@ -225,7 +225,7 @@ tas_label_table <- function(Sample.Names,Sequence.Table.List,Reference.Sequences
     ins <-  indel(Pairwise.Aligned.DNA[[x]])@insertion
     idx.ins <- which(!sapply(ins,S4Vectors::isEmpty))
     ins.num <- rep("",length(ins))
-    ins.num <- lapply(ins[idx.ins],function(y){
+    ins.num[idx.ins] <- lapply(ins[idx.ins],function(y){
       ins.widths <- y@width
       widths.split <- unlist(str_split(ins.widths,"-"))
       output <- str_c("+",widths.split)
