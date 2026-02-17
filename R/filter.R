@@ -224,27 +224,21 @@ tas_label_table <- function(Sample.Names,Sequence.Table.List,Reference.Sequences
     # print(x)
     ins <-  indel(Pairwise.Aligned.DNA[[x]])@insertion
     idx.ins <- which(!sapply(ins,S4Vectors::isEmpty))
-    ins.num <- lapply(1:length(ins),function(y){
-      ins.widths <- ins[y]@unlistData@width
-      if (!S4Vectors::isEmpty(ins.widths)){
-        widths.split <- unlist(str_split(ins.widths,"-"))
-        output <- str_c("+",widths.split)
-      }else{
-        output <- ""
-      }
+    ins.num <- rep("",length(ins))
+    ins.num <- lapply(ins[idx.ins],function(y){
+      ins.widths <- y@width
+      widths.split <- unlist(str_split(ins.widths,"-"))
+      output <- str_c("+",widths.split)
       return(output)
     })
 
     del <- indel(Pairwise.Aligned.DNA[[x]])@deletion
     idx.del <- which(!sapply(del,S4Vectors::isEmpty))
-    del.num <- lapply(1:length(del),function(y){
-      del.widths <- del[y]@unlistData@width
-      if (!S4Vectors::isEmpty(del.widths)){
-        widths.split <- unlist(str_split(del.widths,"-"))
-        output <- str_c("-",widths.split)
-      }else{
-        output <- ""
-      }
+    del.num <- rep("",length(del))
+    del.num[idx.del] <- lapply(del[idx.del],function(y){
+      del.widths <- y@width
+      widths.split <- unlist(str_split(del.widths,"-"))
+      output <- str_c("-",widths.split)
       return(output)
     })
 
