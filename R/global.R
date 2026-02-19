@@ -41,7 +41,6 @@ tas_analyze <- function(InputFilePath,
 
   #quick set used during debugging
   manual.settings <- list(WorkingDirectory=tempdir(),
-                          PandaseqDirectory = NULL,
                           merge.reads = TRUE,
                           measure.shm = TRUE,
                           sequence.alignment.count = 10,
@@ -49,7 +48,10 @@ tas_analyze <- function(InputFilePath,
                           protein.mutations = TRUE,
                           PhyloTree = TRUE,
                           dna.repair.pathways = TRUE,
-                          multicore = TRUE)
+                          multicore = TRUE,
+                          shiny.settings = list(),
+                          shiny.env = FALSE,
+                          shiny.fileTable = character())
 
   t0 <- Sys.time()
   original.WD <- getwd()
@@ -276,8 +278,9 @@ tas_analyze <- function(InputFilePath,
   if (shiny.env){
     incProgress(amount = 8/30, message = 'Done!')
   }else{
-    file.copy(str_c(WD,"analyzed.zip"),
-                str_c(substr(InputFilePath,1,str_locate(InputFilePath,"Input.csv")[,"start"]-1),"analyzed.zip"))
+    file.copy(file.path(WD,"analyzed.zip"),
+                str_c(substr(InputFilePath,1,str_locate(InputFilePath,"Input.csv")[,"start"]-1),"analyzed.zip"),
+                      overwrite = TRUE)
   }
   t14 <- Sys.time()
 

@@ -128,31 +128,49 @@ tas_seq_table <- function(Sample.Names,Reads.Filtered.List,Input.DataFrame,Confi
       }else{
         umi_temp <- narrow(Reads.Filtered.List[[x]], start = umi.pos$start, end = umi.pos$end)@sread
       }
+      #extract id, seq, umi from Reads.Filtered.List and remove any sequences containing N called nt's
+      id_temp <- as.character(Reads.Filtered.List[[x]]@id)
       seq_temp <- narrow(Reads.Filtered.List[[x]],start = Input.DataFrame[x,"InsertStart"],end = Input.DataFrame[x,"InsertEnd"])@sread
       n_idx <- which(elementNROWS(Biostrings::vmatchPattern("n",seq_temp))==0)
-      umi_temp <- umi_temp[n_idx]
-      seq_temp <- seq_temp[n_idx]
+      umi_temp <- as.character(umi_temp[n_idx])
+      seq_temp <- as.character(seq_temp[n_idx])
+      id_temp <- id_temp[n_idx]
 
+      #use data.table to bin by UMI, remove UMIs with <3 reads
+      dt_temp <- data.table::data.table(umi=umi_temp, seq=seq_temp, id=id_temp)
+      dt_id_umi <- dt_temp[, .(id = list(id),count=length(id)), by="umi"]
+      dt_id_umi <- dt_id_umi[dt_id_umi$count>=3,]
+
+      #group sequences
+      dt_id_seq <- dt_temp[, .(id = list(id),count=length(id)), by="seq"]
+
+      #ungroup umis and sequences while retaining grouping information in umi or seq.group columns
+      dt_id_umi_match <- data.table::data.table(umi = rep(dt_id_umi$umi,dt_id_umi$count), umi.id = unlist(dt_id_umi$id))
+      dt_id_seq_match <- data.table::data.table(seq.group = rep(1:nrow(dt_id_seq),dt_id_seq$count), seq.id = unlist(dt_id_seq$id), seq = rep(dt_id_seq$seq,dt_id_seq$count))
+
+      #merge umi and seq data tables based on FASTQ IDs
+      dt_id_merge <- data.table::merge.data.table(dt_id_umi_match,dt_id_seq_match,by.x="umi.id",by.y="seq.id")
+
+      #function to determine optimal sequence for each umi and filter non-passing umis as "Rejected"
       umi_pileup <- function(i){
-        t <- ShortRead::tables(i, n = length(i))
-        d <- t$distribution$nOccurrences[order(t$distribution$nOccurrences,decreasing = TRUE)]
-        if((length(d)==1) || (d[1]>=(d[2]+2) && (d[2]<d[1]*0.7))){
-          return(names(t$top[1]))
+        t <- table(i)
+        d <- data.table(seq = names(t),count=as.numeric(t))
+        setorder(d,-count)
+        if((length(d$count)==1) || (d$count[1]>=(d$count[2]+2) && (d$count[2]<d$count[1]*0.7))){
+          return(d$seq[1])
         }else{
           return("Rejected")
         }
       }
-      a <- ShortRead::tables(umi_temp,n=length(umi_temp))$top[ShortRead::tables(umi_temp,n=length(umi_temp))$top>=3]
-      umi_df <- data.frame(UMI=names(a),Reads=a,row.names=NULL)
-      b <- BiocGenerics::match(as.character(umi_temp),umi_df$UMI)
-      dt <- data.table::data.table(value = b, idx = seq_along(b),seq = as.character(seq_temp))
-      result_dt <- dt[, list(sequences = umi_pileup(DNAStringSet(seq))), by = "value"]
-      df <- as.data.frame(result_dt)
-      df <- na.omit(df[order(df$value),])
-      df <- data.frame(df[,2])
-      colnames(df) <- "TargetSequence"
-      umi_df <- cbind(umi_df,df)
-      Output <- umi_df[!df$TargetSequence=="Rejected",]
+
+      #re-group merged data.tables by umi
+      dt_merge_group <- dt_id_merge[, .(seq = umi_pileup(seq),count = length(seq.group)),by="umi"]
+      setorder(dt_merge_group,-count)
+
+      #change back to data.frame, remove "Rejected" UMIs, and reorder the columns for downstream output
+      df <- as.data.frame(dt_merge_group)
+      colnames(df) <- c("UMI","TargetSequence","Reads")
+      Output <- df[!df$TargetSequence=="Rejected",]
       Output <- Output[,c("TargetSequence","Reads","UMI")]
       return(Output)
     }else{
