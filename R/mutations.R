@@ -245,7 +245,7 @@ tas_measure_mutations <- function(Sample.Names,Sequence.Table.List,AID.Targets,I
     rownames(mut.types) <- mut_label
     mut_types_wb <- createWorkbook("Mutation Types.xlsx")
     addWorksheet(mut_types_wb, "Sheet1")
-    writeData(mut_types_wb,"Sheet1",mut.types)
+    writeData(mut_types_wb, "Sheet1", mut.types, rowNames = TRUE)
   }
 
   #summary mutation data compilation
