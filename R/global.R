@@ -91,18 +91,18 @@ tas_analyze <- function(InputFilePath,
   NGS <- list()
   NGS <- tas_import(InputFilePath,config)
 
-  if (config == 'manual'){
-    NGS$Config <- c(NGS$Config,list(
-                       merge.reads=merge.reads,
-                       measure.shm=measure.shm,
-                       sequence.alignment.count=sequence.alignment.count,
-                       read.frequency.limit=read.frequency.limit,
-                       protein.mutations=protein.mutations,
-                       PhyloTree=PhyloTree,
-                       dna.repair.pathways=dna.repair.pathways,
-                       multicore=multicore,
-                       nCores=availableCores()))
-  }
+  # if (config == 'manual'){
+  #   NGS$Config <- c(NGS$Config,list(
+  #                      merge.reads=merge.reads,
+  #                      measure.shm=measure.shm,
+  #                      sequence.alignment.count=sequence.alignment.count,
+  #                      read.frequency.limit=read.frequency.limit,
+  #                      protein.mutations=protein.mutations,
+  #                      PhyloTree=PhyloTree,
+  #                      dna.repair.pathways=dna.repair.pathways,
+  #                      multicore=multicore,
+  #                      nCores=availableCores()))
+  # }
 
   if (config == 'shiny'){
     cat("Setting shiny settings", file = paste0(WD,"logs/tasAnalyzer logs.txt"), sep = "\n", append = TRUE)

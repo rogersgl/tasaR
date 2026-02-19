@@ -385,7 +385,7 @@ tas_export_mutations <- function(Sample.Names, Output.Mutations.List, Sequence.T
                         rep(x,length(mut_label))
                       }),use.names = FALSE),
                      MutationTypes = rep(mut_label,length(Sample.Names)),
-                     Percentage = unlist(mut.types,use.names = FALSE))
+                     Percentage = unlist(mut.types[,Sample.Names],use.names = FALSE))
     df$Samples <- factor(df$Samples,levels = Sample.Names)
     df$MutationTypes <- factor(df$MutationTypes, levels = mut_label)
     mut.types.graph <- ggplot(df,aes(x = Samples, y = Percentage, fill = MutationTypes)) +
