@@ -283,7 +283,7 @@ tas_export_mutations <- function(Sample.Names, Output.Mutations.List, Sequence.T
                                    colour = "black"))+
     scale_y_continuous(expand = expansion(mult = c(0, 0.05)))+
     theme(axis.text.x = element_text(angle = 45, hjust = 1))
-  ggsave(str_c(WD,"Export/graphs/Summary/All nt mutation summary.pdf"),plot = MutAll,width = 2+0.5*length(Sample.Names),height = 3,units = "in")
+  ggsave(str_c(WD,"Export/graphs/Summary/All nt mutation summary.pdf"),plot = MutAll,width = 1+0.5*length(Sample.Names),height = 3,units = "in")
 
   Output.Mutations.List$SummaryGraphs <- list(MutAll=MutAll)
 
@@ -307,7 +307,7 @@ tas_export_mutations <- function(Sample.Names, Output.Mutations.List, Sequence.T
                                      colour = "black"))+
       scale_y_continuous(expand = expansion(mult = c(0, 0.05)))+
       theme(axis.text.x = element_text(angle = 45, hjust = 1))
-    ggsave(str_c(WD,"Export/graphs/Summary/Cytosine mutation summary.pdf"),plot = MutC_All,width = 2+0.5*length(Sample.Names),height = 3,units = "in")
+    ggsave(str_c(WD,"Export/graphs/Summary/Cytosine mutation summary.pdf"),plot = MutC_All,width = 1+0.5*length(Sample.Names),height = 3,units = "in")
 
     mut_mut <- readWorkbook(Output.Mutations.List$Workbooks$Mut_pos_wb, sheet = "MutAll")
     mut_samp <- character()
@@ -325,7 +325,7 @@ tas_export_mutations <- function(Sample.Names, Output.Mutations.List, Sequence.T
       theme(axis.line = element_line(linewidth = 0, linetype = "solid",
                                      colour = "black"))+
       scale_x_continuous(expand = expansion(mult = c(0.02, 0)))
-    ggsave(str_c(WD,"Export/graphs/Summary/Mutation heatmap.pdf"),plot = MutC_All,width = 3,height = 2+0.5*length(Sample.Names),units = "in")
+    ggsave(str_c(WD,"Export/graphs/Summary/Mutation heatmap.pdf"),plot = mut_hm,width = 6,height = 1+0.5*length(Sample.Names),units = "in")
 
     nmps <- sapply(Sequence.Table.List,function(x){
       x$Indels[x$BasesChanged=="WT"] <- NA
@@ -350,7 +350,7 @@ tas_export_mutations <- function(Sample.Names, Output.Mutations.List, Sequence.T
                                      colour = "black"))+
                                      scale_y_continuous(expand = expansion(mult = c(0, 0.05)))+
                                      theme(axis.text.x = element_text(angle = 45, hjust = 1)))
-    ggsave(str_c(WD,"Export/graphs/Summary/Mutations per sequence dotplot.pdf"),plot = nMutPerSeq,width = 2+0.5*length(Sample.Names),height = 3,units = "in")
+    ggsave(str_c(WD,"Export/graphs/Summary/Mutations per sequence dotplot.pdf"),plot = nMutPerSeq,width = 1+0.5*length(Sample.Names),height = 3,units = "in")
     Output.Mutations.List$SummaryGraphs <- c(Output.Mutations.List$SummaryGraphs,list(MutC_All=MutC_All,MutHM=mut_hm,nMutPerSeq=nMutPerSeq))
 
     if (Config.List$measure.shm==1){
@@ -371,7 +371,7 @@ tas_export_mutations <- function(Sample.Names, Output.Mutations.List, Sequence.T
                                        colour = "black"))+
         scale_x_continuous(expand = expansion(mult = c(0.02, 0)))+
         labs(x = "AID cytosine #")
-      ggsave(str_c(WD,"Export/graphs/Summary/Mutation cytosines heatmap.pdf"),plot = MutC_All,width = 2+0.75*length(Sample.Names),height = 3,units = "in")
+      ggsave(str_c(WD,"Export/graphs/Summary/Mutation cytosines heatmap.pdf"),plot = mutc_hm,width = 4,height = 1+0.5*length(Sample.Names),units = "in")
       Output.Mutations.List$SummaryGraphs <- c(Output.Mutations.List$SummaryGraphs,list(MutC_HM=mutc_hm))
     }
 

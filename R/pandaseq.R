@@ -61,7 +61,6 @@ tas_pandaseq_terminal <- function(Sample.Names, Input.DataFrame, Config.List, WD
   }
 
   #generate arguments list to process in pandaseq
-
   Pandaseq_Args <- list()
   Pandaseq_Args[Sample.Names] <- lapply(seq_along(Sample.Names),function(x){
     c(str_c("-f '",WD,"unpaired/",Input.DataFrame$ForwardFASTQFileName[[x]],"'"),
