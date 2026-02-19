@@ -270,15 +270,12 @@ tas_analyze <- function(InputFilePath,
   t13 <- Sys.time()
   cat(str_c("Graphs generated and tables exported. Elapsed time: ",format(t13-t12, digits = 4, with.units = TRUE)), file = paste0(WD,"logs/tasAnalyzer logs.txt"), sep = "\n", append = TRUE)
   Results <- list(Sequences=Sequence.Table.List, Mutations=Output.Mutations.List, MSA=Output.MSA.List)
+  tf <- Sys.time()
+  cat(str_c("\nAnalysis complete. Total elapsed time: ",format(tf-t0, digits = 4, with.units = TRUE)), file = paste0(WD,"logs/tasAnalyzer logs.txt"), sep = "\n", append = TRUE)
 
   zip::zipr(zipfile = "analyzed.zip",
             files = str_c(WD,c("Export","filtered","logs","merged")),
             root = WD)
-
-  t14 <- Sys.time()
-  cat(str_c("ZIP archive of results generated. Elapsed time: ",format(t14-t13, digits = 4, with.units = TRUE)), file = paste0(WD,"logs/tasAnalyzer logs.txt"), sep = "\n", append = TRUE)
-  tf <- Sys.time()
-  cat(str_c("\nAnalysis complete. Total elapsed time: ",format(tf-t0, digits = 4, with.units = TRUE)), file = paste0(WD,"logs/tasAnalyzer logs.txt"), sep = "\n", append = TRUE)
 
   if (shiny.env){
     incProgress(amount = 8/30, message = 'Done!')
@@ -286,6 +283,7 @@ tas_analyze <- function(InputFilePath,
     file.copy(file.path(WD,"analyzed.zip"),
                 str_c(substr(InputFilePath,1,str_locate(InputFilePath,"Input.csv")[,"start"]-1),"analyzed.zip"),
                       overwrite = TRUE)
+    print("ZIP archive of results generated.")
   }
 
   return(Results)
