@@ -60,7 +60,8 @@ tas_analyze <- function(InputFilePath,
   if (dir.exists(paste0(WD,"logs"))==FALSE){
     dir.create(paste0(WD,"logs"))
   }
-  file.create(paste0(WD,"logs/tasAnalyzer logs.txt"), overwrite = TRUE)
+
+  file.create(paste0(WD,"logs/tasAnalyzer logs.txt"))
   cat("Working directory set.", file = paste0(WD,"logs/tasAnalyzer logs.txt"), sep = "\n", append = TRUE)
 
 
