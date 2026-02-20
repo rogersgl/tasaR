@@ -27,12 +27,15 @@ if (!require("markdown", quietly = TRUE)){
   install("markdown", quietly = TRUE)
   library("markdown", quietly = TRUE)}
 
-suppressMessages(library(tasAnalyzer))
+if (!require("later", quietly = TRUE)){
+  install("later", quietly = TRUE)
+  library("later", quietly = TRUE)}
 
+suppressMessages(library(tasAnalyzer))
 
 options(shiny.maxRequestSize = 100*1024^2)
 
-# Define UI for application that draws a histogram
+# Define UI
 ui <- page_fluid(
     useShinyjs(),
     # Application title
@@ -103,9 +106,6 @@ ui <- page_fluid(
                          selected = TRUE,
                          inline = TRUE
             ),
-            # actionButton(inputId = "apply",
-            #              label = "Apply Settings"
-            #              ),
             actionButton(inputId = "run",
                          label = "Begin Analysis")
         ),
@@ -118,16 +118,15 @@ ui <- page_fluid(
                       card(layout_columns(
                           fileInput(inputId = "sheet",
                                     label = "Configuration spreadsheet (.csv)",
-                                    accept = ".xlsx"
+                                    accept = ".csv"
                           ),
                           fileInput(inputId = "unpaired.reads",
                                     label = "Unmerged fastq files",
-                                    multiple = TRUE,
+                                    multiple = TRUE
                           ),
                           downloadLink("csv", label = "CSV Configuation Template"),
                           layout_columns(selectInput(inputId = "os", label = "Operating system",
-                                      choices = c("Windows" = "bat",
-                                                  "MacOS" = "command",
+                                      choices = c("MacOS" = "command",
                                                   "Linux" = "sh"),
                                       width = '200px'),
                           downloadLink("script", label = "PANDAseq Automation Script"), col_widths = 12),
@@ -138,11 +137,16 @@ ui <- page_fluid(
                       uiOutput("graphs")
                       ),
             nav_panel("Download",
-                      uiOutput("download.data.ui")
-                      ),
+                      uiOutput("download.data.ui"),
+                      shinyjs::disabled(actionButton("prepRdata",
+                                   "Prepare raw .RData for export")),
+                      textOutput("RDprocess"),
+                      shinyjs::hidden(downloadButton("download.R.data",
+                                     label = "Download .RData")
+                      )),
             nav_spacer(),
             nav_panel("Help",
-                      htmltools::includeMarkdown("help/README.md")),
+                      htmltools::includeMarkdown("../../README.md")),
             nav_menu(
               title = "Links"
             ),
@@ -154,10 +158,15 @@ ui <- page_fluid(
 )
 
 
-# Define server logic required to draw a histogram
-server <- function(input, output) {
+###############################################################################
+
+# Define server logic
+server <- function(input, output, session) {
 
    shiny.env <- TRUE
+   saved_RData <- reactiveVal(NULL)
+   busy <- reactiveVal(FALSE)
+   RData_prep <- reactiveVal(FALSE)   # flag that the second RData observer watches
 
    hideTab("tabs","Results")
    hideTab("tabs","Download")
@@ -172,20 +181,18 @@ server <- function(input, output) {
                                    file.copy(paste0("scripts/run_pandaseq.",input$os), file)
                                  })
 
-
-
-
    # tas_load_dependencies()
 
-   observe({
-     if (is.null(input$sheet) || is.null(input$unpaired.reads)) {
-       # If files are not uploaded, disable the button
-       shinyjs::disable("run")
-     } else if (!is.null(input$sheet) && !is.null(input$unpaired.reads)) {
-       # If files are uploaded, enable the button
-       shinyjs::enable("run")
-     }
-   })
+  # disable "Begin Analysis" button until files are uploaded
+  observe({
+    if (is.null(input$sheet) || is.null(input$unpaired.reads)) {
+      # If files are not uploaded, disable the button
+      shinyjs::disable("run")
+    } else if (!is.null(input$sheet) && !is.null(input$unpaired.reads)) {
+      # If files are uploaded, enable the button
+      shinyjs::enable("run")
+    }
+  })
 
    fileTable <- reactive({
      req(isTruthy(input$sheet) || isTruthy(input$unpaired.reads))
@@ -206,8 +213,18 @@ server <- function(input, output) {
      fileTable.display()
      })
 
-   observeEvent(input$run,{
+   observeEvent(input$run, {
+     # disable input buttons when locking in and starting run
      shinyjs::disable("run")
+     shinyjs::disable("merge.reads")
+     shinyjs::disable("measure.shm")
+     shinyjs::disable("protein.mutations")
+     shinyjs::disable("sequence.alignment.count")
+     shinyjs::disable("read.frequency.limit")
+     shinyjs::disable("dna.repair.pathways")
+     shinyjs::disable("PhyloTree")
+     shinyjs::disable("multicore")
+
      showTab("tabs","Results")
      showTab("tabs","Download")
      })
@@ -237,9 +254,8 @@ server <- function(input, output) {
        value = 0, message = "Loading dependencies (step 1 of 8)")
      })
 
-
-  # #instant results to check events without waiting for the full script to execute
-  #  results <- eventReactive(input$run,list(Sequences=list(All=c(1,2))))
+  # # instant results to check events without waiting for the full script to execute
+  # results <- eventReactive(input$run,list(Sequences=list(All=c(1,2))))
 
   calc <- eventReactive(input$run,{
     req(results(), cancelOutput = TRUE)
@@ -248,11 +264,12 @@ server <- function(input, output) {
     "Analysis finished."
   })
 
-  observeEvent(calc(),{
+  observeEvent(calc(), {
     req(results(), cancelOutput = TRUE)
     analysis.done <- isolate(results()$Sequences)
     req(analysis.done)
     shinyjs::toggle("status.card")
+    shinyjs::enable("prepRdata")
     # Sample.Names <- names(results()$Sequences$All)
     # MSA.args <- paste0(lapply(Sample.Names(),function(x){
     #   str_c("renderText('",x,"'), ",
@@ -279,11 +296,6 @@ server <- function(input, output) {
      downloadButton("zip", "Download Results")
    })
 
-
-
-
-
-
    output$graphs <- renderUI({
      navset_underline(nav_panel(title = "Summary",
                                 renderPlot(results()$Mutations$SummaryGraphs$MutAll),
@@ -297,7 +309,57 @@ server <- function(input, output) {
 
                       # paste0(str_c("title = ",results()$Sequences$All,", renderPlot(", results()$), collapse = ","))
    })
+
+   # Download handler for RData is defined once and reads saved_RData()
+   output$download.R.data <- downloadHandler(
+     filename = function(){paste0("tasAnalyzer raw - ", Sys.time(), ".RData")},
+     content = function(file) {
+       req(saved_RData())
+       file.copy(saved_RData(), file)
+     }
+   )
+
+   # Quick observer: update UI, set the flag, and return immediately
+   observeEvent(input$prepRdata, ignoreInit = TRUE, {
+     if (busy()) return()
+     busy(TRUE)
+
+     updateActionButton(session, "prepRdata", label = "Preparing .RData...")
+     shinyjs::disable("prepRdata")
+     shinyjs::disable("download.data.ui")
+
+     # set the flag to trigger the real work in the second observer
+     RData_prep(TRUE)
+   })
+
+   # Heavy observer: runs only when RData_prep becomes TRUE
+   observeEvent(RData_prep(), ignoreInit = TRUE, {
+     req(RData_prep())    # only proceed when TRUE
+
+     later::later(function(){
+       RData_to_save <- isolate(results())   # save data in non-reactive format
+
+       # do the save (this will block the session while running)
+       tmp <- tempfile(fileext = ".RData")
+       base::save(RData_to_save, file = tmp)
+
+       # store path for download
+       saved_RData(tmp)
+     }, delay = 0.1)
+   })
+
+   # UI updates after save function is done
+   observeEvent(saved_RData(), ignoreNULL = TRUE, {
+     rdcheck <- saved_RData()
+     req(rdcheck)
+     updateActionButton(session, "prepRdata", label = "RData ready")
+     shinyjs::show("download.R.data")
+     shinyjs::enable("download.data.ui")
+     on.exit(busy(FALSE))
+   })
+
 }
 
+###############################################################################
 # Run the application
 shinyApp(ui = ui, server = server)
