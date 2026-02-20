@@ -90,7 +90,7 @@ tas_analyze <- function(InputFilePath,
   cat("\nImporting  (step 2 of 8)...", file = paste0(WD,"logs/tasAnalyzer logs.txt"), sep = "\n", append = TRUE)
 
   NGS <- list()
-  NGS <- tas_import(InputFilePath,config)
+  NGS <- tas_import(InputFilePath)
 
   if (config == 'manual'){
     NGS$Config <- c(NGS$Config,list(

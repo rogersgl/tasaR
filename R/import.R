@@ -98,9 +98,9 @@ tas_load_dependencies <- function(){
 #' @param config A character vector provided by parent funtion tas_analyze. Can be 'sheet', 'manual', or 'shiny'.
 #' @returns A data frame containing all input parameters and configurations required for analysis.
 #' @export
-tas_import <- function(Input.File,config){
+tas_import <- function(Input.File){
 
-  #import processing key file "NGS_Input"
+  #import processing key file "Input.csv"
   if (file.exists(Input.File)==TRUE){
     NGS_Input <- suppressWarnings(read.csv(Input.File))
     NGS_Input[is.na(NGS_Input)] <- ""
@@ -114,15 +114,10 @@ tas_import <- function(Input.File,config){
     if (OS=="Darwin"){
       OS <- "MacOS"
     }
-    if (config == 'manual' || config == 'shiny'){
-    OS <- Sys.info()["sysname"]
-    if (OS=="Darwin"){
-      OS <- "MacOS"
-    }
+
     NGS_Config <- list(WorkingDirectory=tempdir(),
                        OperatingSystem=OS,
                        nCores = availableCores())
-    }
 
   #check operating system syntax
   if (!NGS_Config$OperatingSystem %in% c("Windows","MacOS","Linux")){
