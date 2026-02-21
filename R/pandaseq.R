@@ -99,8 +99,9 @@ tas_pandaseq_terminal <- function(Sample.Names, Input.DataFrame, Config.List, WD
 #' @returns A list of merged reads for each sample, in ShortRead format.
 #' @export
 tas_import_fastq <- function(Sample.Names,Fastq.File.Path){
+  stopifnot(length(Sample.Names) == length(Fastq.File.Path))
   Input.Reads <- list()
-  Input.Reads[Sample.Names] <- lapply(Fastq.File.Path,readFastq)
+  Input.Reads[Sample.Names] <- lapply(Fastq.File.Path,ShortRead::readFastq)
   return(Input.Reads)
 }
 
