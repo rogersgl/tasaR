@@ -126,7 +126,7 @@ tas_seq_table <- function(Sample.Names,Reads.Filtered.List,Input.DataFrame,Confi
     }else{
       umi.pos <- NA
     }
-    if (!is.na(umi.pos)){
+    if (any(!is.na(umi.pos))){
       if (is.null(umi.pos$end)){
         umi_temp <- narrow(Reads.Filtered.List[[x]], start = umi.pos$start)@sread
       }else{
