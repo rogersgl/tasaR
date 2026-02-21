@@ -146,7 +146,7 @@ tas_import <- function(Input.File){
 #' @returns No returns within R.
 #' @export
 
-tas_check <- function(InputFilePath,Input.DataFrame, Config.List, shiny.env, shiny.fileTable, WD){
+tas_check <- function(InputFilePath, Input.DataFrame, Config.List, shiny.env, shiny.fileTable, WD){
   Input.Columns <- c("SampleName",
                      "ForwardFASTQFileName",
                      "ReverseFASTQFileName",
