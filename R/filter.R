@@ -349,8 +349,8 @@ tas_label_table <- function(Sample.Names, Sequence.Table.List, Reference.Sequenc
 
       mmT <- mismatchTable(PAP)
       idx_indel <- !Biostrings::nchar(aa)==Biostrings::nchar(WT_Protein)
-      idx_WT <- !seq_along(PAP) %in% mmT$PatternId #indel multiples of 3 identified incorrectly
-      idx_WT[which((idx_indel+idx_WT)==2)] <- FALSE #remove false +ve from idx_WT
+      idx_WT <- !seq_along(PAP) %in% mmT$PatternId # indel multiples of 3 identified incorrectly
+      idx_WT[which((idx_indel+idx_WT)==2)] <- FALSE # remove false +ve from idx_WT
       idx_mm <- which((idx_indel+idx_WT)==0)
       mmT <- mmT[which(mmT$PatternId %in% idx_mm),]
       mmChar <- cbind(data.frame(PatternId=mmT$PatternId),data.frame(Mutation=str_c(mmT[,"SubjectSubstring"],mmT[,"SubjectStart"],mmT[,"PatternSubstring"])))
@@ -362,7 +362,7 @@ tas_label_table <- function(Sample.Names, Sequence.Table.List, Reference.Sequenc
       aa.mut$ProteinMutation[idx_mm] <- aggregate(Mutation ~ PatternId,data = mmChar,FUN = mutCollapse)[,"Mutation"]
       aa.mut$ProteinMutation[idx_indel] <- "Indel"
       aa.mut$ProteinMutation[idx_WT] <- "WT"
-      aa.mut$ProteinMutation[str_detect(aa.mut$ProteinMutation,"\\*")] <- "Nonsense"
+      aa.mut$ProteinMutation[str_detect(aa,"\\*")] <- "Nonsense"
 
       cbind(Sequence.Table[[x]],data.frame(AA=aa),aa.mut)
 
