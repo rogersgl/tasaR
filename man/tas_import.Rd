@@ -4,7 +4,7 @@
 \alias{tas_import}
 \title{Read input .xlsx file.}
 \usage{
-tas_import(Input.File, config)
+tas_import(Input.File)
 }
 \arguments{
 \item{Input.File}{Complete file path of the import .csv file.}

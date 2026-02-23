@@ -224,11 +224,10 @@ tas_seq_table <- function(Sample.Names,Reads.Filtered.List,Input.DataFrame,Confi
 #' @param Sample.Names A character vector with names of all samples.
 #' @param Sequence.Table.List A list of data frames containing each unique DNA sequence for all samples. Names of each list entry must correspond to Sample.Names.
 #' @param Reference.Sequences.DNA A list of DNAString objects containing expected DNA sequences for all samples. Names of each list entry must correspond to Sample.Names.
-#' @param Input.DataFrame A data frame imported from the .xlsx file specifying details of each sample.
 #' @param Config.List A list containing configuration parameters for tasAnaly <- er.
 #' @returns A list of labeled sequence tables (data frames) for each sample.
 #' @export
-tas_label_table <- function(Sample.Names,Sequence.Table.List,Reference.Sequences.DNA,Input.DataFrame,Config.List){
+tas_label_table <- function(Sample.Names, Sequence.Table.List, Reference.Sequences.DNA, Config.List){
   Sequence.Table <- Sequence.Table.List
   #pairwise alignments of DNA
 

@@ -8,7 +8,6 @@ tas_label_table(
   Sample.Names,
   Sequence.Table.List,
   Reference.Sequences.DNA,
-  Input.DataFrame,
   Config.List
 )
 }
@@ -18,8 +17,6 @@ tas_label_table(
 \item{Sequence.Table.List}{A list of data frames containing each unique DNA sequence for all samples. Names of each list entry must correspond to Sample.Names.}
 
 \item{Reference.Sequences.DNA}{A list of DNAString objects containing expected DNA sequences for all samples. Names of each list entry must correspond to Sample.Names.}
-
-\item{Input.DataFrame}{A data frame imported from the .xlsx file specifying details of each sample.}
 
 \item{Config.List}{A list containing configuration parameters for tasAnaly <- er.}
 }

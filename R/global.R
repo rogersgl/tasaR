@@ -208,7 +208,7 @@ tas_analyze <- function(InputFilePath,
   tas_write_filtered(Sample.Names, Reads.Filtered.List, NGS$Config, WD)
   t7 <- Sys.time()
   cat(str_c("Filtered FASTQ files written and compressed. Elapsed time: ",format(t7-t6, digits = 4, with.units = TRUE)), file = paste0(WD,"logs/tasAnalyzer logs.txt"), sep = "\n", append = TRUE)
-  Sequence.Table.List <- tas_label_table(Sample.Names, Sequence.Table.List, Reference.Sequences.DNA, NGS$Input, NGS$Config)
+  Sequence.Table.List <- tas_label_table(Sample.Names, Sequence.Table.List, Reference.Sequences.DNA, NGS$Config)
   t8 <- Sys.time()
   cat(str_c("Sequence tables labeled. Elapsed time: ",format(t8-t7, digits = 4, with.units = TRUE)), file = paste0(WD,"logs/tasAnalyzer logs.txt"), sep = "\n", append = TRUE)
   Read.Filter.Count <- tas_filter_count(Sample.Names, Reads.Filtered.List, Sequence.Table.List, NGS$Input, NGS$Config, WD)
