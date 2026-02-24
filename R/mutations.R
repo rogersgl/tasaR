@@ -9,7 +9,7 @@
 #'
 #' @returns A list of AID hotspot coordinates for each sample.
 #' @export
-tas_find_AID_Targets <- function(Sample.Names,Reference.Sequences.DNA,Config.List){
+tas_find_AID_Targets <- function(Sample.Names, Reference.Sequences.DNA, Config.List){
   AID.Motifs <- c("WRCY","RGYW","WRCH","DGYW")
 
   AID.Targets <- list()
