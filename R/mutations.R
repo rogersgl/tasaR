@@ -51,7 +51,7 @@ tas_find_AID_Targets <- function(Sample.Names, Reference.Sequences.DNA, Config.L
 #'
 #' @returns A list providing the analyzed outputs for each sample.
 #' @export
-tas_measure_mutations <- function(Sample.Names,Sequence.Table.List,AID.Targets,Input.DataFrame,Config.List){
+tas_measure_mutations <- function(Sample.Names, Sequence.Table.List, AID.Targets, Input.DataFrame, Config.List){
 
    Input.Columns <- c("ReferenceSequence",
                       "Antibody",
@@ -76,10 +76,10 @@ tas_measure_mutations <- function(Sample.Names,Sequence.Table.List,AID.Targets,I
   }
 
   Output.Mutagenesis <- list()
-  Output.Mutagenesis[Sample.Names] <- lapply(Sample.Names,function(x){
+  Output.Mutagenesis[Sample.Names] <- lapply(Sample.Names, function(x){
 
     #use rep to make pairwise alignment with all DNA/protein sequences for consensus matrix
-    dna.align <- rep(Sequence.Table.List$AlignDNA[[x]],Sequence.Table.List[[x]][,2])
+    dna.align <- DNAStringSet(rep(as.character(Sequence.Table.List$AlignDNA[[x]]), Sequence.Table.List[[x]][,2]))
 
     #calculate consensus matrixes and mutagenesis frequency by position for DNA
     WT_DNA <- DNAStringSet(Input.DataFrame[x,"ReferenceSequence"])
@@ -182,7 +182,9 @@ tas_measure_mutations <- function(Sample.Names,Sequence.Table.List,AID.Targets,I
         m <- mean(v)
         e <- length(region_start:region_end)/(Ab_coord[["END1"]]-1)*100
         n <- f-e
-        logo <- ggseqlogo(consensus_DNA[,region_start:region_end],method='prob') + theme_logo(base_size=9) + theme(axis.text.x = element_blank())
+        logo <- ggseqlogo(consensus_DNA[,region_start:region_end],method='prob') +
+          theme_logo(base_size=9) +
+          theme(axis.text.x = element_blank())
         list(Mut_Pos=v,Mut_Freq=f,Mut_Avg=m,Mut_Expected=e,Mut_Norm=n,Logo=logo)
       })
 
@@ -205,8 +207,17 @@ tas_measure_mutations <- function(Sample.Names,Sequence.Table.List,AID.Targets,I
           mp <- mean(vp)
           ep <- length(region_end_prot:region_start_prot)/floor((Ab_coord[["END1"]]-1)/3)*100
           np <- fp-ep
-          logo <- ggseqlogo(consensus_Protein[,region_start_prot:region_end_prot],method='prob') + theme_logo(base_size=9) + theme(axis.text.x = element_blank()) + theme(legend.position="none")
-          list(Mut_Pos=vp,Mut_Freq=fp,Mut_Avg=mp,Mut_Expected=ep,Mut_Norm=np,Logo=logo)
+
+          # ggseqlogo doesn't work on regions < length 2
+          if(length(region_start_prot:region_end_prot) > 1){
+            logo <- ggseqlogo(consensus_Protein[,region_start_prot:region_end_prot], method='prob') +
+              theme_logo(base_size=9) +
+              theme(axis.text.x = element_blank()) +
+              theme(legend.position="none")
+          }else{
+            logo <- "Could not generate sequence logo plot"
+          }
+          list(Mut_Pos=vp, Mut_Freq=fp, Mut_Avg=mp, Mut_Expected=ep, Mut_Norm=np, Logo=logo)
         })
         Output <- c(Output,list(RegionMutagenesisProtein=Region_Mutations_Protein))
       }
@@ -236,7 +247,7 @@ tas_measure_mutations <- function(Sample.Names,Sequence.Table.List,AID.Targets,I
                 sum(Sequence.Table.List[[x]]$Percent[idx_indel_bc]),
                 sum(Sequence.Table.List[[x]]$Percent[idx_other]))
       names(sums) <- mut_label
-      if (abs(sum(sums)-100)>1e-7){
+      if (abs(sum(sums) - 100) > 1e-7){
         stop(str_c("Frequency summation error detected in indel types for sample: "),x)
       }
       return(sums)
