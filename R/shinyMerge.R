@@ -163,7 +163,14 @@ tas_shiny_args <- function(InputFilePath,
 
   pandaseqArgs <- tas_pandaseq_wasm(Sample.Names, Input.DataFrame, Config.List, WD, shiny.env, shiny.fileTable)
 
-  return(pandaseqArgs)
+  Output <- list(pandaseqArgs = pandaseqArgs,
+                 Input.DataFrame = Input.DataFrame,
+                 Config.List = Config.List,
+                 Sample.Names = Sample.Names,
+                 WD = WD,
+                 InputFilePath = InputFilePath)
+
+  return(Output)
 }
 
 
