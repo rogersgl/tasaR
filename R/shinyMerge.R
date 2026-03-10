@@ -49,7 +49,8 @@ tas_pandaseq_wasm <- function(Sample.Names, Input.DataFrame, Config.List, WD, sh
 
   Pandaseq_Args <- list()
   Pandaseq_Args[Sample.Names] <- lapply(seq_along(Sample.Names),function(x){
-    c(str_c("-f '",WD,"unpaired/",Input.DataFrame$ForwardFASTQFileName[[x]],"'"),
+    c("pandaseq",
+      str_c("-f '",WD,"unpaired/",Input.DataFrame$ForwardFASTQFileName[[x]],"'"),
       str_c("-r '",WD,"unpaired/",Input.DataFrame$ReverseFASTQFileName[[x]],"'"),
       str_c("-g '",WD,"logs/",Sample.Names[[x]],"-pandaseq-log.txt'"),
       "-F",
