@@ -79,10 +79,11 @@ tas_measure_mutations <- function(Sample.Names, Sequence.Table.List, AID.Targets
   Output.Mutagenesis[Sample.Names] <- lapply(Sample.Names, function(x){
 
     #use rep to make pairwise alignment with all DNA/protein sequences for consensus matrix
-    dna.align <- DNAStringSet(rep(as.character(Sequence.Table.List$AlignDNA[[x]]), Sequence.Table.List[[x]][,2]))
+    WT_DNA <- DNAStringSet(Input.DataFrame[x,"ReferenceSequence"])
+    seqs <- DNAStringSet(rep(Sequence.Table.List[[x]]$TargetSequence, Sequence.Table.List[[x]][,2]))
+    dna.align <- pairwiseAlignment(seqs, WT_DNA)
 
     #calculate consensus matrixes and mutagenesis frequency by position for DNA
-    WT_DNA <- DNAStringSet(Input.DataFrame[x,"ReferenceSequence"])
     consensus_DNA_WT <- consensusMatrix(WT_DNA)[c("A","C","G","T","-"),]
     consensus_DNA_WT_flip <- 1-consensus_DNA_WT
     consensus_DNA <- consensusMatrix(dna.align)[c("A","C","G","T","-"),]
@@ -91,10 +92,11 @@ tas_measure_mutations <- function(Sample.Names, Sequence.Table.List, AID.Targets
 
     #calculate consensus matrixes and mutagenesis frequency by position for Protein
     if (Config.List$protein.mutations==1){
-      protein.align <- rep(Sequence.Table.List$AlignProtein[[x]],Sequence.Table.List[[x]][,2])
+      WT_Protein <- suppressWarnings(AAStringSet(translate(WT_DNA)))
+      p.seqs <- AAStringSet(rep(Sequence.Table.List[[x]]$AA, Sequence.Table.List[[x]][,2]))
+      protein.align <- pairwiseAlignment(p.seqs, WT_Protein)
 
       AA <- c(AA_STANDARD,"*","-")
-      WT_Protein <- suppressWarnings(AAStringSet(translate(WT_DNA)))
       consensus_Protein_WT <- consensusMatrix(WT_Protein)[AA,]
       consensus_Protein_WT_flip <- 1-consensus_Protein_WT
       consensus_Protein <- consensusMatrix(protein.align)[AA,]

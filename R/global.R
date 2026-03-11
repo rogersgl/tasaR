@@ -51,7 +51,9 @@ tas_analyze <- function(InputFilePath,
                           multicore = TRUE,
                           shiny.settings = list(),
                           shiny.env = FALSE,
-                          shiny.fileTable = character())
+                          shiny.fileTable = character(),
+                          nCores = availableCores(),
+                          OperatingSystem="MacOS")
 
   t0 <- Sys.time()
   original.WD <- getwd()
