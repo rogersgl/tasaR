@@ -38,9 +38,9 @@ tas_msa <- function(Sample.Names,Sequence.Table.List,Input.DataFrame,Config.List
              str_flatten(Table.Columns[!Table.Columns %in% colnames(Sequence.Table.List[[x]])],collapse = ", ")))
     }
 
-    dna_WT <- DNAString(Input.DataFrame[x,"ReferenceSequence"])
-    msa.length <- min(c(length(Sequence.Table.List[[x]]$TargetSequence)),as.numeric(Config.List$sequence.alignment.count))
-    top <- c(DNAStringSet(dna_WT),DNAStringSet(Sequence.Table.List[[x]]$TargetSequence[1:msa.length]))
+    dna_WT <- Biostrings::DNAString(Input.DataFrame[x,"ReferenceSequence"])
+    msa.length <- min(c(length(Sequence.Table.List[[x]]$TargetSequence)), as.numeric(Config.List$sequence.alignment.count))
+    top <- c(Biostrings::DNAStringSet(dna_WT), Biostrings::DNAStringSet(Sequence.Table.List[[x]]$TargetSequence[1:msa.length]))
     ilabel <- Sequence.Table.List[[x]]$Indels[1:msa.length]
     ilabel[is.na(ilabel)] <- ""
 
@@ -106,7 +106,7 @@ tas_msa <- function(Sample.Names,Sequence.Table.List,Input.DataFrame,Config.List
                                          round(Sequence.Table.List[[x]]$Percent[1:msa.length],digits=2),
                                          "%"))
       sink(tempfile())
-      topP_align <- msa(topP,order = "input",method = "ClustalOmega",type = "protein")
+      topP_align <- msa(topP, order = "input", method = "ClustalOmega", type = "protein")
       sink()
       topP_align <- AAMultipleAlignment(as(topP_align,"BStringSet"))
 
@@ -124,7 +124,7 @@ tas_msa <- function(Sample.Names,Sequence.Table.List,Input.DataFrame,Config.List
           theme(axis.text = element_text(size = 10))
       )
 
-      Output <- c(Output,list(Protein=list(Logo=msaProt,Alignment=topP)))
+      Output <- c(Output,list(Protein=list(Logo=msaProt,Alignment=topP_align)))
     }
 
     if (Config.List$PhyloTree==1){
@@ -135,7 +135,7 @@ tas_msa <- function(Sample.Names,Sequence.Table.List,Input.DataFrame,Config.List
       msd <- dist.alignment(ms)
       tree <- bionj(msd)
       tree$tip.label <- Sequence.Table.List[[x]]$ProteinMutation[1:msa.length]
-      Output <- c(Output,list(PhyloTree=tree))
+      Output <- c(Output, list(PhyloTree = tree))
     }
 
     return(Output)
