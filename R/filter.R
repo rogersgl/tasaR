@@ -51,9 +51,12 @@ tas_filter <- function(Sample.Names,Reads.List,Input.DataFrame,Config.List){
     stop("ReversePrimer must be a DNA sequence.")
   }
 
-  if (Input.DataFrame$ForwardExtensionType=="UMI" && Input.DataFrame$ReverseExtensionType=="UMI"){
-    stop("tasAnalyzer only supports inclusion of 1 UMI per sequence.")
+  for (i in seq_along(Sample.Names)){
+    if (Input.DataFrame$ForwardExtensionType[i]=="UMI" && Input.DataFrame$ReverseExtensionType[i]=="UMI"){
+      stop(str_c("tasAnalyzer only supports inclusion of 1 UMI per sequence. Check sample: ", Sample.Names[i]))
+    }
   }
+
 
   Reads.Filtered <- list()
   Reads.Filtered[Sample.Names] <- mclapply(Sample.Names,function(x){
