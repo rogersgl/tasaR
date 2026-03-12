@@ -43,11 +43,11 @@ tas_filter <- function(Sample.Names,Reads.List,Input.DataFrame,Config.List){
     stop("ReverseExtension must be a DNA sequence if ReverseExtensionType is provided.")
   }
 
-  if (TRUE %in% (str_detect(Input.DataFrame$ForwardPrimer, paste0("[^", regex.dna, "]")))){
+  if (TRUE %in% (str_detect(toupper(Input.DataFrame$ForwardPrimer), paste0("[^", regex.dna, "]")))){
     stop("ForwardPrimer must be a DNA sequence.")
   }
 
-  if (TRUE %in% (str_detect(Input.DataFrame$ReversePrimer, paste0("[^", regex.dna, "]")))){
+  if (TRUE %in% (str_detect(toupper(Input.DataFrame$ReversePrimer), paste0("[^", regex.dna, "]")))){
     stop("ReversePrimer must be a DNA sequence.")
   }
 
@@ -297,8 +297,10 @@ tas_label_table <- function(Sample.Names, Sequence.Table.List, Reference.Sequenc
 
     idx.wt.temp <- which(!1:nrow(Indel.df) %in% seq.mm$Idx)
     idx.wt <- idx.wt.temp[is.na(Indel.df$Indels[idx.wt.temp])]
-    if (length(idx.wt)!=1){
-      stop("More than 1 WT sequence detected.")
+    if (length(idx.wt) > 1){
+      stop(str_c("More than 1 WT sequence detected for sample ", x))
+    }else if (length(idx.wt) < 1){
+      stop(str_c("No WT sequence detected for sample ", x))
     }
 
     Indel.df$Indels[idx.wt] <- "WT"
