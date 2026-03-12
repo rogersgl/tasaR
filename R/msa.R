@@ -89,7 +89,7 @@ tas_msa <- function(Sample.Names,Sequence.Table.List,Input.DataFrame,Config.List
 
       prot_WT <- suppressWarnings(translate(dna_WT))
 
-      y <- c(as.character(prot_WT),Sequence.Table.List[[x]]$AA[1:msa.length])
+      y <- c(as.character(prot_WT), Sequence.Table.List[[x]]$AA[1:msa.length])
       ns <- str_detect(y,"\\*")
       s <- str_locate(y[ns],"\\*")[,"start"]
       names(s) <- NULL
@@ -127,7 +127,7 @@ tas_msa <- function(Sample.Names,Sequence.Table.List,Input.DataFrame,Config.List
       Output <- c(Output,list(Protein=list(Logo=msaProt,Alignment=topP_align)))
     }
 
-    if (Config.List$PhyloTree==1){
+    if (Config.List$PhyloTree && length(Sequence.Table.List[[x]]$TargetSequence) >= 3){
       sink(tempfile())
       m <- msa(DNAStringSet(Sequence.Table.List[[x]]$TargetSequence[1:msa.length]),type = "dna",verbose = FALSE,method = "ClustalOmega")
       sink()

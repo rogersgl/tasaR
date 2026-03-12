@@ -335,9 +335,10 @@ tas_label_table <- function(Sample.Names, Sequence.Table.List, Reference.Sequenc
       # print(x)
       #amino acid sequences
       aa <- as.character(Reads.Unique.Protein[[x]])
+      ns <- str_detect(aa,"\\*")
 
-      if (!S4Vectors::isEmpty(which(Biostrings::nchar(aa)!=Biostrings::nchar(Reference.Sequences.Protein[[x]])))){
-        ns <- str_detect(aa,"\\*")
+      if (!S4Vectors::isEmpty(which(Biostrings::nchar(aa)!=Biostrings::nchar(Reference.Sequences.Protein[[x]])))
+          || any(ns)){
         s <- str_locate(aa[ns],"\\*")[,"start"]
         names(s) <- NULL
         aa[ns] <-  sapply(1:length(s),function(y){

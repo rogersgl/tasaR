@@ -39,21 +39,7 @@ tas_analyze <- function(InputFilePath,
     stop("Specified input file not found.")
   }
 
-  #quick set used during debugging
-  manual.settings <- list(WorkingDirectory=tempdir(),
-                          merge.reads = TRUE,
-                          measure.shm = TRUE,
-                          sequence.alignment.count = 10,
-                          read.frequency.limit = 0.001,
-                          protein.mutations = TRUE,
-                          PhyloTree = TRUE,
-                          dna.repair.pathways = TRUE,
-                          multicore = TRUE,
-                          shiny.settings = list(),
-                          shiny.env = FALSE,
-                          shiny.fileTable = character(),
-                          nCores = availableCores(),
-                          OperatingSystem="MacOS")
+
 
   t0 <- Sys.time()
   original.WD <- getwd()
@@ -65,8 +51,6 @@ tas_analyze <- function(InputFilePath,
 
   file.create(paste0(WD,"logs/tasAnalyzer logs.txt"))
   cat("Working directory set.", file = paste0(WD,"logs/tasAnalyzer logs.txt"), sep = "\n", append = TRUE)
-
-
 
   ###############################
   #### LOAD/INSTALL PACKAGES ####
@@ -106,6 +90,26 @@ tas_analyze <- function(InputFilePath,
                        multicore=multicore,
                        nCores=availableCores()))
   }
+  #############################################################################
+  # quick set used during debugging
+  manual.settings <- list(WorkingDirectory=tempdir(),
+                          merge.reads = TRUE,
+                          measure.shm = TRUE,
+                          sequence.alignment.count = 10,
+                          read.frequency.limit = 0.001,
+                          protein.mutations = TRUE,
+                          PhyloTree = TRUE,
+                          dna.repair.pathways = TRUE,
+                          multicore = TRUE,
+                          shiny.settings = list(),
+                          shiny.env = FALSE,
+                          shiny.fileTable = character(),
+                          nCores = availableCores(),
+                          OperatingSystem="MacOS")
+  NGS$Config <- manual.settings
+  shiny.env <- FALSE
+  #############################################################################
+
 
   if (config == 'shiny'){
     cat("Setting shiny settings", file = paste0(WD,"logs/tasAnalyzer logs.txt"), sep = "\n", append = TRUE)

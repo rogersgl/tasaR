@@ -38,13 +38,13 @@ tas_export_msa <- function(Sample.Names,Output.MSA.List,Config.List,WD){
 
 
   for (x in Sample.Names){
-    ggsave(str_c(WD,"Export/MSA/DNA/",x,"-MSA.png"),plot = Output.MSA.List[[x]]$DNA$Logo,width = 11,height = 8.5*(nrow(Output.MSA.List[[x]]$DNA$Alignment)/(as.numeric(Config.List$sequence.alignment.count)+1)),units = "in")
+    ggsave(str_c(WD,"Export/MSA/DNA/",x,"-MSA.png"), plot = Output.MSA.List[[x]]$DNA$Logo, width = 11, height = 8.5*(nrow(Output.MSA.List[[x]]$DNA$Alignment)/(as.numeric(Config.List$sequence.alignment.count)+1)), units = "in")
     if (Config.List$protein.mutations==1){
-      ggsave(str_c(WD,"Export/MSA/Protein/",x,"-MSA.png"),plot = Output.MSA.List[[x]]$Protein$Logo,width = 11,height = 8.5*(nrow(Output.MSA.List[[x]]$DNA$Alignment)/(as.numeric(Config.List$sequence.alignment.count)+1)),units = "in")
+      ggsave(str_c(WD,"Export/MSA/Protein/",x,"-MSA.png"), plot = Output.MSA.List[[x]]$Protein$Logo, width = 11, height = 8.5*(nrow(Output.MSA.List[[x]]$DNA$Alignment)/(as.numeric(Config.List$sequence.alignment.count)+1)), units = "in")
     }
-    if (Config.List$PhyloTree==1){
-      invisible(pdf(str_c(WD,"Export/MSA/tree/",x,"-tree.pdf"), width = 6, height = 6))
-      invisible(plot(Output.MSA.List[[x]]$PhyloTree,cex=0.7))
+    if (Config.List$PhyloTree==1 && !is.null(Output.MSA.List[[x]]$PhyloTree)){
+      invisible(pdf(str_c(WD, "Export/MSA/tree/",x,"-tree.pdf"), width = 6, height = 6))
+      invisible(plot(Output.MSA.List[[x]]$PhyloTree, cex=0.7))
       invisible(dev.off())
     }
   }
@@ -124,7 +124,8 @@ tas_export_mutations <- function(Sample.Names, Output.Mutations.List, Sequence.T
     }
 
     #seq logo plots of whole sequence, length 100 bp
-    dna.align <- rep(Sequence.Table.List$AlignDNA[[i]],Sequence.Table.List[[i]][,2])
+    dna <- DNAStringSet(rep(Sequence.Table.List[[i]]$TargetSequence, Sequence.Table.List[[i]][,2]))
+    dna.align <- pairwiseAlignment(dna, DNAStringSet(Input.DataFrame[i,"ReferenceSequence"]))
     consensus_DNA <- consensusMatrix(dna.align)[c("A","C","G","T","-"),]
     n <- ncol(consensus_DNA)
     r <- ceiling(n/100)
@@ -327,31 +328,41 @@ tas_export_mutations <- function(Sample.Names, Output.Mutations.List, Sequence.T
       scale_x_continuous(expand = expansion(mult = c(0.02, 0)))
     ggsave(str_c(WD,"Export/graphs/Summary/Mutation heatmap.pdf"),plot = mut_hm,width = 6,height = 1+0.5*length(Sample.Names),units = "in")
 
-    nmps <- sapply(Sequence.Table.List,function(x){
-      x$Indels[x$BasesChanged=="WT"] <- NA
-      x$BasesChanged[x$BasesChanged=="WT"] <- 0
-      as.numeric(x$BasesChanged[is.na(x$Indels)])
+    nmpu <- sapply(Sample.Names, function(x){
+      stl <- Sequence.Table.List[[x]]
+      stl$Indels[stl$Indels=="WT"] <- 0
+      stl$Indels[is.na(stl$Indels)] <- 0
+      stl$Indels <- as.numeric(stl$Indels)
+      stl$BasesChanged[stl$BasesChanged=="WT"] <- 0
+      stl$BasesChanged[is.na(stl$BasesChanged)] <- 0
+      stl$BasesChanged <- as.numeric(stl$BasesChanged)
+      n <- stl$Indels + stl$BasesChanged
+      rep(n, stl[,2])
     })
-    nmps.maxlen <- max(sapply(nmps,length))
-    nmps <- unlist(lapply(nmps,function(x){
-      c(x,rep(NA,nmps.maxlen-length(x)))
+    nmpu.maxlen <- max(sapply(nmpu,length))
+    nmpu <- unlist(lapply(nmpu,function(x){
+      c(x, rep(NA, nmpu.maxlen-length(x)))
     }),use.names=FALSE)
-    nmps.samp <- unlist(lapply(Sample.Names,function(x){
-      rep(x,nmps.maxlen)
+    nmpu.samp <- unlist(lapply(Sample.Names,function(x){
+      rep(x, nmpu.maxlen)
     }),use.names=FALSE)
+    na.idx <- is.na(nmpu)
+    nmpu <- as.numeric(na.omit(nmpu))
+    nmpu.samp <- nmpu.samp[!na.idx]
 
-    nmps_df <- data.frame(Sample = nmps.samp, Mutations = nmps)
-    nMutPerSeq <- suppressWarnings(ggplot(nmps_df,
+    nmpu_df <- data.frame(Sample = nmpu.samp, Mutations = nmpu)
+
+    nMutPerUmi <- suppressWarnings(ggplot(nmpu_df,
                                           aes(x = Sample, y = Mutations))+
-                                     geom_jitter(alpha = 0.12)+
+                                     geom_jitter(height = 0, width = 0.2)+
                                      labs(y = "# of mutations / sequence")+
                                      theme_classic()+
                                      theme(axis.line = element_line(linewidth = 0.3, linetype = "solid",
                                      colour = "black"))+
-                                     scale_y_continuous(expand = expansion(mult = c(0, 0.05)))+
+                                     scale_y_continuous(expand = expansion(mult = c(0.05, 0.05)))+
                                      theme(axis.text.x = element_text(angle = 45, hjust = 1)))
-    ggsave(str_c(WD,"Export/graphs/Summary/Mutations per sequence dotplot.pdf"),plot = nMutPerSeq,width = 1+0.5*length(Sample.Names),height = 3,units = "in")
-    Output.Mutations.List$SummaryGraphs <- c(Output.Mutations.List$SummaryGraphs,list(MutC_All=MutC_All,MutHM=mut_hm,nMutPerSeq=nMutPerSeq))
+    ggsave(str_c(WD,"Export/graphs/Summary/Mutations per sequence dotplot.pdf"),plot = nMutPerUmi,width = 1+0.5*length(Sample.Names),height = 3,units = "in")
+    Output.Mutations.List$SummaryGraphs <- c(Output.Mutations.List$SummaryGraphs,list(MutC_All=MutC_All,MutHM=mut_hm,nMutPerUmi=nMutPerUmi))
 
     if (Config.List$measure.shm==1){
       mutc_mut <- readWorkbook(Output.Mutations.List$Workbooks$Mut_pos_wb, sheet = "MutCyt")
