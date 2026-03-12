@@ -364,7 +364,10 @@ tas_label_table <- function(Sample.Names, Sequence.Table.List, Reference.Sequenc
         str_flatten(x,", ")
       }
 
-      aa.mut$ProteinMutation[idx_mm] <- aggregate(Mutation ~ PatternId,data = mmChar,FUN = mutCollapse)[,"Mutation"]
+      # error protection, aggregate throws error if mmChar is empty
+      if (!isEmpty(mmChar)){
+        aa.mut$ProteinMutation[idx_mm] <- aggregate(Mutation ~ PatternId, data = mmChar, FUN = mutCollapse)[,"Mutation"]
+      }
       aa.mut$ProteinMutation[idx_indel] <- "Indel"
       aa.mut$ProteinMutation[idx_WT] <- "WT"
       aa.mut$ProteinMutation[str_detect(aa,"\\*")] <- "Nonsense"
