@@ -38,9 +38,9 @@ tas_export_msa <- function(Sample.Names,Output.MSA.List,Config.List,WD){
 
 
   for (x in Sample.Names){
-    ggsave(str_c(WD,"Export/MSA/DNA/",x,"-MSA.png"), plot = Output.MSA.List[[x]]$DNA$Logo, width = 11, height = 8.5*(nrow(Output.MSA.List[[x]]$DNA$Alignment)/(as.numeric(Config.List$sequence.alignment.count)+1)), units = "in")
+     ggsave(str_c(WD,"Export/MSA/DNA/",x,"-MSA.png"), plot = Output.MSA.List[[x]]$DNA$Logo, width = 11, height = (8.5 - abs(nrow(Output.MSA.List[[x]]$DNA$Alignment)-11) * 0.5), units = "in")
     if (Config.List$protein.mutations==1){
-      ggsave(str_c(WD,"Export/MSA/Protein/",x,"-MSA.png"), plot = Output.MSA.List[[x]]$Protein$Logo, width = 11, height = 8.5*(nrow(Output.MSA.List[[x]]$DNA$Alignment)/(as.numeric(Config.List$sequence.alignment.count)+1)), units = "in")
+      ggsave(str_c(WD,"Export/MSA/Protein/",x,"-MSA.png"), plot = Output.MSA.List[[x]]$Protein$Logo, width = 11, height = (8.5 - abs(nrow(Output.MSA.List[[x]]$DNA$Alignment)-11) * 0.5), units = "in")
     }
     if (Config.List$PhyloTree==1 && !is.null(Output.MSA.List[[x]]$PhyloTree)){
       invisible(pdf(str_c(WD, "Export/MSA/tree/",x,"-tree.pdf"), width = 6, height = 6))
