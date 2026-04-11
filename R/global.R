@@ -26,12 +26,12 @@ tas_analyze <- function(InputFilePath,
                         shiny.fileTable = character(),
                         WorkingDirectory = NULL,
                         merge.reads = TRUE,
-                        measure.shm = FALSE,
+                        measure.shm = TRUE,
                         sequence.alignment.count = 10,
-                        read.frequency.limit = 0.001,
-                        protein.mutations = FALSE,
-                        PhyloTree = FALSE,
-                        dna.repair.pathways = FALSE,
+                        read.frequency.limit = 0.01,
+                        protein.mutations = TRUE,
+                        PhyloTree = TRUE,
+                        dna.repair.pathways = TRUE,
                         multicore = TRUE){
   config <- match.arg(config,c('shiny','manual'))
 
@@ -92,22 +92,22 @@ tas_analyze <- function(InputFilePath,
   }
   #############################################################################
   # quick set used during debugging
-  manual.settings <- list(WorkingDirectory=tempdir(),
-                          merge.reads = TRUE,
-                          measure.shm = TRUE,
-                          sequence.alignment.count = 10,
-                          read.frequency.limit = 0.001,
-                          protein.mutations = TRUE,
-                          PhyloTree = TRUE,
-                          dna.repair.pathways = TRUE,
-                          multicore = TRUE,
-                          shiny.settings = list(),
-                          shiny.env = FALSE,
-                          shiny.fileTable = character(),
-                          nCores = availableCores(),
-                          OperatingSystem="MacOS")
-  NGS$Config <- manual.settings
-  shiny.env <- FALSE
+  # manual.settings <- list(WorkingDirectory=tempdir(),
+  #                         merge.reads = TRUE,
+  #                         measure.shm = TRUE,
+  #                         sequence.alignment.count = 10,
+  #                         read.frequency.limit = 0.001,
+  #                         protein.mutations = TRUE,
+  #                         PhyloTree = TRUE,
+  #                         dna.repair.pathways = TRUE,
+  #                         multicore = FALSE,
+  #                         shiny.settings = list(),
+  #                         shiny.env = FALSE,
+  #                         shiny.fileTable = character(),
+  #                         nCores = availableCores(),
+  #                         OperatingSystem="MacOS")
+  # NGS$Config <- manual.settings
+  # shiny.env <- FALSE
   #############################################################################
 
 

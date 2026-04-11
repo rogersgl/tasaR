@@ -92,7 +92,7 @@ tas_filter <- function(Sample.Names,Reads.List,Input.DataFrame,Config.List){
 #' @returns A list of sequence tables (data frames) for each sample. If UMIs were included, also returns a similar table with all sequences for counting filter statistics.
 #' @import data.table
 #' @export
-tas_seq_table <- function(Sample.Names,Reads.Filtered.List,Input.DataFrame,Config.List){
+tas_seq_table <- function(Sample.Names, Reads.Filtered.List, Input.DataFrame, Config.List){
 
   Input.Columns <- c("InsertStart",
                      "InsertEnd",
@@ -212,7 +212,7 @@ tas_seq_table <- function(Sample.Names,Reads.Filtered.List,Input.DataFrame,Confi
     }
   },mc.cores = Config.List$nCores)
 
-  Sequence.Table <- c(Sequence.Table,list(All=Sequence.Table.All))
+  Sequence.Table <- c(Sequence.Table, list(All=Sequence.Table.All))
 
   return(Sequence.Table)
 }

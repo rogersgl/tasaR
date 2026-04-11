@@ -12,12 +12,12 @@ tas_analyze(
   shiny.fileTable = character(),
   WorkingDirectory = NULL,
   merge.reads = TRUE,
-  measure.shm = FALSE,
+  measure.shm = TRUE,
   sequence.alignment.count = 10,
-  read.frequency.limit = 0.001,
-  protein.mutations = FALSE,
-  PhyloTree = FALSE,
-  dna.repair.pathways = FALSE,
+  read.frequency.limit = 0.01,
+  protein.mutations = TRUE,
+  PhyloTree = TRUE,
+  dna.repair.pathways = TRUE,
   multicore = TRUE
 )
 }

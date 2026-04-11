@@ -36,7 +36,6 @@ tas_export_msa <- function(Sample.Names,Output.MSA.List,Config.List,WD){
     }
   }
 
-
   for (x in Sample.Names){
      ggsave(str_c(WD,"Export/MSA/DNA/",x,"-MSA.png"), plot = Output.MSA.List[[x]]$DNA$Logo, width = 11, height = (8.5 - abs(nrow(Output.MSA.List[[x]]$DNA$Alignment)-11) * 0.5), units = "in")
     if (Config.List$protein.mutations==1){
@@ -123,46 +122,49 @@ tas_export_mutations <- function(Sample.Names, Output.Mutations.List, Sequence.T
       }
     }
 
-    #seq logo plots of whole sequence, length 100 bp
-    dna <- DNAStringSet(rep(Sequence.Table.List[[i]]$TargetSequence, Sequence.Table.List[[i]][,2]))
-    dna.align <- pairwiseAlignment(dna, DNAStringSet(Input.DataFrame[i,"ReferenceSequence"]))
-    consensus_DNA <- consensusMatrix(dna.align)[c("A","C","G","T","-"),]
-    n <- ncol(consensus_DNA)
-    r <- ceiling(n/100)
-    nr <- n/r
-    s <- split(1:n,ceiling((1:n)/100))
-    consensus_DNA_s <- list()
-    consensus_DNA_s <- lapply(s,function(y){
-      consensus_DNA[,y]
-    })
+    # #seq logo plots of whole sequence, length 100 bp
+    # dna <- DNAStringSet(rep(Sequence.Table.List[[i]]$TargetSequence, Sequence.Table.List[[i]][,2]))
+    # dna.align <- pairwiseAlignment(dna, DNAStringSet(Input.DataFrame[i,"ReferenceSequence"]))
+    # consensus_DNA <- consensusMatrix(dna.align)[c("A","C","G","T","-"),]
+    # n <- ncol(consensus_DNA)
+    # r <- ceiling(n/100)
+    # nr <- n/r
+    # s <- split(1:n,ceiling((1:n)/100))
+    # consensus_DNA_s <- list()
+    # consensus_DNA_s <- lapply(s,function(y){
+    #   consensus_DNA[,y]
+    # })
 
 
-    logo.len <- lapply(consensus_DNA_s,function(y){
-      suppressMessages(ggseqlogo(y,method='prob')+
-                         theme_logo(base_size=2.25)+
-                         theme(axis.text.x = element_blank(),
-                               axis.text.y = element_text(size = 2.5),
-                               axis.title.y = element_text(size = 2.5))+
-                         scale_x_continuous(expand = expansion(mult = 0, add = 0)))
-    })
+    # logo.len <- lapply(consensus_DNA_s,function(y){
+    #   suppressMessages(ggseqlogo(y,method='prob')+
+    #                      theme_logo(base_size=2.25)+
+    #                      theme(axis.text.x = element_blank(),
+    #                            axis.text.y = element_text(size = 2.5),
+    #                            axis.title.y = element_text(size = 2.5))+
+    #                      scale_x_continuous(expand = expansion(mult = 0, add = 0)))
+    # })
 
 
-    for (y in 1:length(logo.len)){
-      ggsave(str_c(WD,"Export/seqlogo/",i,"/",names(logo.len[y]),".pdf"),
-             plot = logo.len[y],
-             width=n*0.05+0.5,
-             height=0.25,
-             units="in")
-    }
+    # for (y in 1:length(logo.len)){
+    #   ggsave(str_c(WD,"Export/seqlogo/",i,"/",names(logo.len[y]),".pdf"),
+    #          plot = logo.len[y],
+    #          width=n*0.05+0.5,
+    #          height=0.25,
+    #          units="in")
+    # }
 
     ###########
     ### DNA ###
     ###########
 
     #Mutation bar graphs
-    temp <- na.omit(readWorkbook(Output.Mutations.List$Workbooks$Mut_pos_wb, sheet = "MutAll")[i])
-    temp <- cbind(data.frame(seq_along(1:nrow(temp))),temp)
-    colnames(temp) <- c("nt","Mutated")
+    temp_wb <- readWorkbook(Output.Mutations.List$Workbooks$Mut_pos_wb, sheet = "MutAll")
+    temp <- data.frame(nt = temp_wb[,(1 + 3*(which(Sample.Names == i) -1))],
+                       Mutated = temp_wb[,(2 + 3*(which(Sample.Names == i) -1))])
+    # temp <- na.omit(readWorkbook(Output.Mutations.List$Workbooks$Mut_pos_wb, sheet = "MutAll")[i])
+    # temp <- cbind(data.frame(seq_along(1:nrow(temp))),temp)
+    # colnames(temp) <- c("nt","Mutated")
 
     #bars only
     MutBar <- ggplot(data = temp,
@@ -175,6 +177,7 @@ tas_export_mutations <- function(Sample.Names, Output.Mutations.List, Sequence.T
     ggsave(str_c(WD,"Export/graphs/Mutagenesis/",i,".pdf"),plot = MutBar,width = 6,height = 3,units = "in")
 
     if (Config.List$measure.shm==1){
+
       #with WRCH cytosines labeled
       MutBarC <- MutBar+
         geom_text(aes(label = ifelse((nt %in% Output.Mutations.List[[i]]$AID$WRCH$Positions$Cytosine), "C", "")),
@@ -310,14 +313,17 @@ tas_export_mutations <- function(Sample.Names, Output.Mutations.List, Sequence.T
       theme(axis.text.x = element_text(angle = 45, hjust = 1))
     ggsave(str_c(WD,"Export/graphs/Summary/Cytosine mutation summary.pdf"),plot = MutC_All,width = 1+0.5*length(Sample.Names),height = 3,units = "in")
 
-    mut_mut <- readWorkbook(Output.Mutations.List$Workbooks$Mut_pos_wb, sheet = "MutAll")
+    mut_wb <- readWorkbook(Output.Mutations.List$Workbooks$Mut_pos_wb, sheet = "MutAll")
+    mut_mut <- numeric()
     mut_samp <- character()
     mut_pos <- numeric()
-    for (i in seq_along(colnames(mut_mut))){
-      mut_samp <- c(mut_samp,rep(colnames(mut_mut)[i],length(mut_mut[,i])))
-      mut_pos <- c(mut_pos,1:length(mut_mut[,i]))
+    for (i in seq_along(colnames(Sample.Names))){
+      mut_mut <- c(mut_mut, mut_wb[,(2 + 3*(i-1))])
+      mut_pos <- c(mut_pos, mut_wb[,(1 + 3*(i-1))])
+      mut_samp <- c(mut_samp, rep(Sample.Names[i], length(mut_mut[,i])))
+      mut_pos <- c(mut_pos, 1:length(mut_mut[,i]))
     }
-    hm <- data.frame(Samples=mut_samp,nt=mut_pos,Mutation=unlist(mut_mut,use.names = FALSE))
+    hm <- data.frame(Samples=mut_samp,nt=mut_pos, Mutation=unlist(mut_mut,use.names = FALSE))
     mut_hm <- ggplot(data = hm,
                      aes(x = nt, y = Samples, fill = Mutation))+
       geom_tile()+
@@ -414,6 +420,68 @@ tas_export_mutations <- function(Sample.Names, Output.Mutations.List, Sequence.T
            fill = "Mutation Type")
     ggsave(str_c(WD,"Export/graphs/Summary/Mutation Types.pdf"), plot = mut.types.graph, width = 2.5+0.5*length(Sample.Names), height = 3, units = "in")
     Output.Mutations.List$SummaryGraphs <- c(Output.Mutations.List$SummaryGraphs,list(MutTypes=mut.types.graph))
+  }
+
+  if (Config.List$measure.shm==1 && Config.List$protein.mutations==1){
+    AAvec <- c("E","D","R","K","H","Y","F","W","T","S","N","Q","C","M","G","P","A","V","I","L","*")
+    AA_custom_colors <- c("red",
+                          "firebrick3",
+                          "dodgerblue",
+                          "royalblue",
+                          "navy",
+                          "gold",
+                          "khaki1",
+                          "moccasin",
+                          "seagreen2",
+                          "seagreen",
+                          "green3",
+                          "forestgreen",
+                          "aquamarine",
+                          "orange",
+                          "darkorange2",
+                          "orangered2",
+                          "sienna1",
+                          "darkgoldenrod",
+                          "darkorange4",
+                          "sandybrown",
+                          "gray")
+    names(AA_custom_colors) <- AAvec
+
+    # protAlign[Sample.Names] <- lapply(Sample.Names,function(x){
+    #   Sequence.Table.List$AlignProtein[[x]]
+    # })
+
+    for (i in Sample.Names){
+      dm <- consensusMatrix(Sequence.Table.List$AlignProtein[[i]])
+      dmwt <- consensusMatrix(AAStringSet(translate(DNAString(Input.DataFrame$ReferenceSequence))))
+      dm <- (1-dmwt) * dm
+      dm <- rbind(dm[1:20,],dm["*",])
+      colnames(dm) <- 1:ncol(dm)
+      rownames(dm) <- c(rownames(dm)[1:20],"*")
+      dm <- dm/sum(Sequence.Table.List[[i]][,2])*100
+
+      df <- data.frame(Position = c(sapply(1:ncol(dm), rep, nrow(dm))),
+                       AA = rep(rownames(dm), ncol(dm)),
+                       Frequency = c(dm))
+      df$AA <- factor(df$AA, levels = AAvec)
+
+      p <- ggplot(df, aes(x = Position, y = Frequency, fill = AA)) +
+        geom_col(position = position_stack(reverse = TRUE),stat = "identity") +
+        theme_classic(base_size = 8)+
+        theme(axis.line = element_line(linewidth = 0.3, linetype = "solid",
+                                       colour = "black"),
+              axis.title.y = element_text(margin=margin(r = 0.15, unit = 'in')),
+              legend.key.size = unit(0.25, "cm"),
+              axis.text = element_text(size = 7),
+              legend.text = element_text(size = 7)) +
+        scale_y_continuous(expand = expansion(mult = c(0, 0.05)), limits = c(0,0.5)) +
+        ylab("% Mutated Residues") +
+        scale_fill_manual(values = AA_custom_colors)+
+        labs(fill = "Amino Acid")
+
+      ggsave(str_c(WD,"/AAmutplot-",i,".pdf"), p, width = 6, height = 1.6, units = "in")
+    }
+
   }
 
   saveWorkbook(Output.Mutations.List$Workbooks$Mut_pos_wb,str_c(WD,"Export/results/Mutations.xlsx"),overwrite = TRUE)

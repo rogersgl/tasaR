@@ -80,21 +80,40 @@ tas_measure_mutations <- function(Sample.Names, Sequence.Table.List, AID.Targets
 
     #use rep to make pairwise alignment with all DNA/protein sequences for consensus matrix
     WT_DNA <- DNAStringSet(Input.DataFrame[x,"ReferenceSequence"])
-    seqs <- DNAStringSet(rep(Sequence.Table.List[[x]]$TargetSequence, Sequence.Table.List[[x]][,2]))
+    seqs <- DNAStringSet(Sequence.Table.List[[x]]$TargetSequence)
+    #seqs <- DNAStringSet(rep(Sequence.Table.List[[x]]$TargetSequence, Sequence.Table.List[[x]][,2]))
     dna.align <- pairwiseAlignment(seqs, WT_DNA)
+    dna.align.all <- rep(dna.align, Sequence.Table.List[[x]][,2])
+    # dna.align <- rep(Sequence.Table.List$AlignDNA[[x]], Sequence.Table.List[[x]][,2])
 
     #calculate consensus matrixes and mutagenesis frequency by position for DNA
     consensus_DNA_WT <- consensusMatrix(WT_DNA)[c("A","C","G","T","-"),]
     consensus_DNA_WT_flip <- 1-consensus_DNA_WT
-    consensus_DNA <- consensusMatrix(dna.align)[c("A","C","G","T","-"),]
+    consensus_DNA <- consensusMatrix(dna.align.all)[c("A","C","G","T","-"),]
     mutagenesis_DNA <- (colSums(consensus_DNA*consensus_DNA_WT_flip)/length(dna.align))*100
-    Output <- list(MutagenesisDNA=mutagenesis_DNA)
+    insertion_DNA_range <- insertion(dna.align)
+    ins_idx <- which(!sapply(insertion_DNA_range, isEmpty))
+    insertion_DNA <- data.frame(Position = numeric(), Frequency = numeric())
+    for (i in ins_idx){
+      pos <- insertion_DNA_range[[i]]@start-0.5
+      freq <- rep(Sequence.Table.List[[x]]$Percent[i], length(pos))
+      insertion_DNA <- rbind(insertion_DNA, data.frame(Position = pos, Frequency = freq))
+    }
+    insertion_DNA <- aggregate(insertion_DNA, Frequency ~ Position, FUN = sum)
+    df_DNA <- data.frame(Position = 1:Biostrings::nchar(WT_DNA),
+                         Frequency = mutagenesis_DNA)
+    df_DNA <- rbind(df_DNA, insertion_DNA)
+    df_DNA <- df_DNA[order(df_DNA$Position),]
+    Output <- list(MutagenesisDNA = df_DNA)
 
     #calculate consensus matrixes and mutagenesis frequency by position for Protein
     if (Config.List$protein.mutations==1){
       WT_Protein <- suppressWarnings(AAStringSet(translate(WT_DNA)))
-      p.seqs <- AAStringSet(rep(Sequence.Table.List[[x]]$AA, Sequence.Table.List[[x]][,2]))
+      p.seqs <-  AAStringSet(Sequence.Table.List[[x]]$AA)
+      #p.seqs <- AAStringSet(rep(Sequence.Table.List[[x]]$AA, Sequence.Table.List[[x]][,2]))
       protein.align <- pairwiseAlignment(p.seqs, WT_Protein)
+      protein.align <- rep(protein.align, Sequence.Table.List[[x]][,2])
+      #protein.align <- rep(Sequence.Table.List$AlignProtein[[x]], Sequence.Table.List[[x]]$Reads)
 
       AA <- c(AA_STANDARD,"*","-")
       consensus_Protein_WT <- consensusMatrix(WT_Protein)[AA,]
@@ -265,31 +284,30 @@ tas_measure_mutations <- function(Sample.Names, Sequence.Table.List, AID.Targets
 
   if (Config.List$measure.shm==1){
     maxlen <- max(Biostrings::nchar(Input.DataFrame$ReferenceSequence))
-    Mut_pos_all <- data.frame(matrix(nrow=maxlen,ncol=length(Sample.Names)))
-    colnames(Mut_pos_all) <- Sample.Names
+    Mut_pos_all <- list()
+    #colnames(Mut_pos_all) <- Sample.Names
 
     lencyt <- numeric()
     lennonc <- numeric()
     for(i in Sample.Names){
-      lencyt <- c(lencyt,nrow(Output.Mutagenesis[[i]]$AID$WRCH$Positions))
-      lennonc <- c(lennonc,length(Output.Mutagenesis[[i]]$AID$WRCH$MutNonCyt))
+      lencyt <- c(lencyt, nrow(Output.Mutagenesis[[i]]$AID$WRCH$Positions))
+      lennonc <- c(lennonc, length(Output.Mutagenesis[[i]]$AID$WRCH$MutNonCyt))
     }
     maxlencyt <- max(lencyt)
-    Mut_pos_cyt <- data.frame(matrix(nrow=maxlencyt,ncol=length(Sample.Names)))
+    Mut_pos_cyt <- data.frame(matrix(nrow=maxlencyt, ncol=length(Sample.Names)))
     colnames(Mut_pos_cyt) <- Sample.Names
     maxlennonc <- max(lennonc)
-    Mut_pos_nonc <- data.frame(matrix(nrow=maxlennonc,ncol=length(Sample.Names)))
+    Mut_pos_nonc <- data.frame(matrix(nrow=maxlennonc, ncol=length(Sample.Names)))
     colnames(Mut_pos_nonc) <- Sample.Names
 
-    Motif_Sums <- data.frame(matrix(nrow=ncol(Output.Mutagenesis[[1]]$AID$WRCH$MotifSums),ncol=length(Sample.Names)))
+    Motif_Sums <- data.frame(matrix(nrow=ncol(Output.Mutagenesis[[1]]$AID$WRCH$MotifSums), ncol=length(Sample.Names)))
     colnames(Motif_Sums) <- Sample.Names
     rownames(Motif_Sums) <- colnames(Output.Mutagenesis[[1]]$AID$WRCH$MotifSums)
+    Mut_pos_all[Sample.Names] <- lapply(Sample.Names, function(y){
+      Output.Mutagenesis[[y]]$MutagenesisDNA
+    })
 
     for(i in Sample.Names){
-      a <- Output.Mutagenesis[[i]]$MutagenesisDNA
-      b <- c(a,rep(NA,maxlen-length(a)))
-      Mut_pos_all[i] <- b
-
       d <- Output.Mutagenesis[[i]]$AID$WRCH$MutCyt
       e <- c(d,rep(NA,maxlencyt-length(d)))
       Mut_pos_cyt[i] <- e
@@ -300,27 +318,22 @@ tas_measure_mutations <- function(Sample.Names, Sequence.Table.List, AID.Targets
 
       Motif_Sums[i] <- as.numeric(Output.Mutagenesis[[i]]$AID$WRCH$MotifSums)
     }
-  }else{
-    maxlen <- max(Biostrings::nchar(Input.DataFrame$ReferenceSequence))
-    Mut_pos_all <- data.frame(matrix(nrow=maxlen,ncol=length(Sample.Names)))
-    colnames(Mut_pos_all) <- Sample.Names
-    for(i in Sample.Names){
-      a <- Output.Mutagenesis[[i]]$MutagenesisDNA
-      b <- c(a,rep(NA,maxlen-length(a)))
-      Mut_pos_all[i] <- b
-    }
   }
 
   Mut_pos_wb <- createWorkbook("Mut_pos.xlsx")
-  addWorksheet(Mut_pos_wb,"MutAll")
-  writeData(Mut_pos_wb,"MutAll",Mut_pos_all)
+  addWorksheet(Mut_pos_wb, "MutAll")
+  for (i in seq_along(Sample.Names)) {
+    col = 1 + 3*(i-1)
+    writeData(Mut_pos_wb, "MutAll", Sample.Names[i], startCol = col, startRow = 1)
+    writeData(Mut_pos_wb, "MutAll", Mut_pos_all[[i]], startCol = col+1, startRow = 2)
+  }
   if (Config.List$measure.shm==1){
-    addWorksheet(Mut_pos_wb,"MutCyt")
-    writeData(Mut_pos_wb,"MutCyt",Mut_pos_cyt)
-    addWorksheet(Mut_pos_wb,"MutNonC")
-    writeData(Mut_pos_wb,"MutNonC",Mut_pos_nonc)
-    addWorksheet(Mut_pos_wb,"MotifSums")
-    writeData(Mut_pos_wb,"MotifSums",Motif_Sums,rowNames = TRUE)
+    addWorksheet(Mut_pos_wb, "MutCyt")
+    writeData(Mut_pos_wb, "MutCyt", Mut_pos_cyt)
+    addWorksheet(Mut_pos_wb, "MutNonC")
+    writeData(Mut_pos_wb, "MutNonC", Mut_pos_nonc)
+    addWorksheet(Mut_pos_wb, "MotifSums")
+    writeData(Mut_pos_wb, "MotifSums", Motif_Sums, rowNames = TRUE)
     WRCY_wb <- createWorkbook("WRCY.xlsx")
     WRCH_wb <- createWorkbook("WRCH.xlsx")
   }
