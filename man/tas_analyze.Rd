@@ -7,30 +7,20 @@
 tas_analyze(
   InputFilePath,
   config = "manual",
-  shiny.settings = list(),
-  shiny.env = FALSE,
-  shiny.fileTable = character(),
   WorkingDirectory = NULL,
   merge.reads = TRUE,
-  measure.shm = FALSE,
+  measure.shm = TRUE,
   sequence.alignment.count = 10,
   read.frequency.limit = 0.001,
-  protein.mutations = FALSE,
-  PhyloTree = FALSE,
-  dna.repair.pathways = FALSE,
-  multicore = TRUE
+  protein.mutations = TRUE,
+  PhyloTree = TRUE,
+  dna.repair.pathways = TRUE
 )
 }
 \arguments{
 \item{InputFilePath}{The complete file path of the input .csv file. Make sure all R1 and R2 files are in the same directory.}
 
-\item{config}{Determines where the function draws the analysis parameters from. 'manual' allows paramaters to be specified in the function, whereas 'shiny' is used by the shiny app.}
-
-\item{shiny.settings}{A list of function settings set by the shiny app.}
-
-\item{shiny.env}{A logical (TRUE/FALSE) to tell whether the function is being executed by the shiny app (TRUE) or not (FALSE).}
-
-\item{shiny.fileTable}{A character vector containing names of files uploaded to the shiny app.}
+\item{config}{Determines where the function draws the analysis parameters from. 'manual' allows paramaters to be specified in the function.}
 
 \item{WorkingDirectory}{Optional. The path to the folder containing the input .xlsx file and all input .fastq files.}
 

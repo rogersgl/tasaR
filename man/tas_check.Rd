@@ -4,14 +4,7 @@
 \alias{tas_check}
 \title{Check for presence and formatting of all input files.}
 \usage{
-tas_check(
-  InputFilePath,
-  Input.DataFrame,
-  Config.List,
-  shiny.env,
-  shiny.fileTable,
-  WD
-)
+tas_check(InputFilePath, Input.DataFrame, Config.List, WD)
 }
 \arguments{
 \item{InputFilePath}{The complete file path of the input .csv file. Make sure all R1 and R2 files are in the same directory.}
@@ -19,10 +12,6 @@ tas_check(
 \item{Input.DataFrame}{A data frame imported from the .csv file specifying details of each sample.}
 
 \item{Config.List}{A list containing configuration parameters for tasAnalyzer.}
-
-\item{shiny.env}{A logical (TRUE/FALSE) identifying whether processing is being perfomed by the Shiny app. Assigned by parent functions.}
-
-\item{shiny.fileTable}{A data.table with information about uploaded files in the Shiny app. Assigned automatically by parent functions.}
 
 \item{WD}{A character vector indicating the file path to the working directory containing input files.}
 }

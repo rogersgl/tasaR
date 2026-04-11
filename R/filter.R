@@ -20,8 +20,7 @@ tas_filter <- function(Sample.Names,Reads.List,Input.DataFrame,Config.List){
                      "MaxDeletion",
                      "MaxInsertion")
 
-  Config.Entries <- c("WorkingDirectory",
-                      "nCores")
+  Config.Entries <- c("WorkingDirectory")
 
   if (FALSE %in% (Input.Columns %in% colnames(Input.DataFrame))){
     stop(c("The following columns were not found in the input file: ",
@@ -35,32 +34,34 @@ tas_filter <- function(Sample.Names,Reads.List,Input.DataFrame,Config.List){
 
   regex.dna <- str_flatten(DNA_ALPHABET[1:15])
 
-  if (FALSE %in% (nzchar(Input.DataFrame$ForwardExtensionType)) & TRUE %in% (str_detect(Input.DataFrame$ForwardExtension, paste0("[^", regex.dna, "]")))){
+  if (FALSE %in% (nzchar(Input.DataFrame$ForwardExtensionType)) & TRUE %in% (str_detect(toupper(Input.DataFrame$ForwardExtension), paste0("[^", regex.dna, "]")))){
     stop("ForwardExtension must be a DNA sequence if ForwardExtensionType is provided.")
   }
 
-  if (FALSE %in% (nzchar(Input.DataFrame$ReverseExtensionType)) & TRUE %in% (str_detect(Input.DataFrame$ReverseExtension, paste0("[^", regex.dna, "]")))){
+  if (FALSE %in% (nzchar(Input.DataFrame$ReverseExtensionType)) & TRUE %in% (str_detect(toupper(Input.DataFrame$ReverseExtension), paste0("[^", regex.dna, "]")))){
     stop("ReverseExtension must be a DNA sequence if ReverseExtensionType is provided.")
   }
 
-  if (TRUE %in% (str_detect(Input.DataFrame$ForwardPrimer, paste0("[^", regex.dna, "]")))){
+  if (TRUE %in% (str_detect(toupper(Input.DataFrame$ForwardPrimer), paste0("[^", regex.dna, "]")))){
     stop("ForwardPrimer must be a DNA sequence.")
   }
 
-  if (TRUE %in% (str_detect(Input.DataFrame$ReversePrimer, paste0("[^", regex.dna, "]")))){
+  if (TRUE %in% (str_detect(toupper(Input.DataFrame$ReversePrimer), paste0("[^", regex.dna, "]")))){
     stop("ReversePrimer must be a DNA sequence.")
   }
 
-  if (Input.DataFrame$ForwardExtensionType=="UMI" && Input.DataFrame$ReverseExtensionType=="UMI"){
-    stop("tasAnalyzer only supports inclusion of 1 UMI per sequence.")
+  for (i in seq_along(Sample.Names)){
+    if (Input.DataFrame$ForwardExtensionType[i]=="UMI" && Input.DataFrame$ReverseExtensionType[i]=="UMI"){
+      stop(str_c("tasAnalyzer only supports inclusion of 1 UMI per sequence. Check sample: ", Sample.Names[i]))
+    }
   }
 
   Reads.Filtered <- list()
-  Reads.Filtered[Sample.Names] <- mclapply(Sample.Names,function(x){
+  Reads.Filtered[Sample.Names] <- lapply(Sample.Names,function(x){
     fwd <- DNAString(str_c(Input.DataFrame[x,"ForwardExtension"],Input.DataFrame[x,"ForwardPrimer"]))
     rev <- DNAString(str_c(Input.DataFrame[x,"ReverseExtension"],Input.DataFrame[x,"ReversePrimer"]))
-    temp <- Reads.List[[x]]@sread
-    temp_rc <- reverseComplement(temp)
+    temp <- ShortRead::sread(Reads.List[[x]])
+    temp_rc <- ShortRead::reverseComplement(temp)
     fwd_IR <- vmatchPattern(fwd,temp)
     fwd_idx <- which((elementNROWS(fwd_IR)==1))
     dff <- as.data.frame(fwd_IR)
@@ -71,7 +72,7 @@ tas_filter <- function(Sample.Names,Reads.List,Input.DataFrame,Config.List){
     rev_idx <- rev_idx[dfr$start[dfr$group %in% rev_idx]==1]
     both_idx <- intersect(fwd_idx,rev_idx)
     Reads.List[[x]][both_idx]
-  },mc.cores = Config.List$nCores)
+  })
 
   return(Reads.Filtered)
 }
@@ -101,8 +102,7 @@ tas_seq_table <- function(Sample.Names,Reads.Filtered.List,Input.DataFrame,Confi
                      "ReverseExtension",
                      "ReversePrimer")
 
-  Config.Entries <- c("nCores",
-                      "protein.mutations")
+  Config.Entries <- c("protein.mutations")
 
   if(FALSE %in% (Input.Columns %in% colnames(Input.DataFrame))){
     stop(c("The following columns were not found in the input file: ",
@@ -116,7 +116,7 @@ tas_seq_table <- function(Sample.Names,Reads.Filtered.List,Input.DataFrame,Confi
 
 
   Sequence.Table.All <- list()
-  Sequence.Table.All[Sample.Names] <- mclapply(Sample.Names,function(x){
+  Sequence.Table.All[Sample.Names] <- lapply(Sample.Names,function(x){
 
     # print(str_c("all , ",x))
     if (toupper(Input.DataFrame[x,"ForwardExtensionType"])=="UMI"){
@@ -128,13 +128,13 @@ tas_seq_table <- function(Sample.Names,Reads.Filtered.List,Input.DataFrame,Confi
     }
     if (any(!is.na(umi.pos))){
       if (is.null(umi.pos$end)){
-        umi_temp <- narrow(Reads.Filtered.List[[x]], start = umi.pos$start)@sread
+        umi_temp <- ShortRead::sread(narrow(Reads.Filtered.List[[x]], start = umi.pos$start))
       }else{
-        umi_temp <- narrow(Reads.Filtered.List[[x]], start = umi.pos$start, end = umi.pos$end)@sread
+        umi_temp <- ShortRead::sread(narrow(Reads.Filtered.List[[x]], start = umi.pos$start, end = umi.pos$end))
       }
       #extract id, seq, umi from Reads.Filtered.List and remove any sequences containing N called nt's
-      id_temp <- as.character(Reads.Filtered.List[[x]]@id)
-      seq_temp <- narrow(Reads.Filtered.List[[x]],start = Input.DataFrame[x,"InsertStart"],end = Input.DataFrame[x,"InsertEnd"])@sread
+      id_temp <- as.character(ShortRead::id(Reads.Filtered.List[[x]]))
+      seq_temp <- ShortRead::sread(narrow(Reads.Filtered.List[[x]], start = Input.DataFrame[x,"InsertStart"], end = Input.DataFrame[x,"InsertEnd"]))
       n_idx <- which(elementNROWS(Biostrings::vmatchPattern("n",seq_temp))==0)
       umi_temp <- as.character(umi_temp[n_idx])
       seq_temp <- as.character(seq_temp[n_idx])
@@ -142,18 +142,18 @@ tas_seq_table <- function(Sample.Names,Reads.Filtered.List,Input.DataFrame,Confi
 
       #use data.table to bin by UMI, remove UMIs with <3 reads
       dt_temp <- data.table::data.table(umi=umi_temp, seq=seq_temp, id=id_temp)
-      dt_id_umi <- dt_temp[, .(id = list(id),count=length(id)), by="umi"]
+      dt_id_umi <- dt_temp[, .(id = list(id), count=length(id)), by="umi"]
       dt_id_umi <- dt_id_umi[dt_id_umi$count>=3,]
 
       #group sequences
-      dt_id_seq <- dt_temp[, .(id = list(id),count=length(id)), by="seq"]
+      dt_id_seq <- dt_temp[, .(id = list(id), count=length(id)), by="seq"]
 
       #ungroup umis and sequences while retaining grouping information in umi or seq.group columns
-      dt_id_umi_match <- data.table::data.table(umi = rep(dt_id_umi$umi,dt_id_umi$count), umi.id = unlist(dt_id_umi$id))
-      dt_id_seq_match <- data.table::data.table(seq.group = rep(1:nrow(dt_id_seq),dt_id_seq$count), seq.id = unlist(dt_id_seq$id), seq = rep(dt_id_seq$seq,dt_id_seq$count))
+      dt_id_umi_match <- data.table::data.table(umi = rep(dt_id_umi$umi, dt_id_umi$count), umi.id = unlist(dt_id_umi$id))
+      dt_id_seq_match <- data.table::data.table(seq.group = rep(1:nrow(dt_id_seq), dt_id_seq$count), seq.id = unlist(dt_id_seq$id), seq = rep(dt_id_seq$seq,dt_id_seq$count))
 
       #merge umi and seq data tables based on FASTQ IDs
-      dt_id_merge <- data.table::merge.data.table(dt_id_umi_match,dt_id_seq_match,by.x="umi.id",by.y="seq.id")
+      dt_id_merge <- data.table::merge.data.table(dt_id_umi_match, dt_id_seq_match, by.x="umi.id", by.y="seq.id")
 
       #function to determine optimal sequence for each umi and filter non-passing umis as "Rejected"
       umi_pileup <- function(i){
@@ -181,10 +181,10 @@ tas_seq_table <- function(Sample.Names,Reads.Filtered.List,Input.DataFrame,Confi
       Output <- list()
       return(Output)
     }
-  }, mc.cores = Config.List$nCores)
+  })
 
   Sequence.Table <- list()
-  Sequence.Table[Sample.Names] <- mclapply(Sample.Names,function(x){
+  Sequence.Table[Sample.Names] <- lapply(Sample.Names,function(x){
     # print(str_c("table , ",x))
     if (!S4Vectors::isEmpty(Sequence.Table.All[[x]])){
       uCounts <- as.data.frame(BiocGenerics::table(Sequence.Table.All[[x]]$TargetSequence))
@@ -194,7 +194,7 @@ tas_seq_table <- function(Sample.Names,Reads.Filtered.List,Input.DataFrame,Confi
       uCounts$TargetSequence <- as.character(uCounts$TargetSequence)
       return(uCounts)
     }else if (S4Vectors::isEmpty(Sequence.Table.All[[x]])){
-      seq_temp <- narrow(Reads.Filtered.List[[x]],start = Input.DataFrame[x,"InsertStart"],end = Input.DataFrame[x,"InsertEnd"])@sread
+      seq_temp <- ShortRead::sread(narrow(Reads.Filtered.List[[x]],start = Input.DataFrame[x,"InsertStart"],end = Input.DataFrame[x,"InsertEnd"]))
       seq_temp <- seq_temp[which(elementNROWS(vmatchPattern("n",seq_temp))==0)]
       seq_temp_t <- BiocGenerics::table(seq_temp)
       uCounts <- data.frame(Reads=data.frame(seq_temp_t,row.names = NULL))
@@ -207,7 +207,7 @@ tas_seq_table <- function(Sample.Names,Reads.Filtered.List,Input.DataFrame,Confi
       colnames(uCounts) <- c("TargetSequence","Reads","Percent")
       return(uCounts)
     }
-  },mc.cores = Config.List$nCores)
+  })
 
   Sequence.Table <- c(Sequence.Table,list(All=Sequence.Table.All))
 
@@ -232,32 +232,32 @@ tas_label_table <- function(Sample.Names, Sequence.Table.List, Reference.Sequenc
   #pairwise alignments of DNA
 
   Reads.Unique.DNA <- list()
-  Reads.Unique.DNA[Sample.Names] <- mclapply(Sample.Names,function(x){
+  Reads.Unique.DNA[Sample.Names] <- lapply(Sample.Names,function(x){
     DNAStringSet(Sequence.Table[[x]]$TargetSequence)
-  },mc.cores = Config.List$nCores)
+  })
 
   Pairwise.Aligned.DNA <- list()
-  Pairwise.Aligned.DNA[Sample.Names] <- mclapply(Sample.Names,function(x){
+  Pairwise.Aligned.DNA[Sample.Names] <- lapply(Sample.Names,function(x){
     pairwiseAlignment(Reads.Unique.DNA[[x]],Reference.Sequences.DNA[[x]])
-  },mc.cores = Config.List$nCores)
+  })
 
-  Sequence.Table[Sample.Names] <- mclapply(Sample.Names,function(x){
+  Sequence.Table[Sample.Names] <- lapply(Sample.Names,function(x){
     # print(x)
-    ins <-  indel(Pairwise.Aligned.DNA[[x]])@insertion
+    ins <-  pwalign::insertion(Pairwise.Aligned.DNA[[x]])
     idx.ins <- which(!sapply(ins,S4Vectors::isEmpty))
     ins.num <- rep("",length(ins))
     ins.num[idx.ins] <- lapply(ins[idx.ins],function(y){
-      ins.widths <- y@width
+      ins.widths <- IRanges::width(y)
       widths.split <- unlist(str_split(ins.widths,"-"))
       output <- str_c("+",widths.split)
       return(output)
     })
 
-    del <- indel(Pairwise.Aligned.DNA[[x]])@deletion
+    del <- pwalign::deletion(Pairwise.Aligned.DNA[[x]])
     idx.del <- which(!sapply(del,S4Vectors::isEmpty))
     del.num <- rep("",length(del))
     del.num[idx.del] <- lapply(del[idx.del],function(y){
-      del.widths <- y@width
+      del.widths <- IRanges::width(y)
       widths.split <- unlist(str_split(del.widths,"-"))
       output <- str_c("-",widths.split)
       return(output)
@@ -303,7 +303,7 @@ tas_label_table <- function(Sample.Names, Sequence.Table.List, Reference.Sequenc
 
     cbind(Sequence.Table[[x]],Indel.df,nMut.df)
 
-  }, mc.cores = Config.List$nCores)
+  })
 
   Sequence.Table <- c(Sequence.Table,list(AlignDNA=Pairwise.Aligned.DNA))
 
@@ -312,22 +312,22 @@ tas_label_table <- function(Sample.Names, Sequence.Table.List, Reference.Sequenc
 
     Reference.Sequences.Protein <- list()
     Reference.Sequences.Protein <- lapply(Reference.Sequences.DNA,function(x){
-      suppressWarnings(translate(x))
+      suppressWarnings(Biostrings::translate(x))
     })
 
     Reads.Unique.Protein <- list()
-    Reads.Unique.Protein[Sample.Names] <- mclapply(Sample.Names,function(x){
-      suppressWarnings(translate(DNAStringSet(gsub("-","",DNAStringSet(Reads.Unique.DNA[[x]])))))
-    },mc.cores = Config.List$nCores)
+    Reads.Unique.Protein[Sample.Names] <- lapply(Sample.Names,function(x){
+      suppressWarnings(Biostrings::translate(DNAStringSet(gsub("-","",DNAStringSet(Reads.Unique.DNA[[x]])))))
+    })
 
     Pairwise.Aligned.Protein <- list()
-    Pairwise.Aligned.Protein[Sample.Names] <- mclapply(Sample.Names,function(x){
+    Pairwise.Aligned.Protein[Sample.Names] <- lapply(Sample.Names,function(x){
       pairwiseAlignment(Reads.Unique.Protein[[x]],Reference.Sequences.Protein[[x]])
-    },mc.cores = Config.List$nCores)
+    })
 
     #label sequences with protein sequence and mutations
-    Sequence.Table[Sample.Names] <- mclapply(Sample.Names,function(x){
-      # print(x)
+    Sequence.Table[Sample.Names] <- lapply(Sample.Names,function(x){
+       #print(x)
       #amino acid sequences
       aa <- as.character(Reads.Unique.Protein[[x]])
 
@@ -359,14 +359,18 @@ tas_label_table <- function(Sample.Names, Sequence.Table.List, Reference.Sequenc
         str_flatten(x,", ")
       }
 
-      aa.mut$ProteinMutation[idx_mm] <- aggregate(Mutation ~ PatternId,data = mmChar,FUN = mutCollapse)[,"Mutation"]
-      aa.mut$ProteinMutation[idx_indel] <- "Indel"
+      if (!isEmpty(idx_mm)) {
+        aa.mut$ProteinMutation[idx_mm] <- aggregate(Mutation ~ PatternId, data = mmChar, FUN = mutCollapse)[,"Mutation"]
+      }
+      if (!isEmpty(idx_indel)) {
+        aa.mut$ProteinMutation[idx_indel] <- "Indel"
+      }
       aa.mut$ProteinMutation[idx_WT] <- "WT"
       aa.mut$ProteinMutation[str_detect(aa,"\\*")] <- "Nonsense"
 
       cbind(Sequence.Table[[x]],data.frame(AA=aa),aa.mut)
 
-    }, mc.cores = Config.List$nCores)
+    })
 
     Sequence.Table <- c(Sequence.Table,list(AlignProtein=Pairwise.Aligned.Protein))
   }
@@ -391,13 +395,13 @@ tas_write_filtered <- function(Sample.Names,Reads.Filtered.List,Config.List,WD){
     dir.create(str_c(WD,"filtered"))
   }
 
-  invisible(mclapply(seq_along(Reads.Filtered.List),function(x){
+  invisible(lapply(seq_along(Reads.Filtered.List),function(x){
     if (file.exists(str_c(WD,"filtered/",Sample.Names[x],"-filtered.fastq.gz"))==TRUE){
       cat(str_c("The following file was replaced: ",str_c(WD,"filtered/",Sample.Names[x],"-filtered.fastq.gz")), file = paste0(WD,"logs/tasAnalyzer logs.txt"), sep = "\n", append = TRUE)
       file.remove(str_c(WD,"filtered/",Sample.Names[x],"-filtered.fastq.gz"))
     }
     writeFastq(Reads.Filtered.List[[x]],str_c(WD,"filtered/",Sample.Names[x],"-filtered.fastq.gz"))
-  },mc.cores = Config.List$nCores))
+  }))
 }
 
 

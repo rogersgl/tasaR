@@ -6,11 +6,9 @@
 #' @param Input.DataFrame A data frame imported from the .xlsx file specifying details of each sample.
 #' @param Config.List A list containing configuration parameters for tasAnalyzer.
 #' @param WD A character vector indicating the file path to the working directory containing input files.
-#' @param shiny.env A logical (TRUE/FALSE) identifying whether processing is being perfomed by the Shiny app. Assigned by parent functions.
-#' @param shiny.fileTable A data.table with information about uploaded files in the Shiny app. Assigned automatically by parent functions.
 #' @returns No returns within R. Writes files to disk.
 #' @export
-tas_pandaseq_terminal <- function(Sample.Names, Input.DataFrame, Config.List, WD, shiny.env, shiny.fileTable){
+tas_pandaseq_terminal <- function(Sample.Names, Input.DataFrame, Config.List, WD){
   Input.Columns <- c("SampleName",
                      "ForwardFASTQFileName",
                      "ReverseFASTQFileName",
@@ -20,7 +18,6 @@ tas_pandaseq_terminal <- function(Sample.Names, Input.DataFrame, Config.List, WD
 
   Config.Entries <- c("WorkingDirectory",
                       "OperatingSystem",
-                      "nCores",
                       "merge.reads")
 
   if(FALSE %in% (Input.Columns %in% colnames(Input.DataFrame))){
@@ -52,10 +49,8 @@ tas_pandaseq_terminal <- function(Sample.Names, Input.DataFrame, Config.List, WD
   if (dir.exists(str_c(WD,"logs"))==FALSE){
     dir.create(str_c(WD,"logs"))
   }
-  if (shiny.env){
-    file.rename(shiny.fileTable$datapath[str_detect(shiny.fileTable$name,".fastq")],
-                str_c(WD,"unpaired/",shiny.fileTable$name[str_detect(shiny.fileTable$name,".fastq")]))
-  }else if (all(file.exists(str_c(WD,c(Input.DataFrame$ForwardFASTQFileName, Input.DataFrame$ReverseFASTQFileName))))){
+
+  if (all(file.exists(str_c(WD,c(Input.DataFrame$ForwardFASTQFileName, Input.DataFrame$ReverseFASTQFileName))))){
     file.rename(str_c(WD,c(Input.DataFrame$ForwardFASTQFileName, Input.DataFrame$ReverseFASTQFileName)),
                 str_c(WD,"unpaired/",c(Input.DataFrame$ForwardFASTQFileName, Input.DataFrame$ReverseFASTQFileName)))
   }
@@ -85,9 +80,9 @@ tas_pandaseq_terminal <- function(Sample.Names, Input.DataFrame, Config.List, WD
   invisible(lapply(Sample.Names,function(x){system2("pandaseq",args=Pandaseq_Args[[x]])}))
 
   #compress output of pandaseq
-  invisible(mclapply(Sample.Names,function(x){
+  invisible(lapply(Sample.Names,function(x){
     R.utils::gzip(str_c(WD,"merged/",x,"-merged.fastq"), destname = str_c(WD,"merged/",x,"-merged.fastq.gz"), remove = TRUE, overwrite = TRUE)
-  },mc.cores = Config.List$nCores))
+  }))
 }
 
 #' @name tas_import_fastq

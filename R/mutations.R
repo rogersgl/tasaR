@@ -13,7 +13,7 @@ tas_find_AID_Targets <- function(Sample.Names, Reference.Sequences.DNA, Config.L
   AID.Motifs <- c("WRCY","RGYW","WRCH","DGYW")
 
   AID.Targets <- list()
-  AID.Targets[Sample.Names] <- mclapply(Reference.Sequences.DNA,function(x){
+  AID.Targets[Sample.Names] <- lapply(Reference.Sequences.DNA,function(x){
     a <- list()
     a[AID.Motifs] <- lapply(AID.Motifs,function(y){
       b <- matchPattern(y,x,fixed = FALSE)
@@ -32,7 +32,7 @@ tas_find_AID_Targets <- function(Sample.Names, Reference.Sequences.DNA, Config.L
     g <- rbind(a[["WRCH"]],a[["DGYW"]])
     g <- g[order(g$Start),]
     list(WRCY=f,WRCH=g)
-  },mc.cores = Config.List$nCores)
+  })
 
   return(AID.Targets)
 }
@@ -63,23 +63,18 @@ tas_measure_mutations <- function(Sample.Names, Sequence.Table.List, AID.Targets
                       "CDR3Start",
                       "FR4Start")
 
-  Config.Entries <- c("nCores")
-
   if(FALSE %in% (Input.Columns %in% colnames(Input.DataFrame))){
     stop(c("The following columns were not found in the input file: ",
            str_flatten(Input.Columns[!Input.Columns %in% colnames(Input.DataFrame)],collapse = ", ")))
   }
 
-  if(FALSE %in% (Config.Entries %in% names(Config.List))){
-    stop(c("The following columns were not found in the input file: ",
-           str_flatten(Config.Entries[!Config.Entries %in% names(Config.List)],collapse = ", ")))
-  }
-
   Output.Mutagenesis <- list()
   Output.Mutagenesis[Sample.Names] <- lapply(Sample.Names, function(x){
 
-    #use rep to make pairwise alignment with all DNA/protein sequences for consensus matrix
-    dna.align <- DNAStringSet(rep(as.character(Sequence.Table.List$AlignDNA[[x]]), Sequence.Table.List[[x]][,2]))
+    WT_DNA <- DNAStringSet(Input.DataFrame[x,"ReferenceSequence"])
+    seqs <- DNAStringSet(Sequence.Table.List[[x]]$TargetSequence)
+    dna.align <- pairwiseAlignment(seqs, WT_DNA)
+    dna.align.all <- rep(dna.align, Sequence.Table.List[[x]][,2])
 
     #calculate consensus matrixes and mutagenesis frequency by position for DNA
     WT_DNA <- DNAStringSet(Input.DataFrame[x,"ReferenceSequence"])
@@ -91,13 +86,24 @@ tas_measure_mutations <- function(Sample.Names, Sequence.Table.List, AID.Targets
 
     #calculate consensus matrixes and mutagenesis frequency by position for Protein
     if (Config.List$protein.mutations==1){
-      protein.align <- rep(Sequence.Table.List$AlignProtein[[x]],Sequence.Table.List[[x]][,2])
+      WT_Protein <- suppressWarnings(AAStringSet(translate(WT_DNA)))
+      p.seqs <-  AAStringSet(Sequence.Table.List[[x]]$AA)
+      #p.seqs <- AAStringSet(rep(Sequence.Table.List[[x]]$AA, Sequence.Table.List[[x]][,2]))
+      protein.align <- pairwiseAlignment(p.seqs, WT_Protein)
+      protein.align <- rep(protein.align, Sequence.Table.List[[x]][,2])
+      #protein.align <- rep(Sequence.Table.List$AlignProtein[[x]], Sequence.Table.List[[x]]$Reads)
 
       AA <- c(AA_STANDARD,"*","-")
-      WT_Protein <- suppressWarnings(AAStringSet(translate(WT_DNA)))
-      consensus_Protein_WT <- consensusMatrix(WT_Protein)[AA,]
+      consensus_Protein_WT <- pwalign::consensusMatrix(WT_Protein)[AA,]
       consensus_Protein_WT_flip <- 1-consensus_Protein_WT
-      consensus_Protein <- consensusMatrix(protein.align)[AA,]
+
+      # observed crashing here without the additional alignedPattern() call inside consensusMatrix
+      # Saw hard crashes of R, as well as error messages suggesting a misassigned pointer issue (perhaps during callout to C?)
+      # Example: Error in h(simpleError(msg, call)) : error in evaluating the argument 'x' in selecting a method for function 'consensusMatrix': R_ExternalPtrTag: argument of type LISTSXP is not an external pointer
+      # Suspect there may be a bug in the method dispatch in the pwalign package for an amino acid PairwiseAlignedSingleSubject? Odd though because DNA worked fine.
+      consensus_Protein <- pwalign::consensusMatrix(alignedPattern(protein.align))[AA,]
+
+
       mutagenesis_Protein <- list(MutagenesisProtein=(colSums(consensus_Protein*consensus_Protein_WT_flip)/length(protein.align))*100)
       Output <- c(Output,mutagenesis_Protein)
     }

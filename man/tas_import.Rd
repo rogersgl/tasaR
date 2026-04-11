@@ -9,7 +9,7 @@ tas_import(Input.File)
 \arguments{
 \item{Input.File}{Complete file path of the import .csv file.}
 
-\item{config}{A character vector provided by parent funtion tas_analyze. Can be 'sheet', 'manual', or 'shiny'.}
+\item{config}{A character vector provided by parent funtion tas_analyze.}
 }
 \value{
 A data frame containing all input parameters and configurations required for analysis.

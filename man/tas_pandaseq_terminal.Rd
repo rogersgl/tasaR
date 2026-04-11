@@ -4,14 +4,7 @@
 \alias{tas_pandaseq_terminal}
 \title{Runs PANDAseq to merge paired end reads on systems with a Unix terminal (Linux and MacOS).}
 \usage{
-tas_pandaseq_terminal(
-  Sample.Names,
-  Input.DataFrame,
-  Config.List,
-  WD,
-  shiny.env,
-  shiny.fileTable
-)
+tas_pandaseq_terminal(Sample.Names, Input.DataFrame, Config.List, WD)
 }
 \arguments{
 \item{Sample.Names}{A character vector with names of all samples.}
@@ -21,10 +14,6 @@ tas_pandaseq_terminal(
 \item{Config.List}{A list containing configuration parameters for tasAnalyzer.}
 
 \item{WD}{A character vector indicating the file path to the working directory containing input files.}
-
-\item{shiny.env}{A logical (TRUE/FALSE) identifying whether processing is being perfomed by the Shiny app. Assigned by parent functions.}
-
-\item{shiny.fileTable}{A data.table with information about uploaded files in the Shiny app. Assigned automatically by parent functions.}
 }
 \value{
 No returns within R. Writes files to disk.

@@ -17,8 +17,7 @@ tas_msa <- function(Sample.Names,Sequence.Table.List,Input.DataFrame,Config.List
                      "Percent")
 
 
-  Config.Entries <- c("nCores",
-                      "sequence.alignment.count")
+  Config.Entries <- c("sequence.alignment.count")
 
   if(FALSE %in% (Input.Columns %in% colnames(Input.DataFrame))){
     stop(c("The following columns were not found in the input dataframe: ",
@@ -87,7 +86,7 @@ tas_msa <- function(Sample.Names,Sequence.Table.List,Input.DataFrame,Config.List
                str_flatten(Table.Columns.Prot[!Table.Columns.Prot %in% colnames(Sequence.Table.List[[x]])],collapse = ", ")))
       }
 
-      prot_WT <- suppressWarnings(translate(dna_WT))
+      prot_WT <- suppressWarnings(Biostrings::translate(dna_WT))
 
       y <- c(as.character(prot_WT),Sequence.Table.List[[x]]$AA[1:msa.length])
       ns <- str_detect(y,"\\*")

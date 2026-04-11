@@ -50,14 +50,6 @@ tas_load_dependencies <- function(){
     install.packages("ggseqlogo", quietly = TRUE)
     library("ggseqlogo", quietly = TRUE)}
 
-  if (!require("parallel", quietly = TRUE)){
-    install.packages("parallel", quietly = TRUE)
-    library("parallel", quietly = TRUE)}
-
-  if (!require("parallelly", quietly = TRUE)){
-    install.packages("parallelly", quietly = TRUE)
-    library("parallelly", quietly = TRUE)}
-
   if (!require("seqinr", quietly = TRUE)){
     install.packages("seqinr", quietly = TRUE)
     library("seqinr", quietly = TRUE)}
@@ -95,7 +87,7 @@ tas_load_dependencies <- function(){
 #' @description
 #' Reads the input .csv file and imports all parameters that will be used for downstream analysis.
 #' @param Input.File Complete file path of the import .csv file.
-#' @param config A character vector provided by parent funtion tas_analyze. Can be 'sheet', 'manual', or 'shiny'.
+#' @param config A character vector provided by parent funtion tas_analyze.
 #' @returns A data frame containing all input parameters and configurations required for analysis.
 #' @export
 tas_import <- function(Input.File){
@@ -105,9 +97,7 @@ tas_import <- function(Input.File){
     NGS_Input <- suppressWarnings(read.csv(Input.File))
     NGS_Input[is.na(NGS_Input)] <- ""
   }else{
-    if (shiny.env){
-      spsComps::shinyCatch(stop("Input spreadsheet not found."),position = "top-center")
-    }else {stop("Input spreadsheet not found. Check filepath and format (.csv).")}
+    stop("Input spreadsheet not found. Check filepath and format (.csv).")
   }
 
     OS <- Sys.info()["sysname"]
@@ -116,8 +106,7 @@ tas_import <- function(Input.File){
     }
 
     NGS_Config <- list(WorkingDirectory=tempdir(),
-                       OperatingSystem=OS,
-                       nCores = availableCores())
+                       OperatingSystem=OS)
 
   #check operating system syntax
   if (!NGS_Config$OperatingSystem %in% c("Windows","MacOS","Linux")){
@@ -139,14 +128,12 @@ tas_import <- function(Input.File){
 #' @param InputFilePath The complete file path of the input .csv file. Make sure all R1 and R2 files are in the same directory.
 #' @param Input.DataFrame A data frame imported from the .csv file specifying details of each sample.
 #' @param Config.List A list containing configuration parameters for tasAnalyzer.
-#' @param shiny.env A logical (TRUE/FALSE) identifying whether processing is being perfomed by the Shiny app. Assigned by parent functions.
-#' @param shiny.fileTable A data.table with information about uploaded files in the Shiny app. Assigned automatically by parent functions.
 #' @param WD A character vector indicating the file path to the working directory containing input files.
 #'
 #' @returns No returns within R.
 #' @export
 
-tas_check <- function(InputFilePath, Input.DataFrame, Config.List, shiny.env, shiny.fileTable, WD){
+tas_check <- function(InputFilePath, Input.DataFrame, Config.List, WD){
   Input.Columns <- c("SampleName",
                      "ForwardFASTQFileName",
                      "ReverseFASTQFileName",
@@ -174,35 +161,23 @@ tas_check <- function(InputFilePath, Input.DataFrame, Config.List, shiny.env, sh
 
   Config.Entries <- c("WorkingDirectory",
                       "OperatingSystem",
-                      "nCores",
                       "merge.reads",
                       "measure.shm",
                       "sequence.alignment.count",
                       "read.frequency.limit",
                       "protein.mutations",
                       "PhyloTree",
-                      "dna.repair.pathways",
-                      "multicore")
+                      "dna.repair.pathways")
 
   if(FALSE %in% (Input.Columns %in% colnames(Input.DataFrame))){
-    if (shiny.env){spsComps::shinyCatch(stop(c("The following columns were not found in the input file: ",
-                                               str_flatten(Input.Columns[!Input.Columns %in% colnames(Input.DataFrame)],collapse = ", "))),
-                                        position = "top-center")
-    }else{
       stop(c("The following columns were not found in the input file: ",
              str_flatten(Input.Columns[!Input.Columns %in% colnames(Input.DataFrame)],collapse = ", ")))
     }
-  }
 
   if(FALSE %in% (Config.Entries %in% names(Config.List))){
-    if (shiny.env){spsComps::shinyCatch(stop(c("The following columns were not found in the input file: ",
-                                               str_flatten(Config.Entries[!Config.Entries %in% names(Config.List)],collapse = ", "))),
-                                        position = "top-center")
-    }else{
       stop(c("The following columns were not found in the input file: ",
              str_flatten(Config.Entries[!Config.Entries %in% names(Config.List)],collapse = ", ")))
     }
-  }
 
   if (!isSingleNumber(Config.List$sequence.alignment.count)){
     stop("sequence.alignment.count must be a single number")
@@ -222,23 +197,14 @@ tas_check <- function(InputFilePath, Input.DataFrame, Config.List, shiny.env, sh
 
   filenames <- c(Input.DataFrame$ForwardFASTQFileName,Input.DataFrame$ReverseFASTQFileName)
 
-  if (shiny.env){
-    shiny.filenames <- shiny.fileTable$name
-    if (all(filenames %in% shiny.filenames)==FALSE){
-      spsComps::shinyCatch(stop(print(c("These files were not found: ",
-                                      filenames[!filenames %in% shiny.filenames]))),
-                           position = "top-center")
-      }
-    } else {
-      input.dir <- substr(InputFilePath,1,str_locate(InputFilePath,"Input.csv")[,"start"]-1)
+  input.dir <- substr(InputFilePath,1,str_locate(InputFilePath,"Input.csv")[,"start"]-1)
 
-      file.copy(str_c(input.dir,filenames)[file.exists(str_c(input.dir,filenames))],
-                str_c(WD,filenames)[file.exists(str_c(input.dir,filenames))])
-      dirfiles <- dir(WD)
-    if (all(filenames %in% dirfiles)==FALSE){
-      stop(print(c("These files were not found: ",
-                 filenames[!filenames %in% dirfiles])))
-    }
+  file.copy(str_c(input.dir,filenames)[file.exists(str_c(input.dir,filenames))],
+            str_c(WD,filenames)[file.exists(str_c(input.dir,filenames))])
+  dirfiles <- dir(WD)
+
+  if (all(filenames %in% dirfiles)==FALSE){
+    stop(print(c("These files were not found: ",
+               filenames[!filenames %in% dirfiles])))
   }
-
 }
