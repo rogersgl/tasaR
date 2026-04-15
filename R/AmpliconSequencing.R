@@ -32,10 +32,10 @@ makeSettingsCSV <- function(filedest) {
   colnames(df) <- c(titles[1:(length(titles)-1)], names(abr))
   if (str_detect(filedest, ".csv")){
     write.csv(df, file = filedest, quote = FALSE, row.names = FALSE)
-    cat("Created file ", filedest, "\n")
+    message("Created file ", filedest, "\n")
   } else {
     write.csv(df, file = file.path(filedest, "settings.csv"), quote = FALSE, row.names = FALSE)
-    cat("Created file ", file.path(filedest, "settings.csv"),"\n", sep = "")
+    message("Created file ", file.path(filedest, "settings.csv"),"\n", sep = "")
   }
 }
 
@@ -137,13 +137,18 @@ umi_pileup <- function(x){
 #       |- DNA (PairwiseAlignmentsSingleSubject)
 #       |- AA (PairwiseAlignmentsSingleSubject)
 #   |- Sequences (S4)
-#       |- Sequences (character)
-#       |- Count (numeric)
-#       |- Percent (numeric)
-#       |- Indels (character)
-#       |- BasesChanged (character)
-#       |- AA (character)
-#       |- ProteinMutation (character)
+#       |- Table
+#         |- Sequences (character)
+#         |- Count (numeric)
+#         |- Percent (numeric)
+#         |- Indels (character)
+#         |- BasesChanged (character)
+#         |- AA (character)
+#         |- ProteinMutation (character)
+#       |- Supplemental
+#         |- Sequence (character)
+#         |- UMIs (list)
+#         |- IDs (list)
 #   |- Mutations (S4)
 #       |- AllMutations (data.frame)
 #       |- CytosineMutations (data.frame)
@@ -280,6 +285,26 @@ setClass("tas.object.settings", slots = list(Name = "character",
                                               FR4Start = NA_integer_,
                                               FR4End = NA_integer_)))
 
+setMethod("isEmpty", "tas.object.settings", function(x) {
+  n <- slotNames(x)[-length(slotNames(x))]
+  empty <- logical()
+  for (i in n) {
+    if (class(slot(x,i)) == "numeric" || class(slot(x,i)) == "integer"){
+      empty <- c(empty, is.na(slot(x,i)))
+    } else if (class(slot(x,i)) == "character") {
+      if (i != "Name"){empty <- c(empty, (slot(x,i) == ""))}
+    }
+  }
+  for (i in names(x@AntibodyRegions)) {
+    empty <- c(empty, is.na(x@AntibodyRegions[i]))
+  }
+  if (all(empty)) {
+    return(TRUE)
+  } else {
+    return(FALSE)
+  }
+})
+
 #' @export
 setMethod("show", "tas.object.settings", function(object) {
   cat("Settings for ", object@Name, ":\n",
@@ -312,24 +337,26 @@ setMethod("show", "tas.object.settings", function(object) {
 setValidity("tas.object.settings", function(object) {
   # check vector lengths
   for (i in slotNames(object)[1:(length(slotNames(object)) - 1)]) {
-    if (length(slot(object, i)) != 1) {stop("@",i," must be a vector of length = 1.")}
+    if (length(slot(object, i)) != 1) {return("@",i," must be a vector of length = 1.")}
   }
 
-  if (length(object@AntibodyRegions) != 8) {stop("@AntibodyRegions must be an integer vector of length = 8.")}
+  if (length(object@AntibodyRegions) != 8) {return("@AntibodyRegions must be an integer vector of length = 8.")}
 
   # sanity checks for input values
-  if (object@ReferenceSequence != "" && nchar(object@ReferenceSequence) > object@AmpliconLength) {stop("ReferenceSequence cannot be longer than the AmpliconLength.")}
-  if (object@ForwardExtension != "" && any(stringr::str_detect(object@ForwardExtension, DNA_ALPHABET[1:15], negate = TRUE))) {stop("ForwardExtension must be a DNA sequence. Invalid characters detected.")}
-  if (object@ForwardPrimer != "" && any(stringr::str_detect(object@ForwardPrimer, DNA_ALPHABET[1:15], negate = TRUE))) {stop("ForwardPrimer must be a DNA sequence. Invalid characters detected.")}
-  if (object@ReverseExtension != "" && any(stringr::str_detect(object@ReverseExtension, DNA_ALPHABET[1:15], negate = TRUE))) {stop("ReverseExtension must be a DNA sequence. Invalid characters detected.")}
-  if (object@ReversePrimer != "" && any(stringr::str_detect(object@ReversePrimer, DNA_ALPHABET[1:15], negate = TRUE))) {stop("ReversePrimer must be a DNA sequence. Invalid characters detected.")}
-  if (!any(c("barcode", "umi", "") %in% tolower(object@ForwardExtensionType))) {stop("ForwardExtensionType must be either 'barcode' or 'umi'.")}
-  if (!any(c("barcode", "umi", "") %in% tolower(object@ReverseExtensionType))) {stop("ReverseExtensionType must be either 'barcode' or 'umi'.")}
-  if (!is.na(object@InsertStart) && !object@InsertStart >= 1) {stop("InsertStart must be a positive number >= 1.")}
-  if (!is.na(object@InsertEnd) &&!object@InsertEnd < 0) {stop("InsertEnd must be a negative number. Count backwards from the 3' end of the amplicon.")}
+  if (object@ReferenceSequence != "" && nchar(object@ReferenceSequence) > object@AmpliconLength) {return("@ReferenceSequence cannot be longer than the AmpliconLength.")}
+  if (any(grepl("[^ACGTMRWSYKVHDBN-]", object@ReferenceSequence, ignore.case = TRUE))) {return("@ReferenceSequence must be a DNA sequence. Invalid characters detected.")}
+
+  if (any(grepl("[^ACGTMRWSYKVHDBN-]", object@ForwardExtension, ignore.case = TRUE))) {return("@ForwardExtension must be a DNA sequence. Invalid characters detected.")}
+  if (any(grepl("[^ACGTMRWSYKVHDBN-]", object@ForwardPrimer, ignore.case = TRUE))) {return("@ForwardPrimer must be a DNA sequence. Invalid characters detected.")}
+  if (any(grepl("[^ACGTMRWSYKVHDBN-]", object@ReverseExtension, ignore.case = TRUE))) {return("@ReverseExtension must be a DNA sequence. Invalid characters detected.")}
+  if (any(grepl("[^ACGTMRWSYKVHDBN-]", object@ReversePrimer, ignore.case = TRUE))) {return("@ReversePrimer must be a DNA sequence. Invalid characters detected.")}
+  if (!any(c("barcode", "umi", "") %in% tolower(object@ForwardExtensionType))) {return("@ForwardExtensionType must be either 'barcode' or 'umi'.")}
+  if (!any(c("barcode", "umi", "") %in% tolower(object@ReverseExtensionType))) {return("@ReverseExtensionType must be either 'barcode' or 'umi'.")}
+  if (!is.na(object@InsertStart) && !object@InsertStart >= 1) {return("@InsertStart must be a positive number >= 1.")}
+  if (!is.na(object@InsertEnd) &&!object@InsertEnd < 0) {return("@InsertEnd must be a negative number. Count backwards from the 3' end of the amplicon.")}
 
   if ((object@MergedFASTQPath != "") && !str_detect(object@MergedFASTQPath, ".fastq")) {
-    stop("@MergedFASTQPath should be a file path to a .fastq file.")
+    return("@MergedFASTQPath should be a file path to a .fastq file.")
   }
 
   region_starts <- c(FR1 = object@AntibodyRegions["FR1Start"],
@@ -341,7 +368,7 @@ setValidity("tas.object.settings", function(object) {
                      FR4  = object@AntibodyRegions["FR4Start"],
                      END = object@AntibodyRegions["FR4End"])
   if (!all(is.na(region_starts)) && any(diff(region_starts) <= 0)) {
-    stop("Antibody region start positions must be strictly increasing.")
+    stop("@AntibodyRegion start positions must be strictly increasing.")
   }
 
   return(TRUE)
@@ -399,13 +426,13 @@ setMethod("isEmpty", "tas.mutations", function(x) {
 setValidity("tas.mutations", function(object) {
   for (i in slotNames(object)[1:3]) {
     tdf <- slot(object,i)
-    if (ncol(tdf) != 2) {stop(str_c("@",i," must have exactly 2 columns."))}
-    if (any(sapply(tdf, class) != "numeric")) {stop(str_c("Columns in @",i," must be numeric vectors."))}
-    if (any(colnames(tdf) != c("Position", "MutationFrequency"))) {stop(str_c("Columns in @",i," must be named 'Position' and 'MutationFrequency'."))}
-    if (length(tdf$Position) != length(tdf$MutationFrequency)) {stop(str_c("Columns in @",i," must be of equal length."))}
+    if (ncol(tdf) != 2) {return(str_c("@",i," must have exactly 2 columns."))}
+    if (any(sapply(tdf, class) != "numeric")) {return(str_c("Columns in @",i," must be numeric vectors."))}
+    if (any(colnames(tdf) != c("Position", "MutationFrequency"))) {return(str_c("Columns in @",i," must be named 'Position' and 'MutationFrequency'."))}
+    if (length(tdf$Position) != length(tdf$MutationFrequency)) {return(str_c("Columns in @",i," must be of equal length."))}
   }
-  if (!all(sapply(object@MotifSums, class)=="numeric") || !all(sapply(object@MotifSums, length)==1)) {stop("MotifSums must a numeric vector and each entry must be of length = 1.")}
-  if (!all(is.na(object@MotifSums[i])) && any(object@MotifSums < 0)) {stop("MotifSums values must be >= 0.")}
+  if (!all(sapply(object@MotifSums, class)=="numeric") || !all(sapply(object@MotifSums, length)==1)) {return("MotifSums must a numeric vector and each entry must be of length = 1.")}
+  if (!all(is.na(object@MotifSums[i])) && any(object@MotifSums < 0)) {return("MotifSums values must be >= 0.")}
 
   return(TRUE)
 })
@@ -504,12 +531,12 @@ setMethod("show", "tas.sequences", function(object) {
 })
 
 setValidity("tas.sequences", function(object) {
-  if (ncol(object@Table) != 7) {stop("tas.sequences must contain exactly 7 columns.")}
-  if (any(colnames(object@Table) != c("Sequences", "Count", "Percent", "Indels", "BasesChanged", "AA", "ProteinMutation"))) {stop("Column names in @Table are incorrect.")}
-  if (any(grepl("[^ACGTMRWSYKVHDBN-]", object@Table$Sequences, ignore.case = TRUE))) {stop("Sequences must be valid DNA sequences.")}
-  if (any(grepl("[^ARNDCQEGHILKMFPSTWYVUOBJZX*-]", object@Table$AA, ignore.case = TRUE))) {stop("AA must be valid protein sequences.")}
-  if (any(colnames(object@Supplemental) != c("Sequence", "UMIs", "IDs"))) {stop("Column names in @Supplemental are incorrect.")}
-  if (any(grepl("[^ACGTMRWSYKVHDBN-]", object@Supplemental$Sequence, ignore.case = TRUE))) {stop("Sequence entries in @Supplemental must be valid DNA sequences.")}
+  if (ncol(object@Table) != 7) {return("tas.sequences must contain exactly 7 columns.")}
+  if (any(colnames(object@Table) != c("Sequences", "Count", "Percent", "Indels", "BasesChanged", "AA", "ProteinMutation"))) {return("Column names in @Table are incorrect.")}
+  if (any(grepl("[^ACGTMRWSYKVHDBN-]", object@Table$Sequences, ignore.case = TRUE))) {return("Sequences must be valid DNA sequences.")}
+  if (any(grepl("[^ARNDCQEGHILKMFPSTWYVUOBJZX*-]", object@Table$AA, ignore.case = TRUE))) {return("AA must be valid protein sequences.")}
+  if (any(colnames(object@Supplemental) != c("Sequence", "UMIs", "IDs"))) {return("Column names in @Supplemental are incorrect.")}
+  if (any(grepl("[^ACGTMRWSYKVHDBN-]", object@Supplemental$Sequence, ignore.case = TRUE))) {return("Sequence entries in @Supplemental must be valid DNA sequences.")}
 
   return(TRUE)
 })
@@ -668,10 +695,15 @@ setMethod("show", "tas.dna.repair", function(object) {
 
 setValidity("tas.dna.repair", function(object) {
   for (i in slotNames(object)) {
-    if (length(slot(object, i)) != 1) {stop("@",i," must be a numeric vector of length = 1.")}
+    if (length(slot(object, i)) != 1) {return("@",i," must be a numeric vector of length = 1.")}
   }
   if (all(slotNames(object) != c("WT", "NHEJ", "MMEJ", "BaseChange", "IndelBaseChange", "Other"))) {
-    stop("Column names of tas.dna.repair are incorrect.")
+    return("Column names are incorrect.")
+  }
+  if (!isEmpty(object)) {
+    if (abs(sum(object@WT, object@NHEJ, object@MMEJ, object@BaseChange, object@IndelBaseChange, object@Other) - 100) > 1e7) {
+      return("Frequencies do not add up to 100%.")
+    }
   }
   return(TRUE)
 })
@@ -694,8 +726,8 @@ setClass("tas.alignment", slots = list(DNA = "PairwiseAlignmentsSingleSubject",
 
 setValidity("tas.alignment", function(object) {
   n <- slotNames(object)
-  if (length(slot(object, n[1]) != length(slot(object, n[2])))) {
-    stop("Length of DNA and AA pairwise alignments are not equal.")
+  if (length(slot(object, n[1])) != length(slot(object, n[2]))) {
+    return("Length of DNA and AA pairwise alignments are not equal.")
   }
   return(TRUE)
 })
@@ -785,7 +817,7 @@ setMethod("isEmpty", "AmpliconSequencing", function(x) {
 
 #' @export
 setMethod("show", "AmpliconSequencing", function(object) {
-  cat("An 'AmpliconSequencing' object:\n\n")
+  cat("An S4 object of class AmpliconSequencing:\n\n")
   for (i in slotNames(object)[1:5]) {
     cat(i,":\n", sep = "")
     o <- slot(object, i)
@@ -799,12 +831,12 @@ setMethod("show", "AmpliconSequencing", function(object) {
 })
 
 setValidity("AmpliconSequencing", function(object) {
-  if (length(slotNames(object) != 6)) {
-    stop("Incorrect number of slots.")
+  if (length(slotNames(object)) != 6) {
+    return("Incorrect number of slots.")
   }
   for (i in slotNames(object)) {
     if (!validObject(slot(object, i))) {
-      stop(str_c("Invalid slot ",i," detected."))
+      return(str_c("Invalid slot ",i," detected."))
     }
   }
   return(TRUE)
@@ -971,8 +1003,9 @@ setMethod("getSettings", signature(AmpliconSequencing = "AmpliconSequencing"), f
 
 
 ###############################################################################
+# --------------
 # Setter methods
-# -------------
+# --------------
 
 #' Read settings for tasAnalyzer
 #'
@@ -992,14 +1025,14 @@ setMethod("getSettings", signature(AmpliconSequencing = "AmpliconSequencing"), f
 readSettings <- function(x, row = NULL){
   snames <- c(slotNames("tas.object.settings")[1:(length(slotNames("tas.object.settings")) - 1)], names(new("tas.object.settings")@AntibodyRegions))
   if (length(x) == 1 && str_detect(x, ".csv")) {
-    cat("Processing 'x' as a .csv file.\n")
+    message("Processing 'x' as a .csv file.\n")
     if (!file.exists(x)) {stop(str_c("File not found at ",x,"\n"))}
     if (is.null(row)) {stop("Row number NULL is invalid.")}
     t <- suppressWarnings(read.csv(x))
     if (any(colnames(t) != snames)) {stop("Invalid column names.")}
     out <- t[(row-1),]
   } else if (length(x) > 1 || (class(x) == "data.frame" && ncol(x) > 1)) {
-    cat("Processing 'x' as an R object.\n")
+    message("Processing 'x' as an R object.\n")
     if (class(x) == "list" && length(x) != length(snames)) {stop("Invalid length for list 'x'.")}
     if (class(x) == "data.frame" && ncol(x) != length(snames)) {stop("Invalid column number for data.frame 'x'.")}
     out <- as.data.frame(x)
