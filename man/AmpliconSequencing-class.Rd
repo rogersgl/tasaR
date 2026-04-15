@@ -3,20 +3,6 @@
 \docType{class}
 \name{AmpliconSequencing-class}
 \alias{AmpliconSequencing-class}
-\alias{getAlignments,AmpliconSequencing-method}
-\alias{getDNAalign,AmpliconSequencing-method}
-\alias{getAAalign,AmpliconSequencing-method}
-\alias{getSequenceTable,AmpliconSequencing-method}
-\alias{getMutations,AmpliconSequencing-method}
-\alias{getMutationDistribution,AmpliconSequencing-method}
-\alias{getMutationDistributionCytosine,AmpliconSequencing-method}
-\alias{getMutationDistributionNonCytosine,AmpliconSequencing-method}
-\alias{getMutationMotifSums,AmpliconSequencing-method}
-\alias{getMutationTypes,AmpliconSequencing-method}
-\alias{getAIDTables,AmpliconSequencing-method}
-\alias{getWRCHTables,AmpliconSequencing-method}
-\alias{getWRCYTables,AmpliconSequencing-method}
-\alias{getSettings,AmpliconSequencing-method}
 \title{S4 class AmpliconSequencing}
 \description{
 S4 class that holds analysis results from tasAnalyzer
@@ -52,8 +38,8 @@ S4 class that holds analysis results from tasAnalyzer
 \item{\code{getMutationMotifSums()}}{returns numeric vector summarizing mutations across different patterns and denominators}
 \item{\code{getMutationTypes()}}{returns numeric vector predicting DNA repair pathway usage}
 \item{\code{getAIDTables()}}{returns S4 object of class tas.aid.tables}
-\item{\code{getWRCHTables()}}{returns data.frame table of positions and mutations of AID cytosines and their motifs for pattern WRCH}
-\item{\code{getWRCYTables()}}{returns data.frame table of positions and mutations of AID cytosines and their motifs for pattern WRCY}
+\item{\code{getWRCHTable()}}{returns data.frame table of positions and mutations of AID cytosines and their motifs for pattern WRCH}
+\item{\code{getWRCYTable()}}{returns data.frame table of positions and mutations of AID cytosines and their motifs for pattern WRCY}
 \item{\code{getSettings()}}{returns S4 object of class tas.object.settings}
 }
 }

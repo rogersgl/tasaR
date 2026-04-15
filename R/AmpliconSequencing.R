@@ -103,11 +103,11 @@ defineSettingsObject <- function(df, snames) {
 #' Helper function for tas_sequence_table. Determines the optimal sequence for each UMI and filters non-passing UMIs as "Rejected".
 #'
 #' @param x Input vector of sequences to compare.
-#'
+#' @import data.table
 #' @returns Either an optimal consensus sequence for the UMI, or "Rejected".
 umi_pileup <- function(x){
   t <- table(x)
-  d <- data.table(seq = names(t),count=as.numeric(t))
+  d <- data.table::data.table(seq = names(t),count=as.numeric(t))
   setorder(d,-count)
   if((length(d$count)==1) || (d$count[1]>=(d$count[2]+2) && (d$count[2]<d$count[1]*0.7))){
     return(d$seq[1])
@@ -122,6 +122,14 @@ umi_pileup <- function(x){
 
 
 
+
+#' @title isEmpty methods for package tasAnalyzer
+#' @description Extends the S4 function isEmpty to detect whether S4 classes in tasAnalyzer are empty, holding only initialized values.
+#' @param x An S4 object from tasAnalyzer
+#' @importFrom S4Vectors isEmpty
+#' @name isEmpty-tasAnalyzer
+#' @aliases isEmpty-tasAnalyzer
+NULL
 
 
 
@@ -285,6 +293,38 @@ setClass("tas.object.settings", slots = list(Name = "character",
                                               FR4Start = NA_integer_,
                                               FR4End = NA_integer_)))
 
+
+setMethod("as.list", "tas.object.settings", function(x) {
+  list(Name = x@Name,
+       IsAntibody = x@IsAntibody,
+       MeasureSHM = x@MeasureSHM,
+       MeasureDNARepairTypes = x@MeasureDNARepairTypes,
+       MergedFASTQPath = x@MergedFASTQPath,
+       ReferenceSequence = x@ReferenceSequence,
+       ForwardExtensionType = x@ForwardExtensionType,
+       ForwardExtension = x@ForwardExtension,
+       ForwardPrimer = x@ForwardPrimer,
+       ReverseExtensionType = x@ReverseExtensionType,
+       ReverseExtension = x@ReverseExtension,
+       ReversePrimer = x@ReversePrimer,
+       AmpliconLength = x@AmpliconLength,
+       InsertStart = x@InsertStart,
+       InsertEnd = x@InsertEnd,
+       AntibodyRegions = c(FR1Start = x@AntibodyRegions@FR1Start,
+                           CDR1Start = x@AntibodyRegions@CDR1Start,
+                           FR2Start = x@AntibodyRegions@FR2Start,
+                           CDR2Start = x@AntibodyRegions@CDR2Start,
+                           FR3Start = x@AntibodyRegions@FR3Start,
+                           CDR3Start = x@AntibodyRegions@CDR3Start,
+                           FR4Start = x@AntibodyRegions@FR4Start,
+                           FR4End = x@AntibodyRegions@FR4End))
+})
+
+
+#' @aliases NULL
+#' @describeIn isEmpty-tasAnalyzer Method for class tas.object.settings
+#' @importFrom S4Vectors isEmpty
+#' @export
 setMethod("isEmpty", "tas.object.settings", function(x) {
   n <- slotNames(x)[-length(slotNames(x))]
   empty <- logical()
@@ -406,8 +446,10 @@ setClass("tas.mutations", slots = list(AllMutations = "data.frame",
                                         CytosineMutationFrequencyOfMotif = NA_real_)))
 
 
-#' isEmpty methods for S4 class tas.mutations
-#' @describeIn isEmpty-AmpliconSequencing-method.rd methods for tasAnalyzer S4 class tas.mutations
+
+#' @aliases NULL
+#' @describeIn isEmpty-tasAnalyzer Methods for class tas.mutations
+#' @importFrom S4Vectors isEmpty
 #' @export
 setMethod("isEmpty", "tas.mutations", function(x) {
   n <- slotNames(x)
@@ -477,6 +519,7 @@ setMethod("show", "tas.mutations", function(object) {
 #' }
 #'
 #' @importFrom S4Vectors isEmpty
+#' @import data.table
 #'
 #' @export
 setClass("tas.sequences", slots = list(Table = "data.frame",
@@ -488,13 +531,13 @@ setClass("tas.sequences", slots = list(Table = "data.frame",
                                       BasesChanged = NA_real_,
                                       AA = "",
                                       ProteinMutation = ""),
-                   Supplemental = data.table(Sequence = "",
-                                             UMIs = list(),
-                                             IDs = list())))
+                   Supplemental = data.table::data.table(Sequence = "",
+                                                         UMIs = list(),
+                                                         IDs = list())))
 
 
-#' isEmpty function for S4 class tas.sequences
-#' @describeIn isEmpty_tasAnalyzer methods for tasAnalyzer S4 class tas.sequences
+#' @aliases NULL
+#' @describeIn isEmpty-tasAnalyzer Methods for class tas.sequences
 #' @importFrom S4Vectors isEmpty
 #' @export
 setMethod("isEmpty", "tas.sequences", function(x) {
@@ -592,8 +635,9 @@ setValidity("tas.aid.tables", function(object) {
 })
 
 
-##' isEmpty function for S4 class tas.aid.tables
-#' @describeIn isEmpty_tasAnalyzer methods for tasAnalyzer S4 class tas.aid.tables
+
+#' @aliases NULL
+#' @describeIn isEmpty-tasAnalyzer Methods for class tas.aid.tables
 #' @importFrom S4Vectors isEmpty
 #' @export
 setMethod("isEmpty", "tas.aid.tables", function(x) {
@@ -667,8 +711,19 @@ setClass("tas.dna.repair", slots = list(WT = "numeric",
                           Other = NA_real_))
 
 
-#' isEmpty function for S4 class tas.dna.repair
-#' @describeIn isEmpty_tasAnalyzer methods for tasAnalyzer S4 class tas.dna.repair
+setMethod("as.data.frame", "tas.dna.repair", function(x) {
+  data.frame(WT = x@WT,
+             NHEJ = x@NHEJ,
+             MMEJ = x@MMEJ,
+             BaseChange = x@BaseChange,
+             IndelBaseChange = x@IndelBaseChange,
+             Other = x@Other)
+})
+
+
+
+#' @aliases NULL
+#' @describeIn isEmpty-tasAnalyzer Methods for class tas.dna.repair
 #' @importFrom S4Vectors isEmpty
 #' @export
 setMethod("isEmpty", "tas.dna.repair", function(x) {
@@ -733,8 +788,8 @@ setValidity("tas.alignment", function(object) {
 })
 
 
-#' isEmpty function for S4 class tas.alignment
-#' @describeIn isEmpty_tasAnalyzer methods for tasAnalyzer S4 class tas.alignment
+#' @aliases NULL
+#' @describeIn isEmpty-tasAnalyzer Methods for class tas.alignment
 #' @importFrom S4Vectors isEmpty
 #' @export
 setMethod("isEmpty", "tas.alignment", function(x) {
@@ -777,8 +832,8 @@ setMethod("isEmpty", "tas.alignment", function(x) {
 #'   \item{`getMutationMotifSums()`}{returns numeric vector summarizing mutations across different patterns and denominators}
 #'   \item{`getMutationTypes()`}{returns numeric vector predicting DNA repair pathway usage}
 #'   \item{`getAIDTables()`}{returns S4 object of class tas.aid.tables}
-#'   \item{`getWRCHTables()`}{returns data.frame table of positions and mutations of AID cytosines and their motifs for pattern WRCH}
-#'   \item{`getWRCYTables()`}{returns data.frame table of positions and mutations of AID cytosines and their motifs for pattern WRCY}
+#'   \item{`getWRCHTable()`}{returns data.frame table of positions and mutations of AID cytosines and their motifs for pattern WRCH}
+#'   \item{`getWRCYTable()`}{returns data.frame table of positions and mutations of AID cytosines and their motifs for pattern WRCY}
 #'   \item{`getSettings()`}{returns S4 object of class tas.object.settings}
 #' }
 #'
@@ -798,8 +853,9 @@ setClass("AmpliconSequencing", slots = list(Alignment = "tas.alignment",
                           AIDTables = new("tas.aid.tables"),
                           Settings = new("tas.object.settings")))
 
-#' isEmpty function for S4 class AmpliconSequencing
-#' @describeIn isEmpty_tasAnalyzer methods for tasAnalyzer S4 class AmpliconSequencing
+
+#' @aliases NULL
+#' @describeIn isEmpty-tasAnalyzer Methods for class AmpliconSequencing
 #' @importFrom S4Vectors isEmpty
 #' @export
 setMethod("isEmpty", "AmpliconSequencing", function(x) {
@@ -849,155 +905,449 @@ setValidity("AmpliconSequencing", function(object) {
 # Getter methods
 # -------------
 
-setGeneric("getAlignments", function(AmpliconSequencing) standardGeneric("getAlignments"))
 
-#' @rdname AmpliconSequencing-class
+
+# ----------
+# Alignments
+# ----------
+
+### List of alignments ###
+
+#' Retrieve pairwise alignments
+#'
+#' @description
+#' Extracts DNA and/or protein (AA) pairwise alignments from an S4 object of class tas.alignment or its parent class AmpliconSequencing.
+#'
+#' @param object S4 object of class tas.alignment or AmpliconSequencing
 #' @usage NULL
+#' @returns NULL
+#' @describeIn getAlignments Extracts a list of DNA and AA pairwise alignments
 #' @export
-setMethod("getAlignments", signature(AmpliconSequencing = "AmpliconSequencing"), function(AmpliconSequencing) {
-  if (!isEmpty(AmpliconSequencing@Alignment)) {return(AmpliconSequencing@Alignment)}
+#'
+#' @examples
+#' getAlignments(object)
+setGeneric("getAlignments", function(object) standardGeneric("getAlignments"))
+
+#' @describeIn getAlignments Method for class tas.alignment
+#' @export
+setMethod("getAlignments", signature(object = "tas.alignment"), function(object) {
+  if (!isEmpty(object)) {return(list(DNA = object@DNA, AA = object@AA))}
+  else {return("Empty")}
+})
+
+#' @describeIn getAlignments Method for class AmpliconSequencing
+#' @export
+setMethod("getAlignments", signature(object = "AmpliconSequencing"), function(object) {
+  if (!isEmpty(object@Alignment)) {return(list(DNA = object@Alignment@DNA, AA = object@Alignment@AA))}
   else {return("Empty")}
 })
 
 
-setGeneric("getDNAalign", function(AmpliconSequencing) standardGeneric("getDNAalign"))
+### DNA ###
 
-#' @rdname AmpliconSequencing-class
+#' @describeIn getAlignments Extracts a pairwise alignment of DNA sequences
+#'
 #' @usage NULL
+#'
+#' @param object An S4 object of class tas.alignment or AmpliconSequencing
+#' @returns NULL
 #' @export
-setMethod("getDNAalign", signature(AmpliconSequencing = "AmpliconSequencing"), function(AmpliconSequencing) {
-  if (!isEmpty(AmpliconSequencing@Alignment@DNA)) {return(AmpliconSequencing@Alignment@DNA)}
+#'
+#' @examples
+#' getDNAalign(object)
+setGeneric("getDNAalign", function(object) standardGeneric("getDNAalign"))
+
+#' @describeIn getAlignments Method for class tas.alignment
+#' @export
+setMethod("getDNAalign", signature(object = "tas.alignment"), function(object) {
+  if (!isEmpty(object@DNA)) {return(object@DNA)}
+  else {return("Empty")}
+})
+
+#' @describeIn getAlignments Method for class AmpliconSequencing
+#' @export
+setMethod("getDNAalign", signature(object = "AmpliconSequencing"), function(object) {
+  if (!isEmpty(object@Alignment@DNA)) {return(object@Alignment@DNA)}
   else {return("Empty")}
 })
 
 
-setGeneric("getAAalign", function(AmpliconSequencing) standardGeneric("getAAalign"))
+### Protein ###
 
-#' @rdname AmpliconSequencing-class
+#' @describeIn getAlignments Extracts a pairwise alignment of protein sequences
+#'
 #' @usage NULL
+#'
+#' @param object An S4 object of class tas.alignment or AmpliconSequencing
+#' @returns NULL
+#' @examples
+#' getAAalign(object)
+setGeneric("getAAalign", function(object) standardGeneric("getAAalign"))
+
+#' @describeIn getAlignments Method for class tas.alignment
 #' @export
-setMethod("getAAalign", signature(AmpliconSequencing = "AmpliconSequencing"), function(AmpliconSequencing) {
-  if (!isEmpty(AmpliconSequencing@Alignment@AA)) {return(AmpliconSequencing@Alignment@AA)}
+setMethod("getAAalign", signature(object = "tas.alignment"), function(object) {
+  if (!isEmpty(object@AA)) {return(object@AA)}
+  else {return("Empty")}
+})
+
+#' @describeIn getAlignments Method for class AmpliconSequencing
+#' @export
+setMethod("getAAalign", signature(object = "AmpliconSequencing"), function(object) {
+  if (!isEmpty(object@Alignment@AA)) {return(object@Alignment@AA)}
   else {return("Empty")}
 })
 
 
-setGeneric("getSequenceTable", function(AmpliconSequencing) standardGeneric("getSequenceTable"))
 
-#' @rdname AmpliconSequencing-class
+# --------------
+# Sequence Table
+# --------------
+
+#' Retrieve table of sequences
+#'
+#' @description
+#' Extracts a table (data.frame) of sequences, including sequence quantification and annotations of DNA and protein mutations detected from an S4 object of class tas.sequences or its parent class AmpliconSequencing.
+#'
+#' @param object S4 object of class tas.sequences or AmpliconSequencing
 #' @usage NULL
+#' @returns NULL
 #' @export
-setMethod("getSequenceTable", signature(AmpliconSequencing = "AmpliconSequencing"), function(AmpliconSequencing) {
-  if (!isEmpty(AmpliconSequencing@Sequences)) {return(AmpliconSequencing@Sequences@Table)}
+#'
+#' @examples
+#' getSequenceTable(object)
+setGeneric("getSequenceTable", function(object) standardGeneric("getSequenceTable"))
+
+#' @describeIn getSequenceTable Method for class tas.sequences
+#' @export
+setMethod("getSequenceTable", signature(object = "tas.sequences"), function(object) {
+  if (!isEmpty(object)) {return(object@Table)}
+  else {return("Empty")}
+})
+
+#' @describeIn getSequenceTable Method for class AmpliconSequencing
+#' @export
+setMethod("getSequenceTable", signature(object = "AmpliconSequencing"), function(object) {
+  if (!isEmpty(object@Sequences)) {return(object@Sequences@Table)}
   else {return("Empty")}
 })
 
 
-setGeneric("getMutations", function(AmpliconSequencing) standardGeneric("getMutations"))
 
-#' @rdname AmpliconSequencing-class
+
+# ---------
+# Mutations
+# ---------
+
+### S4 object tas.mutations ###
+
+#' Retrieve mutation distributions
+#'
+#' @description
+#' Extracts quantifications of mutations from an S4 object of class tas.mutations or its parent class AmpliconSequencing.
+#'
+#' @param object S4 object of class tas.mutations or AmpliconSequencing
 #' @usage NULL
+#' @returns NULL
+#' @describeIn getMutations Extracts a list containing mutation information
 #' @export
-setMethod("getMutations", signature(AmpliconSequencing = "AmpliconSequencing"), function(AmpliconSequencing) {
-  if (!isEmpty(AmpliconSequencing@Mutations)) {return(AmpliconSequencing@Mutations)}
+#'
+#' @examples
+#' getMutations(object)
+setGeneric("getMutations", function(object) standardGeneric("getMutations"))
+
+#' @describeIn getMutations Method for class tas.mutations
+#' @export
+setMethod("getMutations", signature(object = "tas.mutations"), function(object) {
+  if (!isEmpty(object)) {return(list(AllMutations = object@AllMutations,
+                                     CytosineMutations = object@CytosineMutations,
+                                     NonCytosineMutations = object@NonCytosineMutations,
+                                     MotifSums = object@MotifSums))}
+  else {return("Empty")}
+})
+
+#' @describeIn getMutations Method for class AmpliconSequencing
+#' @export
+setMethod("getMutations", signature(object = "AmpliconSequencing"), function(object) {
+  if (!isEmpty(object@Mutations)) {return(list(AllMutations = object@Mutations@AllMutations,
+                                               CytosineMutations = object@Mutations@CytosineMutations,
+                                               NonCytosineMutations = object@Mutations@NonCytosineMutations,
+                                               MotifSums = object@Mutations@MotifSums))}
+  else {return("Empty")}
+})
+
+### All distribtuion ###
+
+#' @describeIn getMutations Extracts a data.frame quantifying mutation rate at all positions in the sequence
+#'
+#' @usage NULL
+#'
+#' @param object An S4 object of class tas.mutations or AmpliconSequencing
+#' @returns NULL
+#' @export
+#'
+#' @examples
+#' getMutationDistribution(object)
+setGeneric("getMutationDistribution", function(object) standardGeneric("getMutationDistribution"))
+
+#' @describeIn getMutations Method for class tas.mutations
+#' @export
+setMethod("getMutationDistribution", signature(object = "tas.mutations"), function(object) {
+  if (!isEmpty(object)) {return(object@AllMutations)}
+  else {return("Empty")}
+})
+
+#' @describeIn getMutations Method for class AmpliconSequencing
+#' @export
+setMethod("getMutationDistribution", signature(object = "AmpliconSequencing"), function(object) {
+  if (!isEmpty(object@Mutations)) {return(object@Mutations@AllMutations)}
   else {return("Empty")}
 })
 
 
-setGeneric("getMutationDistribution", function(AmpliconSequencing) standardGeneric("getMutationDistribution"))
+### Cytosine mutations ###
 
-#' @rdname AmpliconSequencing-class
+#' @describeIn getMutations Extracts a data.frame quantifying mutation rate at all AID hotspot cytosines in the sequence
+#'
 #' @usage NULL
+#'
+#' @param object An S4 object of class tas.mutations or AmpliconSequencing
+#' @returns NULL
 #' @export
-setMethod("getMutationDistribution", signature(AmpliconSequencing = "AmpliconSequencing"), function(AmpliconSequencing) {
-  if (!isEmpty(AmpliconSequencing@Mutations)) {return(AmpliconSequencing@Mutations@AllMutations)}
+#'
+#' @examples
+#' getMutationDistributionCytosine(object)
+setGeneric("getMutationDistributionCytosine", function(object) standardGeneric("getMutationDistributionCytosine"))
+
+#' @describeIn getMutations Method for class tas.mutations
+#' @export
+setMethod("getMutationDistributionCytosine", signature(object = "tas.mutations"), function(object) {
+  if (!isEmpty(object)) {return(object@CytosineMutations)}
+  else {return("Empty")}
+})
+
+#' @describeIn getMutations Method for class AmpliconSequencing
+#' @export
+setMethod("getMutationDistributionCytosine", signature(object = "AmpliconSequencing"), function(object) {
+  if (!isEmpty(object@Mutations)) {return(object@Mutations@CytosineMutations)}
   else {return("Empty")}
 })
 
 
-setGeneric("getMutationDistributionCytosine", function(AmpliconSequencing) standardGeneric("getMutationDistributionCytosine"))
+### Non-cytosine mutations ###
 
-#' @rdname AmpliconSequencing-class
+
+#' @describeIn getMutations Extracts a data.frame quantifying mutation rate at all bases that are not AID hotspot cytosines
+#'
 #' @usage NULL
+#'
+#' @param object An S4 object of class tas.mutations or AmpliconSequencing
+#' @returns NULL
 #' @export
-setMethod("getMutationDistributionCytosine", signature(AmpliconSequencing = "AmpliconSequencing"), function(AmpliconSequencing) {
-  if (!isEmpty(AmpliconSequencing@Mutations)) {return(AmpliconSequencing@Mutations@CytosineMutations)}
+#'
+#' @examples
+#' getMutationDistributionNonCytosine(object)
+setGeneric("getMutationDistributionNonCytosine", function(object) standardGeneric("getMutationDistributionNonCytosine"))
+
+#' @describeIn getMutations Method for class tas.mutations
+#' @export
+setMethod("getMutationDistributionNonCytosine", signature(object = "tas.mutations"), function(object) {
+  if (!isEmpty(object)) {return(object@NonCytosineMutations)}
+  else {return("Empty")}
+})
+
+#' @describeIn getMutations Method for class AmpliconSequencing
+#' @export
+setMethod("getMutationDistributionNonCytosine", signature(object = "AmpliconSequencing"), function(object) {
+  if (!isEmpty(object@Mutations)) {return(object@Mutations@NonCytosineMutations)}
   else {return("Empty")}
 })
 
 
-setGeneric("getMutationDistributionNonCytosine", function(AmpliconSequencing) standardGeneric("getMutationDistributionNonCytosine"))
+### Motif sums ###
 
-#' @rdname AmpliconSequencing-class
+#' @describeIn getMutations Extracts a vector summarizing mutations at different motifs and denominators
+#'
 #' @usage NULL
+#'
+#' @param object An S4 object of class tas.mutations or AmpliconSequencing
+#' @returns NULL
 #' @export
-setMethod("getMutationDistributionNonCytosine", signature(AmpliconSequencing = "AmpliconSequencing"), function(AmpliconSequencing) {
-  if (!isEmpty(AmpliconSequencing@Mutations)) {return(AmpliconSequencing@Mutations@NonCytosineMutations)}
+#'
+#' @examples
+#' getMutationMotifSums(object)
+setGeneric("getMutationMotifSums", function(object) standardGeneric("getMutationMotifSums"))
+
+#' @describeIn getMutations Method for class tas.mutations
+#' @export
+setMethod("getMutationMotifSums", signature(object = "tas.mutations"), function(object) {
+  if (!isEmpty(object)) {return(object@MotifSums)}
   else {return("Empty")}
 })
 
-setGeneric("getMutationMotifSums", function(AmpliconSequencing) standardGeneric("getMutationMotifSums"))
-
-#' @rdname AmpliconSequencing-class
-#' @usage NULL
+#' @describeIn getMutations Method for class AmpliconSequencing
 #' @export
-setMethod("getMutationMotifSums", signature(AmpliconSequencing = "AmpliconSequencing"), function(AmpliconSequencing) {
-  if (!isEmpty(AmpliconSequencing@Mutations)) {return(AmpliconSequencing@Mutations@MotifSums)}
-  else {return("Empty")}
-})
-
-
-setGeneric("getMutationTypes", function(AmpliconSequencing) standardGeneric("getMutationTypes"))
-
-#' @rdname AmpliconSequencing-class
-#' @usage NULL
-#' @export
-setMethod("getMutationTypes", signature(AmpliconSequencing = "AmpliconSequencing"), function(AmpliconSequencing) {
-  if (!isEmpty(AmpliconSequencing@MutationTypes)) {return(AmpliconSequencing@MutationTypes)}
-  else {return("Empty")}
-})
-
-
-setGeneric("getAIDTables", function(AmpliconSequencing) standardGeneric("getAIDTables"))
-
-#' @rdname AmpliconSequencing-class
-#' @usage NULL
-#' @export
-setMethod("getAIDTables", signature(AmpliconSequencing = "AmpliconSequencing"), function(AmpliconSequencing) {
-  if (!isEmpty(AmpliconSequencing@AIDTables)) {return(AmpliconSequencing@AIDTables)}
+setMethod("getMutationMotifSums", signature(object = "AmpliconSequencing"), function(object) {
+  if (!isEmpty(object@Mutations)) {return(object@Mutations@MotifSums)}
   else {return("Empty")}
 })
 
 
-setGeneric("getWRCHTables", function(AmpliconSequencing) standardGeneric("getWRCHTables"))
+# ----------------
+# DNA Repair Types
+# ----------------
 
-#' @rdname AmpliconSequencing-class
+
+#' Retrieve DNA repair pathway inferences
+#'
+#' @description
+#' Extracts a table (data.frame) of DNA repair pathway frequencies from an S4 object of class tas.dna.repair or its parent class AmpliconSequencing.
+#'
+#' @param object S4 object of class tas.dna.repair or AmpliconSequencing
 #' @usage NULL
+#' @returns NULL
 #' @export
-setMethod("getWRCHTables", signature(AmpliconSequencing = "AmpliconSequencing"), function(AmpliconSequencing) {
-  if (!isEmpty(AmpliconSequencing@AIDTables)) {return(AmpliconSequencing@AIDTables@WRCH)}
+#'
+#' @examples
+#' getMutationTypes(object)
+setGeneric("getMutationTypes", function(object) standardGeneric("getMutationTypes"))
+
+#' @describeIn getMutationTypes Method for class tas.dna.repair
+#' @export
+setMethod("getMutationTypes", signature(object = "tas.dna.repair"), function(object) {
+  if (!isEmpty(object)) {return(as.data.frame(object))}
+  else {return("Empty")}
+})
+
+#' @describeIn getMutationTypes Method for class AmpliconSequencing
+#' @export
+setMethod("getMutationTypes", signature(object = "AmpliconSequencing"), function(object) {
+  if (!isEmpty(object@MutationTypes)) {return(as.data.frame(object@MutationTypes))}
   else {return("Empty")}
 })
 
 
-setGeneric("getWRCYTables", function(AmpliconSequencing) standardGeneric("getWRCYTables"))
 
-#' @rdname AmpliconSequencing-class
+
+# ----------
+# AID Tables
+# ----------
+
+### Both tables ###
+
+#' Retrieve AID mutation tables
+#'
+#' @description
+#' Extracts tables summarizing positions and mutations at AID hotspots from an S4 object of class tas.aid.tables or its parent class AmpliconSequencing.
+#'
+#' @param object S4 object of class tas.aid.tables or AmpliconSequencing
 #' @usage NULL
+#' @returns NULL
+#' @describeIn getAIDTables Extracts a list containing tables for WRCH and WRCY AID hotspot motifs
 #' @export
-setMethod("getWRCYTables", signature(AmpliconSequencing = "AmpliconSequencing"), function(AmpliconSequencing) {
-  if (!isEmpty(AmpliconSequencing@AIDTables)) {return(AmpliconSequencing@AIDTables@WRCY)}
+#'
+#' @examples
+#' getAIDTables(object)
+setGeneric("getAIDTables", function(object) standardGeneric("getAIDTables"))
+
+#' @describeIn getAIDTables Method for class tas.aid.tables
+#' @export
+setMethod("getAIDTables", signature(object = "tas.aid.tables"), function(object) {
+  if (!isEmpty(object)) {return(list(WRCH = object@WRCH, WRCY = object@WRCY))}
+  else {return("Empty")}
+})
+
+#' @describeIn getAIDTables Method for class AmpliconSequencing
+#' @export
+setMethod("getAIDTables", signature(object = "AmpliconSequencing"), function(object) {
+  if (!isEmpty(object@AIDTables)) {return(list(WRCH = object@AIDTables@WRCH, WRCY = object@AIDTables@WRCY))}
   else {return("Empty")}
 })
 
 
-setGeneric("getSettings", function(AmpliconSequencing) standardGeneric("getSettings"))
+### WRCH Table ###
 
-#' @rdname AmpliconSequencing-class
+#' @describeIn getAIDTables Extracts a data.frame showing positions and mutations at WRCH AID hotspot motifs
+#'
 #' @usage NULL
+#'
+#' @param object An S4 object of class tas.aid.tables or AmpliconSequencing
+#' @returns NULL
 #' @export
-setMethod("getSettings", signature(AmpliconSequencing = "AmpliconSequencing"), function(AmpliconSequencing) {
-  return(AmpliconSequencing@Settings)
+#'
+#' @examples
+#' getWRCHTable(object)
+setGeneric("getWRCHTable", function(object) standardGeneric("getWRCHTable"))
+
+#' @describeIn getAIDTables Method for class tas.aid.tables
+#' @export
+setMethod("getWRCHTable", signature(object = "tas.aid.tables"), function(object) {
+  if (!isEmpty(object)) {return(object@WRCH)}
+  else {return("Empty")}
+})
+
+#' @describeIn getAIDTables Method for class AmpliconSequencing
+#' @export
+setMethod("getWRCHTable", signature(object = "AmpliconSequencing"), function(object) {
+  if (!isEmpty(object@AIDTables)) {return(object@AIDTables@WRCH)}
+  else {return("Empty")}
+})
+
+
+### WRCY Table ###
+
+#' @describeIn getAIDTables Extracts a data.frame showing positions and mutations at WRCY AID hotspot motifs
+#'
+#' @usage NULL
+#'
+#' @param object An S4 object of class tas.aid.tables or AmpliconSequencing
+#' @returns NULL
+#' @export
+#'
+#' @examples
+#' getWRCYTable(object)
+setGeneric("getWRCYTable", function(object) standardGeneric("getWRCYTable"))
+
+#' @describeIn getAIDTables Method for class tas.aid.tables
+#' @export
+setMethod("getWRCYTable", signature(object = "tas.aid.tables"), function(object) {
+  if (!isEmpty(object)) {return(object@WRCY)}
+  else {return("Empty")}
+})
+
+#' @describeIn getAIDTables Method for class AmpliconSequencing
+#' @export
+setMethod("getWRCYTable", signature(object = "AmpliconSequencing"), function(object) {
+  if (!isEmpty(object@AIDTables)) {return(object@AIDTables@WRCY)}
+  else {return("Empty")}
+})
+
+
+
+#' Retrieve object settings
+#'
+#' @description
+#' Extracts a list of tasAnalyzer settings from an S4 object of class tas.object.settings or its parent class AmpliconSequencing.
+#'
+#' @param object S4 object of class tas.object.settings or AmpliconSequencing
+#' @usage NULL
+#' @returns NULL
+#' @export
+#'
+#' @examples
+#' getSettings(object)
+setGeneric("getSettings", function(object) standardGeneric("getSettings"))
+
+#' @describeIn getSettings Method for class AmpliconSequencing
+#' @export
+setMethod("getSettings", signature(object = "AmpliconSequencing"), function(object) {
+  return(as.list(object))
+})
+
+#' @describeIn getSettings Method for class AmpliconSequencing
+#' @export
+setMethod("getSettings", signature(object = "AmpliconSequencing"), function(object) {
+  return(as.list(object@Settings))
 })
 
 
