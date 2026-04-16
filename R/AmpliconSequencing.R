@@ -13,9 +13,9 @@
 # Helper functions
 # ------
 
-# -----------------
-# Exported funcions
-# -----------------
+# ------------------
+# Exported functions
+# ------------------
 
 #' Write a .CSV file to input settings
 #'
@@ -92,10 +92,8 @@ defineSettingsObject <- function(df, snames) {
   return(tos)
 }
 
+
 #function to determine optimal sequence for each umi and filter non-passing umis as "Rejected"
-
-
-
 
 #' @title Merge data.table by UMIs
 #'
@@ -119,26 +117,8 @@ umi_pileup <- function(x){
 
 
 
-
-
-
-
-#' @title isEmpty methods for package tasAnalyzer
-#' @description Extends the S4 function isEmpty to detect whether S4 classes in tasAnalyzer are empty, holding only initialized values.
-#' @param x An S4 object from tasAnalyzer
-#' @importFrom S4Vectors isEmpty
-#' @name isEmpty-tasAnalyzer
-#' @aliases isEmpty-tasAnalyzer
-NULL
-
-
-
-
-
-
-
 ###############################################################################
-# Object constructors to create S4 class "AmpliconSequencing"
+# S4 class definitions and hierarchy
 # -------
 # AmpliconSequencing
 #   |- Alignment (S4)
@@ -232,6 +212,10 @@ tasGlobalSettings <- new("tas.global.settings",
 
 
 
+# -------------------
+# tas.object.settings
+# -------------------
+
 
 #' @title S4 class tas.object.settings
 #' @description S4 object containing analysis settings for tasAnalyzer
@@ -294,7 +278,13 @@ setClass("tas.object.settings", slots = list(Name = "character",
                                               FR4End = NA_integer_)))
 
 
-setMethod("as.list", "tas.object.settings", function(x) {
+#' Coerce tas.object.settings to list
+#'
+#' @param x A tas.object.settings object
+#' @param ... Passed to data.frame
+#' @export
+#' @method as.data.frame tas.dna.repair
+as.list.tas.object.settings <- function(x) {
   list(Name = x@Name,
        IsAntibody = x@IsAntibody,
        MeasureSHM = x@MeasureSHM,
@@ -310,68 +300,17 @@ setMethod("as.list", "tas.object.settings", function(x) {
        AmpliconLength = x@AmpliconLength,
        InsertStart = x@InsertStart,
        InsertEnd = x@InsertEnd,
-       AntibodyRegions = c(FR1Start = x@AntibodyRegions@FR1Start,
-                           CDR1Start = x@AntibodyRegions@CDR1Start,
-                           FR2Start = x@AntibodyRegions@FR2Start,
-                           CDR2Start = x@AntibodyRegions@CDR2Start,
-                           FR3Start = x@AntibodyRegions@FR3Start,
-                           CDR3Start = x@AntibodyRegions@CDR3Start,
-                           FR4Start = x@AntibodyRegions@FR4Start,
-                           FR4End = x@AntibodyRegions@FR4End))
-})
+       AntibodyRegions = c(x@AntibodyRegions["FR1Start"],
+                           x@AntibodyRegions["CDR1Start"],
+                           x@AntibodyRegions["FR2Start"],
+                           x@AntibodyRegions["CDR2Start"],
+                           x@AntibodyRegions["FR3Start"],
+                           x@AntibodyRegions["CDR3Start"],
+                           x@AntibodyRegions["FR4Start"],
+                           x@AntibodyRegions["FR4End"]))
+}
 
 
-#' @aliases NULL
-#' @describeIn isEmpty-tasAnalyzer Method for class tas.object.settings
-#' @importFrom S4Vectors isEmpty
-#' @export
-setMethod("isEmpty", "tas.object.settings", function(x) {
-  n <- slotNames(x)[-length(slotNames(x))]
-  empty <- logical()
-  for (i in n) {
-    if (class(slot(x,i)) == "numeric" || class(slot(x,i)) == "integer"){
-      empty <- c(empty, is.na(slot(x,i)))
-    } else if (class(slot(x,i)) == "character") {
-      if (i != "Name"){empty <- c(empty, (slot(x,i) == ""))}
-    }
-  }
-  for (i in names(x@AntibodyRegions)) {
-    empty <- c(empty, is.na(x@AntibodyRegions[i]))
-  }
-  if (all(empty)) {
-    return(TRUE)
-  } else {
-    return(FALSE)
-  }
-})
-
-#' @export
-setMethod("show", "tas.object.settings", function(object) {
-  cat("Settings for ", object@Name, ":\n",
-      "IsAntibody : ", object@IsAntibody, "\n",
-      "MeasureSHM : ", object@MeasureSHM, "\n",
-      "MeasureDNARepairTypes : ", object@MeasureDNARepairTypes, "\n", sep = "")
-  for (i in slotNames(object)[6:12]) {
-    s <- slot(object, i)
-    if (s != ""){
-      s <- charDisplayTrim(s)
-      cat("",i,": ", s, "\n", sep = "")}
-  }
-  for (i in slotNames(object)[13:15]) {
-    if (!is.na(slot(object, i))){cat("",i,": ", slot(object, i), "\n", sep = "")}
-  }
-  if (!all(is.na(object@AntibodyRegions))){
-  cat("Antibody region coordinates:\n",
-      " FR1: ", object@AntibodyRegions["FR1Start"], "\n",
-      "CDR1: ", object@AntibodyRegions["CDR1Start"], "\n",
-      " FR2: ", object@AntibodyRegions["FR2Start"], "\n",
-      "CDR2: ", object@AntibodyRegions["CDR2Start"], "\n",
-      " FR3: ", object@AntibodyRegions["FR3Start"], "\n",
-      "CDR3: ", object@AntibodyRegions["CDR3Start"], "\n",
-      " FR4: ", object@AntibodyRegions["FR4Start"], "\n",
-      " End: ", object@AntibodyRegions["FR4End"], "\n", sep = "")
-  }
-})
 
 
 setValidity("tas.object.settings", function(object) {
@@ -415,6 +354,11 @@ setValidity("tas.object.settings", function(object) {
 })
 
 
+
+# -------------
+# tas.mutations
+# -------------
+
 #' @title S4 class tas.mutations
 #' @description S4 object of sequence mutations by position
 #'
@@ -446,25 +390,6 @@ setClass("tas.mutations", slots = list(AllMutations = "data.frame",
                                         CytosineMutationFrequencyOfMotif = NA_real_)))
 
 
-
-#' @aliases NULL
-#' @describeIn isEmpty-tasAnalyzer Methods for class tas.mutations
-#' @importFrom S4Vectors isEmpty
-#' @export
-setMethod("isEmpty", "tas.mutations", function(x) {
-  n <- slotNames(x)
-  df_empty <- logical()
-  for (i in n[1:3]){
-    df_empty <- c(df_empty, isEmpty(slot(x, i)))
-  }
-  ms <- all(is.na((x@MotifSums)))
-  if (all(df_empty) && ms){
-    return(TRUE)
-  } else {
-    return(FALSE)
-  }
-})
-
 setValidity("tas.mutations", function(object) {
   for (i in slotNames(object)[1:3]) {
     tdf <- slot(object,i)
@@ -479,30 +404,11 @@ setValidity("tas.mutations", function(object) {
   return(TRUE)
 })
 
-#' @export
-setMethod("show", "tas.mutations", function(object) {
-  cat("DNA mutation tables:\n")
-  for (i in slotNames(object)[1:3]) {
-    df <- slot(object, i)
-    if (!isEmpty(df)) {
-      cat("",i,":\n", sep = "")
-      if (nrow(df) <= 6){
-        show(df)
-      } else {
-        show(df[1:3,])
-        cat("\n          ..........          \n\n")
-        show(df[(nrow(df)-2):nrow(df),])
-      }
-    }
-    cat("\n")
-  }
-  cat("Percent mutation for different motifs:\n")
-  for (i in names(object@MotifSums)) {
-    if (!is.na(object@MotifSums[i])) {
-      cat("",i,": ", object@MotifSums[i],"%\n", sep = "")
-    }
-  }
-})
+
+
+# -------------
+# tas.sequences
+# -------------
 
 
 #' @title S4 class tas.sequences
@@ -535,44 +441,6 @@ setClass("tas.sequences", slots = list(Table = "data.frame",
                                                          UMIs = list(),
                                                          IDs = list())))
 
-
-#' @aliases NULL
-#' @describeIn isEmpty-tasAnalyzer Methods for class tas.sequences
-#' @importFrom S4Vectors isEmpty
-#' @export
-setMethod("isEmpty", "tas.sequences", function(x) {
-  df <- x@Table
-  if (nrow(df) < 2 && all(is.na(df[1,c(2,3,5)])) && all(df[1,c(1,4,6,7)] == "")){
-    return(TRUE)
-  } else {
-    return(FALSE)
-  }
-})
-
-
-#' @export
-setMethod("show", "tas.sequences", function(object) {
-  df <- object@Table
-  if (nrow(df) <= 6){
-    for (i in colnames(df)) {
-      if (class(df[,i]) == "character"){
-        df[,i] <- sapply(df[,i], charDisplayTrim, USE.NAMES = FALSE)
-      }
-    }
-    show(df)
-  } else {
-    df <- rbind(df[1:3,], df[(nrow(df)-2):nrow(df),])
-    for (i in colnames(df)) {
-      if (class(df[,i]) == "character"){
-        df[,i] <- sapply(df[,i], charDisplayTrim, USE.NAMES = FALSE)
-      }
-    }
-    show(df[1:3,])
-    cat("----------\n")
-    show(df[(nrow(df)-2):nrow(df),])
-  }
-})
-
 setValidity("tas.sequences", function(object) {
   if (ncol(object@Table) != 7) {return("tas.sequences must contain exactly 7 columns.")}
   if (any(colnames(object@Table) != c("Sequences", "Count", "Percent", "Indels", "BasesChanged", "AA", "ProteinMutation"))) {return("Column names in @Table are incorrect.")}
@@ -586,6 +454,9 @@ setValidity("tas.sequences", function(object) {
 
 
 
+# --------------
+# tas.aid.tables
+# --------------
 
 #' @title S4 class tas.aid.tables
 #' @description S4 object of tables summarizing mutations at AID cytosine motifs. Separate tables for the broader WRCH motif and the more specific WRCY motif.
@@ -622,6 +493,7 @@ setClass("tas.aid.tables", slots = list(WRCH = "data.frame",
                                             MotifMutagenesis = NA_real_,
                                             CytosineMutagenesis = NA_real_)))
 
+
 setValidity("tas.aid.tables", function(object) {
   for (i in slotNames(object)) {
     if (all(class(colnames(slot(object,i))) != c("character", "integer", "integer", "integer", "numeric", "numeric"))){
@@ -635,54 +507,9 @@ setValidity("tas.aid.tables", function(object) {
 })
 
 
-
-#' @aliases NULL
-#' @describeIn isEmpty-tasAnalyzer Methods for class tas.aid.tables
-#' @importFrom S4Vectors isEmpty
-#' @export
-setMethod("isEmpty", "tas.aid.tables", function(x) {
-  empty.all <- logical()
-  for (i in slotNames(x)){
-    if (nrow(slot(x, i)) > 1){
-      empty.all <- c(empty.all, FALSE)
-    } else {
-      empty <- logical()
-      empty <- c(empty, slot(x, i)[1,1] == "")
-      for (j in 2:ncol(slot(x, i))) {
-        empty <- c(empty, is.na(slot(x, i)[1,j]))
-      }
-      if (all(empty)) {
-        empty.all <- c(empty.all, TRUE)
-      } else {
-        empty.all <- c(empty.all, FALSE)
-      }
-    }
-  }
-  if (all(empty.all)){
-    return(TRUE)
-  } else {
-    return(FALSE)
-  }
-})
-
-#' @export
-setMethod("show", "tas.aid.tables", function(object) {
-  for (i in slotNames(object)) {
-    cat("Slot",i,":\n", sep = "")
-
-    df <- slot(object, i)
-    if (nrow(df) <= 6){
-      show(df)
-    } else {
-      df <- rbind(df[1:3,], df[(nrow(df)-2):nrow(df),])
-      show(df[1:3,])
-      cat("\n               .........................               \n\n")
-      show(df[(nrow(df)-2):nrow(df),])
-    }
-
-    cat("\n\n")
-  }
-})
+# --------------
+# tas.dna.repair
+# --------------
 
 #' @title S4 class tas.dna.repair
 #' @description S4 object showing the inferred frequency of different types of DNA repair
@@ -711,42 +538,24 @@ setClass("tas.dna.repair", slots = list(WT = "numeric",
                           Other = NA_real_))
 
 
-setMethod("as.data.frame", "tas.dna.repair", function(x) {
-  data.frame(WT = x@WT,
-             NHEJ = x@NHEJ,
-             MMEJ = x@MMEJ,
-             BaseChange = x@BaseChange,
-             IndelBaseChange = x@IndelBaseChange,
-             Other = x@Other)
-})
-
-
-
-#' @aliases NULL
-#' @describeIn isEmpty-tasAnalyzer Methods for class tas.dna.repair
-#' @importFrom S4Vectors isEmpty
+#' Coerce tas.dna.repair to data.frame
+#'
+#' @param x A tas.dna.repair object
+#' @param ... Passed to data.frame
 #' @export
-setMethod("isEmpty", "tas.dna.repair", function(x) {
-  empty <- logical()
-  for (i in slotNames(x)) {
-    empty <- c(empty, is.na(slot(x, i)))
-  }
-  if (all(empty)) {
-    return(TRUE)
-  } else {
-    return(FALSE)
-  }
-})
+#' @method as.data.frame tas.dna.repair
+as.data.frame.tas.dna.repair <- function(x, ..., row.names = NULL) {
+  data.frame(
+    WT = x@WT,
+    NHEJ = x@NHEJ,
+    MMEJ = x@MMEJ,
+    BaseChange = x@BaseChange,
+    IndelBaseChange = x@IndelBaseChange,
+    Other = x@Other,
+    row.names = row.names
+  )
+}
 
-#' @export
-setMethod("show", "tas.dna.repair", function(object) {
-  cat("Inferred DNA repair pathways:\n")
-  for (i in slotNames(object)) {
-    if (!is.na(slot(object, i))){
-      cat(i,": ", slot(object, i), "%\n", sep = "")
-    }
-  }
-})
 
 setValidity("tas.dna.repair", function(object) {
   for (i in slotNames(object)) {
@@ -765,6 +574,10 @@ setValidity("tas.dna.repair", function(object) {
 
 
 
+# -------------
+# tas.alignment
+# -------------
+
 #' @title S4 class tas.alignment
 #' @description S4 class containing pairwise alignments of sequences against the reference. Contains both DNA and protein (AA) alignments.
 #'
@@ -779,6 +592,7 @@ setClass("tas.alignment", slots = list(DNA = "PairwiseAlignmentsSingleSubject",
          prototype = list(DNA = empty.pass(),
                           AA = empty.pass()))
 
+
 setValidity("tas.alignment", function(object) {
   n <- slotNames(object)
   if (length(slot(object, n[1])) != length(slot(object, n[2]))) {
@@ -788,23 +602,10 @@ setValidity("tas.alignment", function(object) {
 })
 
 
-#' @aliases NULL
-#' @describeIn isEmpty-tasAnalyzer Methods for class tas.alignment
-#' @importFrom S4Vectors isEmpty
-#' @export
-setMethod("isEmpty", "tas.alignment", function(x) {
-  n <- slotNames(x)
-  len <- numeric(length(n))
-  for (i in n){
-    len <- c(len, length(slot(x, i)) )
-  }
-  if (sum(len) == 0){
-    return(TRUE)
-  } else {
-    return(FALSE)
-  }
-})
 
+# ------------------
+# AmpliconSequencing
+# ------------------
 
 #' @title S4 class AmpliconSequencing
 #'
@@ -853,38 +654,6 @@ setClass("AmpliconSequencing", slots = list(Alignment = "tas.alignment",
                           AIDTables = new("tas.aid.tables"),
                           Settings = new("tas.object.settings")))
 
-
-#' @aliases NULL
-#' @describeIn isEmpty-tasAnalyzer Methods for class AmpliconSequencing
-#' @importFrom S4Vectors isEmpty
-#' @export
-setMethod("isEmpty", "AmpliconSequencing", function(x) {
-  empty <- logical()
-  for (i in slotNames(x)) {
-    empty <- c(empty, isEmpty(slot(x, i)))
-  }
-  if (all(empty)) {
-    return(TRUE)
-  } else {
-    return(FALSE)
-  }
-})
-
-
-#' @export
-setMethod("show", "AmpliconSequencing", function(object) {
-  cat("An S4 object of class AmpliconSequencing:\n\n")
-  for (i in slotNames(object)[1:5]) {
-    cat(i,":\n", sep = "")
-    o <- slot(object, i)
-    if (isEmpty(o)) {
-      cat("Empty\n\n")
-    } else {
-      cat("Access using @",i,"\n\n")
-    }
-  }
-  show(object@Settings)
-})
 
 setValidity("AmpliconSequencing", function(object) {
   if (length(slotNames(object)) != 6) {
@@ -1004,6 +773,8 @@ setMethod("getAAalign", signature(object = "AmpliconSequencing"), function(objec
 # Sequence Table
 # --------------
 
+### Table ###
+
 #' Retrieve table of sequences
 #'
 #' @description
@@ -1033,7 +804,33 @@ setMethod("getSequenceTable", signature(object = "AmpliconSequencing"), function
 })
 
 
+### Supplemental ###
 
+
+#' @describeIn getSequenceTable Extracts a data.table linking sequences, Illumina read IDs, and UMIs (if applicable)
+#' @param object S4 object of class tas.sequences or AmpliconSequencing
+#' @usage NULL
+#' @returns NULL
+#' @export
+#'
+#' @examples
+#' getSequenceSupplemental(object)
+setGeneric("getSequenceSupplemental", function(object) standardGeneric("getSequenceSupplemental"))
+
+
+#' @describeIn getSequenceTable Method for class tas.sequences
+#' @export
+setMethod("getSequenceSupplemental", signature(object = "tas.sequences"), function(object) {
+  if (!isEmpty(object)) {return(object@Supplemental)}
+  else {return("Empty")}
+})
+
+#' @describeIn getSequenceTable Method for class AmpliconSequencing
+#' @export
+setMethod("getSequenceSupplemental", signature(object = "AmpliconSequencing"), function(object) {
+  if (!isEmpty(object@Sequences)) {return(object@Sequences@Supplemental)}
+  else {return("Empty")}
+})
 
 # ---------
 # Mutations
@@ -1324,6 +1121,10 @@ setMethod("getWRCYTable", signature(object = "AmpliconSequencing"), function(obj
 
 
 
+# --------
+# Settings
+# --------
+
 #' Retrieve object settings
 #'
 #' @description
@@ -1338,9 +1139,9 @@ setMethod("getWRCYTable", signature(object = "AmpliconSequencing"), function(obj
 #' getSettings(object)
 setGeneric("getSettings", function(object) standardGeneric("getSettings"))
 
-#' @describeIn getSettings Method for class AmpliconSequencing
+#' @describeIn getSettings Method for class tas.object.settings
 #' @export
-setMethod("getSettings", signature(object = "AmpliconSequencing"), function(object) {
+setMethod("getSettings", signature(object = "tas.object.settings"), function(object) {
   return(as.list(object))
 })
 
@@ -1428,6 +1229,323 @@ buildSequenceTable <- function(settings) {
 
 
 
+###############################################################################
+# Extended functions
+# ------
+
+# ---------
+# isEmpty()
+# ---------
+
+### main definition page ###
+
+#' @title isEmpty methods for package tasAnalyzer
+#' @description Extends the S4 function isEmpty to detect whether S4 classes in tasAnalyzer are empty, holding only initialized values.
+#' @param x An S4 object from tasAnalyzer
+#' @importMethodsFrom S4Vectors isEmpty
+#' @name isEmpty-tasAnalyzer
+#' @aliases isEmpty-tasAnalyzer
+NULL
+
+### class tas.object.settings ###
+
+#' @aliases NULL
+#' @describeIn isEmpty-tasAnalyzer Method for class tas.object.settings
+#' @importMethodsFrom S4Vectors isEmpty
+#' @export
+setMethod("isEmpty", "tas.object.settings", function(x) {
+  n <- slotNames(x)
+  n <- setdiff(n, c("Name", "AntibodyRegions"))
+  empty <- logical()
+  for (i in n) {
+    if (class(slot(x,i)) == "numeric" || class(slot(x,i)) == "integer"){
+      empty <- c(empty, is.na(slot(x,i)))
+    } else if (class(slot(x,i)) == "character") {
+      empty <- c(empty, (slot(x,i) == ""))
+      }
+  }
+  for (i in names(x@AntibodyRegions)) {
+    empty <- c(empty, is.na(x@AntibodyRegions[i]))
+  }
+  if (all(empty)) {
+    return(TRUE)
+  } else {
+    return(FALSE)
+  }
+})
+
+
+### class tas.mutations ###
+
+#' @aliases NULL
+#' @describeIn isEmpty-tasAnalyzer Methods for class tas.mutations
+#' @importMethodsFrom S4Vectors isEmpty
+#' @export
+setMethod("isEmpty", "tas.mutations", function(x) {
+  n <- slotNames(x)
+  df_empty <- logical()
+  for (i in n[1:3]){
+    df_empty <- c(df_empty, isEmpty(slot(x, i)))
+  }
+  ms <- all(is.na((x@MotifSums)))
+  if (all(df_empty) && ms){
+    return(TRUE)
+  } else {
+    return(FALSE)
+  }
+})
+
+
+### class tas.sequences ###
+
+#' @aliases NULL
+#' @describeIn isEmpty-tasAnalyzer Methods for class tas.sequences
+#' @importMethodsFrom S4Vectors isEmpty
+#' @export
+setMethod("isEmpty", "tas.sequences", function(x) {
+  df <- x@Table
+  if (nrow(df) < 2 && all(is.na(df[1,c(2,3,5)])) && all(df[1,c(1,4,6,7)] == "")){
+    return(TRUE)
+  } else {
+    return(FALSE)
+  }
+})
+
+
+### class tas.aid.tables ###
+
+#' @aliases NULL
+#' @describeIn isEmpty-tasAnalyzer Methods for class tas.aid.tables
+#' @importMethodsFrom S4Vectors isEmpty
+#' @export
+setMethod("isEmpty", "tas.aid.tables", function(x) {
+  empty.all <- logical()
+  for (i in slotNames(x)){
+    if (nrow(slot(x, i)) > 1){
+      empty.all <- c(empty.all, FALSE)
+    } else {
+      empty <- logical()
+      empty <- c(empty, slot(x, i)[1,1] == "")
+      for (j in 2:ncol(slot(x, i))) {
+        empty <- c(empty, is.na(slot(x, i)[1,j]))
+      }
+      if (all(empty)) {
+        empty.all <- c(empty.all, TRUE)
+      } else {
+        empty.all <- c(empty.all, FALSE)
+      }
+    }
+  }
+  if (all(empty.all)){
+    return(TRUE)
+  } else {
+    return(FALSE)
+  }
+})
+
+
+### class tas.dna.repair ###
+
+#' @aliases NULL
+#' @describeIn isEmpty-tasAnalyzer Methods for class tas.dna.repair
+#' @importMethodsFrom S4Vectors isEmpty
+#' @export
+setMethod("isEmpty", "tas.dna.repair", function(x) {
+  empty <- logical()
+  for (i in slotNames(x)) {
+    empty <- c(empty, is.na(slot(x, i)))
+  }
+  if (all(empty)) {
+    return(TRUE)
+  } else {
+    return(FALSE)
+  }
+})
+
+
+### class tas.alignment ###
+
+#' @aliases NULL
+#' @describeIn isEmpty-tasAnalyzer Methods for class tas.alignment
+#' @importMethodsFrom S4Vectors isEmpty
+#' @export
+setMethod("isEmpty", "tas.alignment", function(x) {
+  n <- slotNames(x)
+  len <- numeric(length(n))
+  for (i in n){
+    len <- c(len, length(slot(x, i)) )
+  }
+  if (sum(len) == 0){
+    return(TRUE)
+  } else {
+    return(FALSE)
+  }
+})
+
+
+### class AmpliconSequencing ###
+
+#' @aliases NULL
+#' @describeIn isEmpty-tasAnalyzer Methods for class AmpliconSequencing
+#' @importMethodsFrom S4Vectors isEmpty
+#' @export
+setMethod("isEmpty", "AmpliconSequencing", function(x) {
+  empty <- logical()
+  for (i in slotNames(x)) {
+    empty <- c(empty, isEmpty(slot(x, i)))
+  }
+  if (all(empty)) {
+    return(TRUE)
+  } else {
+    return(FALSE)
+  }
+})
+
+
+
+
+
+# ------
+# show()
+# ------
+
+
+### class tas.object.settings ###
+
+#' @export
+setMethod("show", "tas.object.settings", function(object) {
+  cat("Settings for ", object@Name, ":\n",
+      "IsAntibody : ", object@IsAntibody, "\n",
+      "MeasureSHM : ", object@MeasureSHM, "\n",
+      "MeasureDNARepairTypes : ", object@MeasureDNARepairTypes, "\n", sep = "")
+  for (i in slotNames(object)[6:12]) {
+    s <- slot(object, i)
+    if (s != ""){
+      s <- charDisplayTrim(s)
+      cat("",i,": ", s, "\n", sep = "")}
+  }
+  for (i in slotNames(object)[13:15]) {
+    if (!is.na(slot(object, i))){cat("",i,": ", slot(object, i), "\n", sep = "")}
+  }
+  if (!all(is.na(object@AntibodyRegions))){
+    cat("Antibody region coordinates:\n",
+        " FR1: ", object@AntibodyRegions["FR1Start"], "\n",
+        "CDR1: ", object@AntibodyRegions["CDR1Start"], "\n",
+        " FR2: ", object@AntibodyRegions["FR2Start"], "\n",
+        "CDR2: ", object@AntibodyRegions["CDR2Start"], "\n",
+        " FR3: ", object@AntibodyRegions["FR3Start"], "\n",
+        "CDR3: ", object@AntibodyRegions["CDR3Start"], "\n",
+        " FR4: ", object@AntibodyRegions["FR4Start"], "\n",
+        " End: ", object@AntibodyRegions["FR4End"], "\n", sep = "")
+  }
+})
+
+
+### class tas.mutations ###
+
+#' @export
+setMethod("show", "tas.mutations", function(object) {
+  cat("DNA mutation tables:\n")
+  for (i in slotNames(object)[1:3]) {
+    df <- slot(object, i)
+    if (!isEmpty(df)) {
+      cat("",i,":\n", sep = "")
+      if (nrow(df) <= 6){
+        show(df)
+      } else {
+        show(df[1:3,])
+        cat("\n          ..........          \n\n")
+        show(df[(nrow(df)-2):nrow(df),])
+      }
+    }
+    cat("\n")
+  }
+  cat("Percent mutation for different motifs:\n")
+  for (i in names(object@MotifSums)) {
+    if (!is.na(object@MotifSums[i])) {
+      cat("",i,": ", object@MotifSums[i],"%\n", sep = "")
+    }
+  }
+})
+
+
+### class tas.sequences ###
+
+#' @export
+setMethod("show", "tas.sequences", function(object) {
+  df <- object@Table
+  if (nrow(df) <= 6){
+    for (i in colnames(df)) {
+      if (class(df[,i]) == "character"){
+        df[,i] <- sapply(df[,i], charDisplayTrim, USE.NAMES = FALSE)
+      }
+    }
+    show(df)
+  } else {
+    df <- rbind(df[1:3,], df[(nrow(df)-2):nrow(df),])
+    for (i in colnames(df)) {
+      if (class(df[,i]) == "character"){
+        df[,i] <- sapply(df[,i], charDisplayTrim, USE.NAMES = FALSE)
+      }
+    }
+    show(df[1:3,])
+    cat("----------\n")
+    show(df[(nrow(df)-2):nrow(df),])
+  }
+})
+
+
+### class tas.aid.tables ###
+
+#' @export
+setMethod("show", "tas.aid.tables", function(object) {
+  for (i in slotNames(object)) {
+    cat("Slot",i,":\n", sep = "")
+
+    df <- slot(object, i)
+    if (nrow(df) <= 6){
+      show(df)
+    } else {
+      df <- rbind(df[1:3,], df[(nrow(df)-2):nrow(df),])
+      show(df[1:3,])
+      cat("\n               .........................               \n\n")
+      show(df[(nrow(df)-2):nrow(df),])
+    }
+
+    cat("\n\n")
+  }
+})
+
+
+### class tas.dna.repair ###
+
+#' @export
+setMethod("show", "tas.dna.repair", function(object) {
+  cat("Inferred DNA repair pathways:\n")
+  for (i in slotNames(object)) {
+    if (!is.na(slot(object, i))){
+      cat(i,": ", slot(object, i), "%\n", sep = "")
+    }
+  }
+})
+
+
+### class AmpliconSequencing ###
+
+#' @export
+setMethod("show", "AmpliconSequencing", function(object) {
+  cat("An S4 object of class AmpliconSequencing:\n\n")
+  for (i in slotNames(object)[1:5]) {
+    cat(i,":\n", sep = "")
+    o <- slot(object, i)
+    if (isEmpty(o)) {
+      cat("Empty\n\n")
+    } else {
+      cat("Access using @",i,"\n\n")
+    }
+  }
+  show(object@Settings)
+})
 
 
 

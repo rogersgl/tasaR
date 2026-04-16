@@ -4,11 +4,18 @@
 \alias{getSequenceTable}
 \alias{getSequenceTable,tas.sequences-method}
 \alias{getSequenceTable,AmpliconSequencing-method}
+\alias{getSequenceSupplemental}
+\alias{getSequenceSupplemental,tas.sequences-method}
+\alias{getSequenceSupplemental,AmpliconSequencing-method}
 \title{Retrieve table of sequences}
 \usage{
 \S4method{getSequenceTable}{tas.sequences}(object)
 
 \S4method{getSequenceTable}{AmpliconSequencing}(object)
+
+\S4method{getSequenceSupplemental}{tas.sequences}(object)
+
+\S4method{getSequenceSupplemental}{AmpliconSequencing}(object)
 }
 \arguments{
 \item{object}{S4 object of class tas.sequences or AmpliconSequencing}
@@ -22,7 +29,17 @@ Extracts a table (data.frame) of sequences, including sequence quantification an
 
 \item \code{getSequenceTable(AmpliconSequencing)}: Method for class AmpliconSequencing
 
+\item \code{getSequenceSupplemental(tas.sequences)}: Method for class tas.sequences
+
+\item \code{getSequenceSupplemental(AmpliconSequencing)}: Method for class AmpliconSequencing
+
+}}
+\section{Functions}{
+\itemize{
+\item \code{getSequenceSupplemental()}: Extracts a data.table linking sequences, Illumina read IDs, and UMIs (if applicable)
+
 }}
 \examples{
 getSequenceTable(object)
+getSequenceSupplemental(object)
 }

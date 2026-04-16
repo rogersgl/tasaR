@@ -26,27 +26,22 @@ LazyData: true
 Imports: 
     ape,
     BiocManager,
-    Biostrings,
     ggmsa,
     ggplot2,
     ggseqlogo,
     msa,
-    openxlsx,
-    parallel,
-    parallelly,
-    pwalign,
     R.utils,
-    S4Vectors,
     seqinr,
-    ShortRead,
-    stringr,
-    data.table,
     zip,
-    shiny,
-    bslib,
-    shinyjs,
-    spsComps,
     markdown
+Depends:
+    ShortRead,
+    Biostrings,
+    data.table,
+    stringr,
+    openxlsx,
+    pwalign,
+    S4Vectors
 RoxygenNote: 7.3.3
 Suggests: 
     testthat (>= 3.0.0)

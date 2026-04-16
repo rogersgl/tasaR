@@ -2,10 +2,11 @@
 % Please edit documentation in R/AmpliconSequencing.R
 \name{getSettings}
 \alias{getSettings}
+\alias{getSettings,tas.object.settings-method}
 \alias{getSettings,AmpliconSequencing-method}
 \title{Retrieve object settings}
 \usage{
-\S4method{getSettings}{AmpliconSequencing}(object)
+\S4method{getSettings}{tas.object.settings}(object)
 
 \S4method{getSettings}{AmpliconSequencing}(object)
 }
@@ -17,7 +18,7 @@ Extracts a list of tasAnalyzer settings from an S4 object of class tas.object.se
 }
 \section{Methods (by class)}{
 \itemize{
-\item \code{getSettings(AmpliconSequencing)}: Method for class AmpliconSequencing
+\item \code{getSettings(tas.object.settings)}: Method for class tas.object.settings
 
 \item \code{getSettings(AmpliconSequencing)}: Method for class AmpliconSequencing
 
