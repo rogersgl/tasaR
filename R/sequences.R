@@ -1,3 +1,7 @@
+###############################################################################
+# Helper functions
+# ------
+
 
 tas_filter2 <- function(reads, settings) {
   fwd <- DNAString(str_c(settings@ForwardExtension, settings@ForwardPrimer))
@@ -20,7 +24,7 @@ tas_filter2 <- function(reads, settings) {
 
 tas_sequence_table2 <- function(reads.filtered, settings) {
   if (tolower(settings@ForwardExtensionType) == "umi" && tolower(settings@ReverseExtensionType) == "umi") {
-    stop("tasa does not currently support dual UMIs on both ends of the amplicon.")
+    stop("tasaR does not currently support dual UMIs on both ends of the amplicon.")
   } else if (tolower(settings@ForwardExtensionType) == "umi") {
     umi.pos <- data.frame(start = 1, end = Biostrings::nchar(settings@ForwardExtension))
   } else if (tolower(settings@ReverseExtensionType) == "umi") {
@@ -35,38 +39,38 @@ tas_sequence_table2 <- function(reads.filtered, settings) {
     } else {
       umi_temp <- ShortRead::sread(narrow(reads.filtered, start = umi.pos$start, end = umi.pos$end))
     }
-  cat("Binning UMIs...\n")
-  # extract id, seq, umi from Reads.Filtered.List and remove any sequences containing N called nt's
-  id_temp <- as.character(ShortRead::id(reads.filtered))
-  seq_temp <- ShortRead::sread(narrow(reads.filtered ,start = settings@InsertStart, end = settings@InsertEnd))
-  n_idx <- which(elementNROWS(Biostrings::vmatchPattern("n", seq_temp)) == 0)
-  umi_temp <- as.character(umi_temp[n_idx])
-  seq_temp <- as.character(seq_temp[n_idx])
-  id_temp <- id_temp[n_idx]
+    cat("Binning UMIs...\n")
+    # extract id, seq, umi from Reads.Filtered.List and remove any sequences containing N called nt's
+    id_temp <- as.character(ShortRead::id(reads.filtered))
+    seq_temp <- ShortRead::sread(narrow(reads.filtered ,start = settings@InsertStart, end = settings@InsertEnd))
+    n_idx <- which(elementNROWS(Biostrings::vmatchPattern("n", seq_temp)) == 0)
+    umi_temp <- as.character(umi_temp[n_idx])
+    seq_temp <- as.character(seq_temp[n_idx])
+    id_temp <- id_temp[n_idx]
 
-  #use data.table to bin by UMI, remove UMIs with <3 reads
-  dt_temp <- data.table::data.table(umi=umi_temp, seq=seq_temp, id=id_temp)
-  dt_id_umi <- dt_temp[, .(id = list(id), count=length(id)), by="umi"]
-  dt_id_umi <- dt_id_umi[dt_id_umi$count>=3,]
+    #use data.table to bin by UMI, remove UMIs with <3 reads
+    dt_temp <- data.table::data.table(umi=umi_temp, seq=seq_temp, id=id_temp)
+    dt_id_umi <- dt_temp[, .(id = list(id), count=length(id)), by="umi"]
+    dt_id_umi <- dt_id_umi[dt_id_umi$count>=3,]
 
-  #group sequences
-  dt_id_seq <- dt_temp[, .(id = list(id),count=length(id)), by="seq"]
+    #group sequences
+    dt_id_seq <- dt_temp[, .(id = list(id),count=length(id)), by="seq"]
 
-  #ungroup umis and sequences while retaining grouping information in umi or seq.group columns
-  dt_id_umi_match <- data.table::data.table(umi = rep(dt_id_umi$umi,dt_id_umi$count), umi.id = unlist(dt_id_umi$id))
-  dt_id_seq_match <- data.table::data.table(seq.group = rep(1:nrow(dt_id_seq),dt_id_seq$count), seq.id = unlist(dt_id_seq$id), seq = rep(dt_id_seq$seq,dt_id_seq$count))
+    #ungroup umis and sequences while retaining grouping information in umi or seq.group columns
+    dt_id_umi_match <- data.table::data.table(umi = rep(dt_id_umi$umi,dt_id_umi$count), umi.id = unlist(dt_id_umi$id))
+    dt_id_seq_match <- data.table::data.table(seq.group = rep(1:nrow(dt_id_seq),dt_id_seq$count), seq.id = unlist(dt_id_seq$id), seq = rep(dt_id_seq$seq,dt_id_seq$count))
 
-  #merge umi and seq data tables based on FASTQ IDs
-  dt_id_merge <- data.table::merge.data.table(dt_id_umi_match, dt_id_seq_match, by.x="umi.id", by.y="seq.id")
+    #merge umi and seq data tables based on FASTQ IDs
+    dt_id_merge <- data.table::merge.data.table(dt_id_umi_match, dt_id_seq_match, by.x="umi.id", by.y="seq.id")
 
-  #re-group merged data.tables by umi
-  dt_merge_group <- dt_id_merge[, .(seq = umi_pileup(seq), count = length(seq.group), id = list(umi.id)), by="umi"]
-  setorder(dt_merge_group,-count)
-  dt_merge_group <- dt_merge_group[seq != "Rejected"]
-  dt <- dt_merge_group[, .(N = .N, umis = list(umi), ids = list(id)), by = seq]
-  setorder(dt, -N)
+    #re-group merged data.tables by umi
+    dt_merge_group <- dt_id_merge[, .(seq = umi_pileup(seq), count = length(seq.group), id = list(umi.id)), by="umi"]
+    setorder(dt_merge_group,-count)
+    dt_merge_group <- dt_merge_group[seq != "Rejected"]
+    dt <- dt_merge_group[, .(N = .N, umis = list(umi), ids = list(id)), by = seq]
+    setorder(dt, -N)
 
-##########
+    ##########
 
   } else { #make dt if no UMIs
     cat("Binning sequences...\n")
@@ -83,7 +87,7 @@ tas_sequence_table2 <- function(reads.filtered, settings) {
     dt <- cbind(dt, data.table(umis = list(NA)))
   }
 
-##########
+  ##########
 
   cat("Labeling DNA mutations...\n")
   Reference.Sequence.DNA <- Biostrings::DNAString(settings@ReferenceSequence)
@@ -107,7 +111,7 @@ tas_sequence_table2 <- function(reads.filtered, settings) {
   ins.temp <- insertion(Pairwise.Aligned.DNA)
   ins.midx <- which(dt.indel$iNum>1)
   dt.indel$iSize[ins.midx] <- lapply(ins.midx, function(x){
-        str_flatten(str_c("+", ins.temp[[x]]@width), collapse = ", ")
+    str_flatten(str_c("+", ins.temp[[x]]@width), collapse = ", ")
   })
 
   # concatenate multilple deletions, including from ends
@@ -156,7 +160,7 @@ tas_sequence_table2 <- function(reads.filtered, settings) {
   dt <- cbind(dt, data.table(Indels = str.indel, BasesChanged = vec.mm))
 
 
-##########
+  ##########
 
   cat("Labeling protien mutations...\n")
   Reads.Unique.Protein <- suppressWarnings(translate(Reads.Unique.DNA))
@@ -202,7 +206,7 @@ tas_sequence_table2 <- function(reads.filtered, settings) {
 
   dt <- cbind(dt, data.table(AA = aa, aa.mut))
 
-##########
+  ##########
 
   new("tas.sequences", Table = data.frame(Sequences = dt$seq,
                                           Count = dt$N,
@@ -214,4 +218,37 @@ tas_sequence_table2 <- function(reads.filtered, settings) {
       Supplemental = data.table(data.table(Sequence = dt$seq,
                                            UMIs = dt$umis,
                                            IDs = dt$ids)))
+}
+
+
+###############################################################################
+# buildSequenceTable()
+# --------------------
+
+#' Make a labeled table of sequences
+#'
+#' @description
+#' Uses the settings specified by a tas.settings object, including a file path to a merged .fastq file, to generate a labeled table of sequences, with counts, frequencies, DNA mutations, and AA mutations annotated.
+#'
+#' Will use barcodes for sequence filtering/demultiplexing if provided. Will bin sequences and count by UMIs if provided (only supports 1 UMI currently). Otherwise, will bin sequences and filter based on the global setting tasGlobalSettings$read.frequency.limit (the minimum % to accept a sequence).
+#'
+#' @param settings An object of S4 class tas.settings
+#'
+#' @returns An S4 object of class tas.sequences
+#' @export
+#'
+#' @examples
+#' buildSequenceTable(settings)
+buildSequenceTable <- function(settings) {
+  filter.counts <- numeric()
+  if (!file.exists(settings@MergedFASTQPath)) {stop("FASTQ file not found.")}
+  cat("Reading .fastq file...\n")
+  reads <- ShortRead::readFastq(settings@MergedFASTQPath)
+  filter.counts <- c(filter.counts, Merged = length(reads))
+  cat("Filtering reads...\n")
+  reads.filtered <- tas_filter2(reads, settings)
+  filter.counts <- c(filter.counts, Filtered = length(reads.filtered))
+  reads <- NULL
+  cat("Building sequence table...\n")
+  tas_sequence_table2(reads.filtered, settings)
 }
