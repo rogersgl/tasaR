@@ -1,7 +1,7 @@
-Package: tasAnalyzer
+Package: tasa
 Type: Package
-Title: Analyzes Targeted Amplicon Sequencing Experiments
-Version: 0.1.0
+Title: Tools for Amplicon Sequencing Analysis
+Version: 0.2.0-a
 Authors@R: c(
     person(
       "Geoffrey", "Rogers",

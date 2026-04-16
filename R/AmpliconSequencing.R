@@ -218,7 +218,7 @@ tasGlobalSettings <- new("tas.global.settings",
 
 
 #' @title S4 class tas.object.settings
-#' @description S4 object containing analysis settings for tasAnalyzer
+#' @description S4 object containing analysis settings for tasa
 #' @slot Name character vector of sequence name
 #' @slot IsAntibody logical vector if sequence is an antibody
 #' @slot MeasureSHM logical vector defining whether to measure somatic hypermutation (SHM)
@@ -609,7 +609,7 @@ setValidity("tas.alignment", function(object) {
 
 #' @title S4 class AmpliconSequencing
 #'
-#' @description S4 class that holds analysis results from tasAnalyzer
+#' @description S4 class that holds analysis results from tasa
 #'
 #' @slot Alignment S4 object of class \linkS4class{tas.alignment}
 #' @slot Sequences S4 object of class \linkS4class{tas.sequences}
@@ -1128,7 +1128,7 @@ setMethod("getWRCYTable", signature(object = "AmpliconSequencing"), function(obj
 #' Retrieve object settings
 #'
 #' @description
-#' Extracts a list of tasAnalyzer settings from an S4 object of class tas.object.settings or its parent class AmpliconSequencing.
+#' Extracts a list of tasa settings from an S4 object of class tas.object.settings or its parent class AmpliconSequencing.
 #'
 #' @param object S4 object of class tas.object.settings or AmpliconSequencing
 #' @usage NULL
@@ -1158,10 +1158,10 @@ setMethod("getSettings", signature(object = "AmpliconSequencing"), function(obje
 # Setter methods
 # --------------
 
-#' Read settings for tasAnalyzer
+#' Read settings for tasa
 #'
 #' @description
-#' The tasAnalyzer package has a relatively complex set of settings that must be defined for each sample. This function reads those settings from either a .csv file on disk or an R object (list/data.frame) and generates an appropriate S4 object of class tas.object.settings.
+#' The tasa package has a relatively complex set of settings that must be defined for each sample. This function reads those settings from either a .csv file on disk or an R object (list/data.frame) and generates an appropriate S4 object of class tas.object.settings.
 #'
 #' @param x The object to be analyzed. May be a file path ("./X.csv"), or a data.frame or list with the appropriate names and classes for the object. Function should automatically detect which type input 'x' is.
 #' @param row If using a .csv input, the row number in the sheet that contains the information for this sample. Use the **displayed number**, the function will account for and remove the header row during processing.
@@ -1239,18 +1239,17 @@ buildSequenceTable <- function(settings) {
 
 ### main definition page ###
 
-#' @title isEmpty methods for package tasAnalyzer
-#' @description Extends the S4 function isEmpty to detect whether S4 classes in tasAnalyzer are empty, holding only initialized values.
-#' @param x An S4 object from tasAnalyzer
+#' @title isEmpty methods for package tasa
+#' @description Extends the S4 function isEmpty to detect whether S4 classes in tasa are empty, holding only initialized values.
+#' @param x An S4 object from tasa
 #' @importMethodsFrom S4Vectors isEmpty
-#' @name isEmpty-tasAnalyzer
-#' @aliases isEmpty-tasAnalyzer
+#' @name isEmpty,tasa-method
 NULL
 
 ### class tas.object.settings ###
 
 #' @aliases NULL
-#' @describeIn isEmpty-tasAnalyzer Method for class tas.object.settings
+#' @describeIn isEmpty,tasa-method Method for class tas.object.settings
 #' @importMethodsFrom S4Vectors isEmpty
 #' @export
 setMethod("isEmpty", "tas.object.settings", function(x) {
@@ -1278,7 +1277,7 @@ setMethod("isEmpty", "tas.object.settings", function(x) {
 ### class tas.mutations ###
 
 #' @aliases NULL
-#' @describeIn isEmpty-tasAnalyzer Methods for class tas.mutations
+#' @describeIn isEmpty,tasa-method Methods for class tas.mutations
 #' @importMethodsFrom S4Vectors isEmpty
 #' @export
 setMethod("isEmpty", "tas.mutations", function(x) {
@@ -1299,7 +1298,7 @@ setMethod("isEmpty", "tas.mutations", function(x) {
 ### class tas.sequences ###
 
 #' @aliases NULL
-#' @describeIn isEmpty-tasAnalyzer Methods for class tas.sequences
+#' @describeIn isEmpty,tasa-method Methods for class tas.sequences
 #' @importMethodsFrom S4Vectors isEmpty
 #' @export
 setMethod("isEmpty", "tas.sequences", function(x) {
@@ -1315,7 +1314,7 @@ setMethod("isEmpty", "tas.sequences", function(x) {
 ### class tas.aid.tables ###
 
 #' @aliases NULL
-#' @describeIn isEmpty-tasAnalyzer Methods for class tas.aid.tables
+#' @describeIn isEmpty,tasa-method Methods for class tas.aid.tables
 #' @importMethodsFrom S4Vectors isEmpty
 #' @export
 setMethod("isEmpty", "tas.aid.tables", function(x) {
@@ -1347,7 +1346,7 @@ setMethod("isEmpty", "tas.aid.tables", function(x) {
 ### class tas.dna.repair ###
 
 #' @aliases NULL
-#' @describeIn isEmpty-tasAnalyzer Methods for class tas.dna.repair
+#' @describeIn isEmpty,tasa-method Methods for class tas.dna.repair
 #' @importMethodsFrom S4Vectors isEmpty
 #' @export
 setMethod("isEmpty", "tas.dna.repair", function(x) {
@@ -1366,7 +1365,7 @@ setMethod("isEmpty", "tas.dna.repair", function(x) {
 ### class tas.alignment ###
 
 #' @aliases NULL
-#' @describeIn isEmpty-tasAnalyzer Methods for class tas.alignment
+#' @describeIn isEmpty,tasa-method Methods for class tas.alignment
 #' @importMethodsFrom S4Vectors isEmpty
 #' @export
 setMethod("isEmpty", "tas.alignment", function(x) {
@@ -1386,7 +1385,7 @@ setMethod("isEmpty", "tas.alignment", function(x) {
 ### class AmpliconSequencing ###
 
 #' @aliases NULL
-#' @describeIn isEmpty-tasAnalyzer Methods for class AmpliconSequencing
+#' @describeIn isEmpty,tasa-method Methods for class AmpliconSequencing
 #' @importMethodsFrom S4Vectors isEmpty
 #' @export
 setMethod("isEmpty", "AmpliconSequencing", function(x) {

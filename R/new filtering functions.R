@@ -20,7 +20,7 @@ tas_filter2 <- function(reads, settings) {
 
 tas_sequence_table2 <- function(reads.filtered, settings) {
   if (tolower(settings@ForwardExtensionType) == "umi" && tolower(settings@ReverseExtensionType) == "umi") {
-    stop("tasAnalyzer does not currently support dual UMIs on both ends of the amplicon.")
+    stop("tasa does not currently support dual UMIs on both ends of the amplicon.")
   } else if (tolower(settings@ForwardExtensionType) == "umi") {
     umi.pos <- data.frame(start = 1, end = Biostrings::nchar(settings@ForwardExtension))
   } else if (tolower(settings@ReverseExtensionType) == "umi") {
