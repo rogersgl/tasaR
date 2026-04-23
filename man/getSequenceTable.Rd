@@ -4,6 +4,12 @@
 \alias{getSequenceTable}
 \alias{getSequenceTable,tas.sequences-method}
 \alias{getSequenceTable,AmpliconSequencing-method}
+\alias{getSequencesDNA}
+\alias{getSequencesDNA,tas.sequences-method}
+\alias{getSequencesDNA,AmpliconSequencing-method}
+\alias{getSequencesAA}
+\alias{getSequencesAA,tas.sequences-method}
+\alias{getSequencesAA,AmpliconSequencing-method}
 \alias{getSequenceSupplemental}
 \alias{getSequenceSupplemental,tas.sequences-method}
 \alias{getSequenceSupplemental,AmpliconSequencing-method}
@@ -12,6 +18,14 @@
 \S4method{getSequenceTable}{tas.sequences}(object)
 
 \S4method{getSequenceTable}{AmpliconSequencing}(object)
+
+\S4method{getSequencesDNA}{tas.sequences}(object)
+
+\S4method{getSequencesDNA}{AmpliconSequencing}(object)
+
+\S4method{getSequencesAA}{tas.sequences}(object)
+
+\S4method{getSequencesAA}{AmpliconSequencing}(object)
 
 \S4method{getSequenceSupplemental}{tas.sequences}(object)
 
@@ -29,6 +43,14 @@ Extracts a table (data.frame) of sequences, including sequence quantification an
 
 \item \code{getSequenceTable(AmpliconSequencing)}: Method for class AmpliconSequencing
 
+\item \code{getSequencesDNA(tas.sequences)}: Method for class tas.sequences
+
+\item \code{getSequencesDNA(AmpliconSequencing)}: Method for class AmpliconSequencing
+
+\item \code{getSequencesAA(tas.sequences)}: Method for class tas.sequences
+
+\item \code{getSequencesAA(AmpliconSequencing)}: Method for class AmpliconSequencing
+
 \item \code{getSequenceSupplemental(tas.sequences)}: Method for class tas.sequences
 
 \item \code{getSequenceSupplemental(AmpliconSequencing)}: Method for class AmpliconSequencing
@@ -36,10 +58,16 @@ Extracts a table (data.frame) of sequences, including sequence quantification an
 }}
 \section{Functions}{
 \itemize{
-\item \code{getSequenceSupplemental()}: Extracts a data.table linking sequences, Illumina read IDs, and UMIs (if applicable)
+\item \code{getSequencesDNA()}: Extracts a character vector of unique DNA sequences
+
+\item \code{getSequencesAA()}: Extracts a character vector of unique protein sequences
+
+\item \code{getSequenceSupplemental()}: Extracts a data.table with additional sequence information and metadata
 
 }}
 \examples{
 getSequenceTable(object)
+getSequencesDNA(object)
+getSequencesAA(object)
 getSequenceSupplemental(object)
 }

@@ -20,5 +20,9 @@ S4 object of analyzed sequence table
 \item{AA}{character vector of protein sequences}
 \item{ProteinMutation}{character vector annotating protein mutations in the sequence}
 }}
+
+\item{\code{Alignments}}{A list of DNA and protein (AA) pairwise alignments}
+
+\item{\code{Supplemental}}{A data.table of DNA sequences paired with UMIs and Illumina sequence IDs}
 }}
 

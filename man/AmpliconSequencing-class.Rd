@@ -3,6 +3,7 @@
 \docType{class}
 \name{AmpliconSequencing-class}
 \alias{AmpliconSequencing-class}
+\alias{alias}
 \title{S4 class AmpliconSequencing}
 \description{
 S4 class that holds analysis results from tasaR
@@ -10,37 +11,33 @@ S4 class that holds analysis results from tasaR
 \section{Slots}{
 
 \describe{
-\item{\code{Alignment}}{S4 object of class \linkS4class{tas.alignment}}
+\item{\code{Sequences}}{S4 object of class \code{\linkS4class{tas.sequences}}}
 
-\item{\code{Sequences}}{S4 object of class \linkS4class{tas.sequences}}
+\item{\code{Mutations}}{S4 object of class \code{\linkS4class{tas.mutations}}}
 
-\item{\code{Mutations}}{S4 object of class \linkS4class{tas.mutations}}
+\item{\code{MutationTypes}}{S4 object of class \code{\linkS4class{tas.dna.repair}}}
 
-\item{\code{MutationTypes}}{S4 object of class \linkS4class{tas.dna.repair}}
-
-\item{\code{AIDTables}}{S4 object of class \linkS4class{tas.aid.tables}}
-
-\item{\code{Settings}}{S4 object of class \linkS4class{tas.object.settings}}
+\item{\code{Settings}}{S4 object of class \code{\linkS4class{tas.object.settings}}}
 }}
 
 \section{List of accessor functions}{
 
 
 \describe{
-\item{\code{getAlignments()}}{returns S4 object of class tas.alignment}
+\item{\code{getAlignments()}}{returns list of DNA and AA alignments}
 \item{\code{getDNAalign()}}{returns S4 object of DNA pairwise alignment}
 \item{\code{getAAalign()}}{returns S4 object of protein pairwise alignment}
 \item{\code{getSequenceTable()}}{returns data.frame table of sequences}
-\item{\code{getMutations()}}{returns S4 object of class tas.mutations}
+\item{\code{getMutations()}}{returns list comprising the Mutations slot}
 \item{\code{getMutationDistribution()}}{returns data.frame table of positions and frequencies all mutations}
 \item{\code{getMutationDistributionCytosine()}}{returns data.frame table of positions and frequences of all mutations at AID cytosines}
 \item{\code{getMutationDistributionNonCytosine()}}{returns data.frame table of positions and frequences of all mutations at all bases that are not AID cytosines}
 \item{\code{getMutationMotifSums()}}{returns numeric vector summarizing mutations across different patterns and denominators}
 \item{\code{getMutationTypes()}}{returns numeric vector predicting DNA repair pathway usage}
-\item{\code{getAIDTables()}}{returns S4 object of class tas.aid.tables}
+\item{\code{getAIDTables()}}{returns list of AID cytosine mutation summary tables}
 \item{\code{getWRCHTable()}}{returns data.frame table of positions and mutations of AID cytosines and their motifs for pattern WRCH}
 \item{\code{getWRCYTable()}}{returns data.frame table of positions and mutations of AID cytosines and their motifs for pattern WRCY}
-\item{\code{getSettings()}}{returns S4 object of class tas.object.settings}
+\item{\code{getSettings()}}{returns list of object-specific tasaR settings used for analysis}
 }
 }
 

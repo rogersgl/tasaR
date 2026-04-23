@@ -1,12 +1,12 @@
+#' @include helper-fns.R
+NULL
+
 ###############################################################################
 # S4 class definitions and hierarchy
 # -------
 # AmpliconSequencing
-#   |- Alignment (S4)
-#       |- DNA (PairwiseAlignmentsSingleSubject)
-#       |- AA (PairwiseAlignmentsSingleSubject)
-#   |- Sequences (S4)
-#       |- Table
+#   |- Sequences (S4) [tas.sequences]
+#       |- Table (data.frame)
 #         |- Sequences (character)
 #         |- Count (numeric)
 #         |- Percent (numeric)
@@ -14,49 +14,48 @@
 #         |- BasesChanged (character)
 #         |- AA (character)
 #         |- ProteinMutation (character)
-#       |- Supplemental
+#       |- Supplemental (data.table)
 #         |- Sequence (character)
 #         |- UMIs (list)
 #         |- IDs (list)
-#   |- Mutations (S4)
-#       |- AllMutations (data.frame)
-#       |- CytosineMutations (data.frame)
-#       |- NonCytosineMutations (data.frame)
-#       |- MotifSums (numeric)
-#           |- TotalPercentMutated (numeric)
-#           |- TotalPercentMutatedInMotif (numeric)
-#           |- TotalPercentMutatedInCytosine (numeric)
-#           |- MotifMutationAverage (numeric)
-#           |- MotifMutationFrequencyofTotal (numeric)
-#           |- MotifMutationNonCAverage (numeric)
-#           |- MotifMutationNonCFrequencyOfTotal (numeric)
-#           |- CytosineMutationAverage (numeric)
-#           |- NonCytosineMutationAverage (numeric)
-#           |- CytosineMutationFrequencyOfTotal (numeric)
-#           |- CytosineMutationFrequencyOfMotif (numeric)
-#   |- MutationTypes (S4)
+#       |- Alignment (list)
+#          |- DNA (PairwiseAlignmentsSingleSubject)
+#          |- AA (PairwiseAlignmentsSingleSubject)
+#   |- Mutations (S4) [tas.mutations]
+#       |- DNA (list)
+#          |- AllMutations (data.frame)
+#          |- CytosineMutations (data.frame)
+#          |- NonCytosineMutations (data.frame)
+#          |- MotifSums (numeric)
+#             |- AverageAllMutations (numeric)
+#             |- AverageCytosineMutations (numeric)
+#             |- AverageNonCytosineMutations (numeric)
+#             |- FrequencyOfAllMutationsAtCytosines (numeric)
+#             |- FrequencyOfAllMutationsAtNonCytosines (numeric)
+#       |- AA (list)
+#          |- AllMutations (data.frame)
+#          |- MutationMatrix (matrix)
+#       |- AIDTables (list)
+#          |- WRCH (data.frame)
+#             |- Motif (character)
+#             |- Start (integer)
+#             |- End (integer)
+#             |- Cytosine (numeric)
+#             |- CytosineMutationFrequency (numeric)
+#         |- WRCY (data.frame)
+#             |- Motif (character)
+#             |- Start (integer)
+#             |- End (integer)
+#             |- Cytosine (numeric)
+#             |- CytosineMutationFrequency (numeric)
+#   |- MutationTypes (S4) [tas.dna.repair]
 #       |- WT (numeric)
 #       |- NHEJ (numeric)
 #       |- MMEJ (numeric)
 #       |- BaseChange (numeric)
 #       |- IndelBaseChange (numeric)
 #       |- Other (numeric)
-#   |- AIDTables (S4)
-#       |- WRCH (data.frame)
-#           |- Motif (character)
-#           |- Start (integer)
-#           |- End (integer)
-#           |- Cytosine (integer)
-#           |- MotifMutagenesis (numeric)
-#           |- CytosineMutagenesis (numeric)
-#       |- WRCY (data.frame)
-#           |- Motif (character)
-#           |- Start (integer)
-#           |- End (integer)
-#           |- Cytosine (integer)
-#           |- MotifMutagenesis (numeric)
-#           |- CytosineMutagenesis (numeric)
-#   |- Settings (S4)
+#   |- Settings (S4) [tas.object.settings]
 #       |- Name (character)
 #       |- ReferenceSequence (character)
 #       |- IsAntibody (logical)
@@ -83,6 +82,8 @@
 #           |- FR4End (integer)
 # ------
 
+
+
 setRefClass("tas.global.settings", fields = list(max.deletion = "integer",
                                                  max.insertion = "integer",
                                                  read.frequency.limit = "numeric"))
@@ -102,8 +103,6 @@ tasGlobalSettings <- new("tas.global.settings",
 #' @description S4 object containing analysis settings for tasaR
 #' @slot Name character vector of sequence name
 #' @slot IsAntibody logical vector if sequence is an antibody
-#' @slot MeasureSHM logical vector defining whether to measure somatic hypermutation (SHM)
-#' @slot MeasureDNARepairTypes logical vector defining whether to measure DNA repair types
 #' @slot MergedFASTQPath character vector of file path to the merged paired-end FASTQ file to be analyzed
 #' @slot ReferenceSequence character vector of the reference (expected) amplicon sequence to be analyzed (do not include primers)
 #' @slot ForwardExtensionType character vector ("barcode", "umi", or "") of forward primer extension type (if any)
@@ -120,8 +119,6 @@ tasGlobalSettings <- new("tas.global.settings",
 #' @export
 setClass("tas.object.settings", slots = list(Name = "character",
                                              IsAntibody = "logical",
-                                             MeasureSHM = "logical",
-                                             MeasureDNARepairTypes = "logical",
                                              MergedFASTQPath = "character",
                                              ReferenceSequence = "character",
                                              ForwardExtensionType = "character",
@@ -136,8 +133,6 @@ setClass("tas.object.settings", slots = list(Name = "character",
                                              AntibodyRegions = "integer"),
          prototype = list(Name = "unknown",
                           IsAntibody = FALSE,
-                          MeasureSHM = FALSE,
-                          MeasureDNARepairTypes = FALSE,
                           MergedFASTQPath = "",
                           ReferenceSequence = "",
                           ForwardExtensionType = "",
@@ -205,55 +200,6 @@ setValidity("tas.object.settings", function(object) {
 
 
 
-# -------------
-# tas.mutations
-# -------------
-
-#' @title S4 class tas.mutations
-#' @description S4 object of sequence mutations by position
-#'
-#' @slot AllMutations data.frame showing position and frequency of mutations at all positions
-#' @slot CytosineMutations data.frame showing position and frequency of mutations at AID cytosines
-#' @slot NonCytosineMutations data.frame showing position and frequency of mutations at all positions that are not AID cytosines
-#' @slot MotifSums numeric vector summarizing the frequency of mutations among different motifs and denominators
-#'
-#' @importFrom S4Vectors isEmpty
-#'
-#' @export
-setClass("tas.mutations", slots = list(AllMutations = "data.frame",
-                                       CytosineMutations = "data.frame",
-                                       NonCytosineMutations = "data.frame",
-                                       MotifSums = "numeric"),
-         prototype = list(AllMutations = data.frame(Position = numeric(), MutationFrequency = numeric()),
-                          CytosineMutations = data.frame(Position = numeric(), MutationFrequency = numeric()),
-                          NonCytosineMutations = data.frame(Position = numeric(), MutationFrequency = numeric()),
-                          MotifSums = c(TotalPercentMutated = NA_real_,
-                                        TotalPercentMutatedInMotif = NA_real_,
-                                        TotalPercentMutatedInCytosine = NA_real_,
-                                        MotifMutationAverage = NA_real_,
-                                        MotifMutationFrequencyofTotal = NA_real_,
-                                        MotifMutationNonCAverage = NA_real_,
-                                        MotifMutationNonCFrequencyOfTotal = NA_real_,
-                                        CytosineMutationAverage = NA_real_,
-                                        NonCytosineMutationAverage = NA_real_,
-                                        CytosineMutationFrequencyOfTotal = NA_real_,
-                                        CytosineMutationFrequencyOfMotif = NA_real_)))
-
-
-setValidity("tas.mutations", function(object) {
-  for (i in slotNames(object)[1:3]) {
-    tdf <- slot(object,i)
-    if (ncol(tdf) != 2) {return(str_c("@",i," must have exactly 2 columns."))}
-    if (any(sapply(tdf, class) != "numeric")) {return(str_c("Columns in @",i," must be numeric vectors."))}
-    if (any(colnames(tdf) != c("Position", "MutationFrequency"))) {return(str_c("Columns in @",i," must be named 'Position' and 'MutationFrequency'."))}
-    if (length(tdf$Position) != length(tdf$MutationFrequency)) {return(str_c("Columns in @",i," must be of equal length."))}
-  }
-  if (!all(sapply(object@MotifSums, class)=="numeric") || !all(sapply(object@MotifSums, length)==1)) {return("MotifSums must a numeric vector and each entry must be of length = 1.")}
-  if (!all(is.na(object@MotifSums[i])) && any(object@MotifSums < 0)) {return("MotifSums values must be >= 0.")}
-
-  return(TRUE)
-})
-
 
 
 # -------------
@@ -274,12 +220,16 @@ setValidity("tas.mutations", function(object) {
 #'   \item{ProteinMutation}{character vector annotating protein mutations in the sequence}
 #' }
 #'
+#' @slot Alignments A list of DNA and protein (AA) pairwise alignments
+#' @slot Supplemental A data.table of DNA sequences paired with UMIs and Illumina sequence IDs
 #' @importFrom S4Vectors isEmpty
 #' @import data.table
 #'
 #' @export
 setClass("tas.sequences", slots = list(Table = "data.frame",
-                                       Supplemental = "data.table"),
+                                       Supplemental = "data.table",
+                                       Alignments = "list",
+                                       ReadCounts = "integer"),
          prototype = list(Table = data.frame(Sequences = "",
                                              Count = NA_real_,
                                              Percent = NA_real_,
@@ -287,72 +237,118 @@ setClass("tas.sequences", slots = list(Table = "data.frame",
                                              BasesChanged = NA_real_,
                                              AA = "",
                                              ProteinMutation = ""),
-                          Supplemental = data.table::data.table(Sequence = "",
+                          Supplemental = data.table::data.table(Index = NA_integer_,
                                                                 UMIs = list(),
-                                                                IDs = list())))
+                                                                IDs = list(),
+                                                                IndelStart = NA_real_,
+                                                                IndelType = NA_character_),
+                          Alignments = list(DNA = empty.pass(),
+                                            AA = empty.pass()),
+                          ReadCounts = NA_integer_))
+
 
 setValidity("tas.sequences", function(object) {
   if (ncol(object@Table) != 7) {return("tas.sequences must contain exactly 7 columns.")}
   if (any(colnames(object@Table) != c("Sequences", "Count", "Percent", "Indels", "BasesChanged", "AA", "ProteinMutation"))) {return("Column names in @Table are incorrect.")}
   if (any(grepl("[^ACGTMRWSYKVHDBN-]", object@Table$Sequences, ignore.case = TRUE))) {return("Sequences must be valid DNA sequences.")}
-  if (any(grepl("[^ARNDCQEGHILKMFPSTWYVUOBJZX*-]", object@Table$AA, ignore.case = TRUE))) {return("AA must be valid protein sequences.")}
-  if (any(colnames(object@Supplemental) != c("Sequence", "UMIs", "IDs"))) {return("Column names in @Supplemental are incorrect.")}
-  if (any(grepl("[^ACGTMRWSYKVHDBN-]", object@Supplemental$Sequence, ignore.case = TRUE))) {return("Sequence entries in @Supplemental must be valid DNA sequences.")}
+  if (any(grepl("[^ARNDCQEGHILKMFPSTWYVUOBJZX*+-]", object@Table$AA, ignore.case = TRUE))) {return("AA must be valid protein sequences.")}
+  if (any(colnames(object@Supplemental) != c("Index", "UMIs", "IDs", "IndelStart", "IndelType"))) {return("Column names in @Supplemental are incorrect.")}
 
+  if (all(names(object@Alignments) != c("DNA", "AA"))) {return("Invalid list names in @Alignments.")}
+  if (class(object@Alignments$DNA) != "PairwiseAlignmentsSingleSubject" || class(object@Alignments$AA) != "PairwiseAlignmentsSingleSubject") {return("Class of elements in @Alignments should be 'PairwiseAlignmentsSingleSubject'")}
+  if (length(object@Alignments$DNA) != length(object@Alignments$AA)) {return("DNA and AA alignments are of unequal lengths.")}
   return(TRUE)
 })
 
 
 
-# --------------
-# tas.aid.tables
-# --------------
 
-#' @title S4 class tas.aid.tables
-#' @description S4 object of tables summarizing mutations at AID cytosine motifs. Separate tables for the broader WRCH motif and the more specific WRCY motif.
+# -------------
+# tas.mutations
+# -------------
+
+#' @title S4 class tas.mutations
+#' @description S4 object of sequence mutations
 #'
-#' @slot WRCH data.frame. Coordinates and mutations at WRCH AID cytosines.
-#' @slot WRCY data.frame. Coordinates and mutations at WRCY AID cytosines.
+#' @slot DNA a list of DNA mutation information
+#' @slot AA a list of protein mutation information
+#' @slot AIDTables a list of summary information of mutations at AID hotspots
 #'
-#' @section Table Columns:
+#' @section DNA:
+#' \describe{
+#'  \item{AllMutations}{data.frame showing position and frequency of mutations at all positions}
+#'  \item{CytosineMutations}{data.frame showing position and frequency of mutations at AID cytosines}
+#'  \item{NonCytosineMutations}{data.frame showing position and frequency of mutations at all positions that are not AID cytosines}
+#'  \item{MotifSums}{numeric vector summarizing the frequency of mutations among different motifs and denominators}
+#' }
+#'
+#'
+#' @section AA:
+#' \describe{
+#'  \item{AllMutations}{data.frame showing position and frequency of mutations at all positions}
+#'  \item{MutationMatrix}{matrix showing frequency and identity of all protein mutations (WT omitted)}
+#' }
+#'
+#'
+#' @section AIDTables Columns:
 #' \describe{
 #'   \item{Motif}{character vector DNA motif (top strand = WRCH/WRCY, bottom strand = DGYW/RGYW)}
 #'   \item{Start}{numeric vector of starting coordinates of AID motifs}
 #'   \item{End}{numeric vector of ending coordinates of AID motifs}
 #'   \item{Cytosine}{numeric vector of coordinates of AID cytosines}
-#'   \item{MotifMutagenesis}{numeric vector of the total frequency of mutagenesis within the motif (max 400\%)}
-#'   \item{CytosineMutagenesis}{numeric vector of the frequency of mutagenesis at the AID cytosine}
+#'   \item{CytosineMutationFrequency}{numeric vector of the mutation frequency at the AID cytosine}
 #' }
-#' }
+#'
 #'
 #' @importFrom S4Vectors isEmpty
 #'
 #' @export
-setClass("tas.aid.tables", slots = list(WRCH = "data.frame",
-                                        WRCY = "data.frame"),
-         prototype = list(WRCH = data.frame(Motif = "",
-                                            Start = NA_integer_,
-                                            End = NA_integer_,
-                                            Cytosine = NA_integer_,
-                                            MotifMutagenesis = NA_real_,
-                                            CytosineMutagenesis = NA_real_),
-                          WRCY = data.frame(Motif = "",
-                                            Start = NA_integer_,
-                                            End = NA_integer_,
-                                            Cytosine = NA_integer_,
-                                            MotifMutagenesis = NA_real_,
-                                            CytosineMutagenesis = NA_real_)))
+setClass("tas.mutations", slots = list(DNA = "list",
+                                       AA = "list",
+                                       AIDTables = "list"),
+         prototype = list(DNA = list(AllMutations = data.frame(Position = numeric(), MutationFrequency = numeric()),
+                                     CytosineMutations = data.frame(Position = numeric(), MutationFrequency = numeric()),
+                                     NonCytosineMutations = data.frame(Position = numeric(), MutationFrequency = numeric()),
+                                     MotifSums = c(AverageAllMutations = NA_real_,
+                                                  AverageCytosineMutations = NA_real_,
+                                                  AverageNonCytosineMutations = NA_real_,
+                                                  FrequencyOfAllMutationsAtCytosines = NA_real_,
+                                                  FrequencyOfAllMutationsAtNonCytosines = NA_real_)),
+                          AA = list(AllMutations = data.frame(Position = numeric(), MutationFrequency = numeric()),
+                                    MutationMatrix = matrix()),
+                          AIDTables = list(WRCH = data.frame(Motif = character(), Start = integer(), End = integer(), Cytosine = integer(), CytosineMutationFrequency = numeric()),
+                                           WRCY = data.frame(Motif = character(), Start = integer(), End = integer(), Cytosine = integer(), CytosineMutationFrequency = numeric()))
+                                    ))
 
 
-setValidity("tas.aid.tables", function(object) {
-  for (i in slotNames(object)) {
-    if (all(class(colnames(slot(object,i))) != c("character", "integer", "integer", "integer", "numeric", "numeric"))){
-      stop(str_c("Column data types in ",i," are incorrect."))
-    }
-    if (!all(colnames(slot(object, i)) == c("Motif", "Start", "End", "Cytosine", "MotifMutagenesis", "CytosineMutagenesis"))) {
-      stop(str_c("Column names in ",i," are incorrect."))
-    }
+setValidity("tas.mutations", function(object) {
+  if (any(slotNames(object) != c("DNA", "AA", "AIDTables"))) {return("Invalid slot names.")}
+  if (class(object@DNA) != "list" ||
+      any(names(object@DNA) != c("AllMutations", "CytosineMutations", "NonCytosineMutations", "MotifSums")) ||
+      any(sapply(object@DNA, class) != c("data.frame", "data.frame", "data.frame", "numeric"))) {return("Invalid @DNA.")}
+  if (class(object@AA) != "list" ||
+      any(names(object@AA) != c("AllMutations", "MutationMatrix")) ||
+      any(unlist(sapply(object@AA, class)) != c("data.frame", "matrix", "array"))) {return("Invalid @AA.")}
+  if (class(object@AIDTables) != "list" ||
+      any(names(object@AIDTables) != c("WRCH", "WRCY")) ||
+      any(sapply(object@AIDTables, class) != c("data.frame", "data.frame"))) {return("Invalid @AIDTables.")}
+
+  dfs <- list(object@DNA$AllMutations, object@DNA$CytosineMutations, object@DNA$NonCytosineMutations, object@AA$AllMutations)
+  for (i in dfs) {
+    if (ncol(i) != 2) {return(str_c("@",i," must have exactly 2 columns."))}
+    if (any(!sapply(i, is.numeric))) {return(str_c("Columns in @",i," must be numeric vectors."))}
+    if (any(colnames(i) != c("Position", "MutationFrequency"))) {return(str_c("Columns in @",i," must be named 'Position' and 'MutationFrequency'."))}
+    if (length(i$Position) != length(i$MutationFrequency)) {return(str_c("Columns in @",i," must be of equal length."))}
   }
+  if (!all(sapply(object@DNA$MotifSums, class)=="numeric")) {return("MotifSums must a numeric vector.")}
+  if (!all(is.na(object@DNA$MotifSums)) && any(object@DNA$MotifSums < 0)) {return("MotifSums values must be >= 0.")}
+
+  for (i in object@AIDTables) {
+    if (any(colnames(i) != c("Motif", "Start", "End", "Cytosine", "CytosineMutationFrequency"))) {return("Invalid column names in @AIDTables")}
+    if (class(i$Motif) != "character" || any(!sapply(i[,-1], is.numeric))) {return("Invalid column types in @AIDTables")}
+  }
+
+
   return(TRUE)
 })
 
@@ -387,10 +383,6 @@ setClass("tas.dna.repair", slots = list(WT = "numeric",
                           IndelBaseChange = NA_real_,
                           Other = NA_real_))
 
-
-
-
-
 setValidity("tas.dna.repair", function(object) {
   for (i in slotNames(object)) {
     if (length(slot(object, i)) != 1) {return("@",i," must be a numeric vector of length = 1.")}
@@ -407,36 +399,6 @@ setValidity("tas.dna.repair", function(object) {
 })
 
 
-
-# -------------
-# tas.alignment
-# -------------
-
-#' @title S4 class tas.alignment
-#' @description S4 class containing pairwise alignments of sequences against the reference. Contains both DNA and protein (AA) alignments.
-#'
-#' @slot DNA S4 object of class PairwiseAlignmentsSingleSubject for DNA sequences
-#' @slot AA S4 object of class PairwiseAlignmentsSingleSubject for protein sequences
-#'
-#' @importFrom S4Vectors isEmpty
-#'
-#' @export
-setClass("tas.alignment", slots = list(DNA = "PairwiseAlignmentsSingleSubject",
-                                       AA = "PairwiseAlignmentsSingleSubject"),
-         prototype = list(DNA = empty.pass(),
-                          AA = empty.pass()))
-
-
-setValidity("tas.alignment", function(object) {
-  n <- slotNames(object)
-  if (length(slot(object, n[1])) != length(slot(object, n[2]))) {
-    return("Length of DNA and AA pairwise alignments are not equal.")
-  }
-  return(TRUE)
-})
-
-
-
 # ------------------
 # AmpliconSequencing
 # ------------------
@@ -445,52 +407,48 @@ setValidity("tas.alignment", function(object) {
 #'
 #' @description S4 class that holds analysis results from tasaR
 #'
-#' @slot Alignment S4 object of class \linkS4class{tas.alignment}
-#' @slot Sequences S4 object of class \linkS4class{tas.sequences}
-#' @slot Mutations S4 object of class \linkS4class{tas.mutations}
-#' @slot MutationTypes S4 object of class \linkS4class{tas.dna.repair}
-#' @slot AIDTables S4 object of class \linkS4class{tas.aid.tables}
-#' @slot Settings S4 object of class \linkS4class{tas.object.settings}
+#' @slot Sequences S4 object of class \code{\linkS4class{tas.sequences}}
+#' @slot Mutations S4 object of class \code{\linkS4class{tas.mutations}}
+#' @slot MutationTypes S4 object of class \code{\linkS4class{tas.dna.repair}}
+#' @slot Settings S4 object of class \code{\linkS4class{tas.object.settings}}
+#'
+#' @aliases alias
 #'
 #'
 #' @section List of accessor functions:
 #'
 #' \describe{
-#'   \item{`getAlignments()`}{returns S4 object of class tas.alignment}
+#'   \item{`getAlignments()`}{returns list of DNA and AA alignments}
 #'   \item{`getDNAalign()`}{returns S4 object of DNA pairwise alignment}
 #'   \item{`getAAalign()`}{returns S4 object of protein pairwise alignment}
 #'   \item{`getSequenceTable()`}{returns data.frame table of sequences}
-#'   \item{`getMutations()`}{returns S4 object of class tas.mutations}
+#'   \item{`getMutations()`}{returns list comprising the Mutations slot}
 #'   \item{`getMutationDistribution()`}{returns data.frame table of positions and frequencies all mutations}
 #'   \item{`getMutationDistributionCytosine()`}{returns data.frame table of positions and frequences of all mutations at AID cytosines}
 #'   \item{`getMutationDistributionNonCytosine()`}{returns data.frame table of positions and frequences of all mutations at all bases that are not AID cytosines}
 #'   \item{`getMutationMotifSums()`}{returns numeric vector summarizing mutations across different patterns and denominators}
 #'   \item{`getMutationTypes()`}{returns numeric vector predicting DNA repair pathway usage}
-#'   \item{`getAIDTables()`}{returns S4 object of class tas.aid.tables}
+#'   \item{`getAIDTables()`}{returns list of AID cytosine mutation summary tables}
 #'   \item{`getWRCHTable()`}{returns data.frame table of positions and mutations of AID cytosines and their motifs for pattern WRCH}
 #'   \item{`getWRCYTable()`}{returns data.frame table of positions and mutations of AID cytosines and their motifs for pattern WRCY}
-#'   \item{`getSettings()`}{returns S4 object of class tas.object.settings}
+#'   \item{`getSettings()`}{returns list of object-specific tasaR settings used for analysis}
 #' }
 #'
 #' @importFrom S4Vectors isEmpty
 #'
 #' @export
-setClass("AmpliconSequencing", slots = list(Alignment = "tas.alignment",
-                                            Sequences = "tas.sequences",
+setClass("AmpliconSequencing", slots = list(Sequences = "tas.sequences",
                                             Mutations = "tas.mutations",
                                             MutationTypes = "tas.dna.repair",
-                                            AIDTables = "tas.aid.tables",
                                             Settings = "tas.object.settings"),
-         prototype = list(Alignment = new("tas.alignment"),
-                          Sequences = new("tas.sequences"),
+         prototype = list(Sequences = new("tas.sequences"),
                           Mutations = new("tas.mutations"),
                           MutationTypes = new("tas.dna.repair"),
-                          AIDTables = new("tas.aid.tables"),
                           Settings = new("tas.object.settings")))
 
 
 setValidity("AmpliconSequencing", function(object) {
-  if (length(slotNames(object)) != 6) {
+  if (length(slotNames(object)) != 4) {
     return("Incorrect number of slots.")
   }
   for (i in slotNames(object)) {

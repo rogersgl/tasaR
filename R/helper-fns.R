@@ -20,14 +20,11 @@
 # ---------------
 
 
-#' @title Function empty.pass
-#' @description Helper function to create an empty PairwiseAlignmentsSingleSubject object. Used to initialize S4 class "tas.alignment".
-#'
+# build empty pairwiseAlignments for object initialization
+
 #' @importFrom Biostrings DNAString
 #' @importFrom Biostrings DNAStringSet
 #' @importFrom pwalign pairwiseAlignment
-#'
-#' @returns An empty PairwiseAlignmentsSingleSubject object.
 empty.pass <- function() {
   empty_pattern <- DNAStringSet(character(0))
   subject <- DNAString("ACGT")
@@ -35,24 +32,15 @@ empty.pass <- function() {
 }
 
 
-#' @title Function charDisplayTrim
-#' @description Helper function to trim longer character vectors to 12 characters and (...). Used in "show" methods for more compact display with long sequences.
-#' @param string character vector to be trimmed
-#' @returns a truncated string
+# trim long strings to 20 characters, used for show() functions
+
 charDisplayTrim <- function(string) {
   str_trunc(string, width = 23, side = "right")
 }
 
 #function to determine optimal sequence for each umi and filter non-passing umis as "Rejected"
 
-#' @title Merge data.table by UMIs
-#'
-#' @description
-#' Helper function for tas_sequence_table. Determines the optimal sequence for each UMI and filters non-passing UMIs as "Rejected".
-#'
-#' @param x Input vector of sequences to compare.
 #' @import data.table
-#' @returns Either an optimal consensus sequence for the UMI, or "Rejected".
 umi_pileup <- function(x){
   t <- table(x)
   d <- data.table::data.table(seq = names(t),count=as.numeric(t))

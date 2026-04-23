@@ -2,45 +2,45 @@
 % Please edit documentation in R/generics.R
 \name{getAlignments}
 \alias{getAlignments}
-\alias{getAlignments,tas.alignment-method}
+\alias{getAlignments,tas.sequences-method}
 \alias{getAlignments,AmpliconSequencing-method}
 \alias{getDNAalign}
-\alias{getDNAalign,tas.alignment-method}
+\alias{getDNAalign,tas.sequences-method}
 \alias{getDNAalign,AmpliconSequencing-method}
 \alias{getAAalign}
-\alias{getAAalign,tas.alignment-method}
+\alias{getAAalign,tas.sequences-method}
 \alias{getAAalign,AmpliconSequencing-method}
 \title{Retrieve pairwise alignments}
 \usage{
-\S4method{getAlignments}{tas.alignment}(object)
+\S4method{getAlignments}{tas.sequences}(object)
 
 \S4method{getAlignments}{AmpliconSequencing}(object)
 
-\S4method{getDNAalign}{tas.alignment}(object)
+\S4method{getDNAalign}{tas.sequences}(object)
 
 \S4method{getDNAalign}{AmpliconSequencing}(object)
 
-\S4method{getAAalign}{tas.alignment}(object)
+\S4method{getAAalign}{tas.sequences}(object)
 
 \S4method{getAAalign}{AmpliconSequencing}(object)
 }
 \arguments{
-\item{object}{An S4 object of class tas.alignment or AmpliconSequencing}
+\item{object}{An S4 object of class tas.sequences or AmpliconSequencing}
 }
 \description{
-Extracts DNA and/or protein (AA) pairwise alignments from an S4 object of class tas.alignment or its parent class AmpliconSequencing.
+Extracts DNA and/or protein (AA) pairwise alignments from an S4 object of class tas.sequences or its parent class AmpliconSequencing.
 }
 \section{Methods (by class)}{
 \itemize{
-\item \code{getAlignments(tas.alignment)}: Method for class tas.alignment
+\item \code{getAlignments(tas.sequences)}: Method for class tas.sequences
 
 \item \code{getAlignments(AmpliconSequencing)}: Method for class AmpliconSequencing
 
-\item \code{getDNAalign(tas.alignment)}: Method for class tas.alignment
+\item \code{getDNAalign(tas.sequences)}: Method for class tas.sequences
 
 \item \code{getDNAalign(AmpliconSequencing)}: Method for class AmpliconSequencing
 
-\item \code{getAAalign(tas.alignment)}: Method for class tas.alignment
+\item \code{getAAalign(tas.sequences)}: Method for class tas.sequences
 
 \item \code{getAAalign(AmpliconSequencing)}: Method for class AmpliconSequencing
 

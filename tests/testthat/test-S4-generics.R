@@ -2,12 +2,6 @@
 # Testing helper functions
 # -------------
 
-makeTestAlignment <- function() {
-  da <- pairwiseAlignment(DNAStringSet(c("ATGCAG", "ATGGAG")), DNAString("ATGCAG"))
-  pa <- pairwiseAlignment(AAStringSet(c("MQ", "ME")), AAString("MQ"))
-  new("tas.alignment", DNA = da, AA = pa)
-}
-
 fakeIlluminaId <- function() {
   str_c("A90033:281:WB24762987th.Miseq:1:", sample(100:50000, 1), ":", sample(100:50000, 1), ":AAGAGGCA+CGGAGAGA")
 }
@@ -20,7 +14,7 @@ makeTestSeqTable <- function() {
                   BasesChanged = (c(0, 1, 0)),
                   AA = c("MQ", "ME", "M"),
                   ProteinMutation = c("WT", "Q2E", "Q2-"))
-  s <- data.table(Sequence = c("ATGCAG", "ATGGAG", "ATGCG"),
+  s <- data.table(Index = c(1L, 2L, 3L),
                   UMIs = list(list("TGACG", "ACATA", "CGGTA", "GAACA", "TGGCA"), list("GGGCC", "ACCTC"), list("TCGTA")),
                   IDs = list(list(list(fakeIlluminaId(), fakeIlluminaId(), fakeIlluminaId(), fakeIlluminaId(), fakeIlluminaId()),
                                list(fakeIlluminaId(), fakeIlluminaId(), fakeIlluminaId()),
@@ -31,9 +25,14 @@ makeTestSeqTable <- function() {
                           list(list(fakeIlluminaId(), fakeIlluminaId(), fakeIlluminaId(), fakeIlluminaId(), fakeIlluminaId(), fakeIlluminaId()),
                                list(fakeIlluminaId(), fakeIlluminaId(), fakeIlluminaId(), fakeIlluminaId())),
                           list(list(fakeIlluminaId(), fakeIlluminaId(), fakeIlluminaId()))
-                  ))
+                  ),
+                  IndelStart = NA_real_,
+                  IndelType = NA_character_)
+  da <- pairwiseAlignment(DNAStringSet(c("ATGCAG", "ATGGAG")), DNAString("ATGCAG"))
+  pa <- pairwiseAlignment(AAStringSet(c("MQ", "ME")), AAString("MQ"))
+  ReadCounts <- c(Merged = 53L, Filtered = 44L, UMIs = 8L, UniqueSequences = 3L)
 
-  new("tas.sequences", Table = t, Supplemental = s)
+  new("tas.sequences", Table = t, Supplemental = s, Alignments = list(DNA = da, AA = pa), ReadCounts = ReadCounts)
 }
 
 
@@ -41,9 +40,23 @@ makeTestMutation <- function() {
   a <- data.frame(Position = c(1, 2, 3, 4, 5), MutationFrequency = c(0.1, 8.93, 57.02, 1.21, 2.76))
   c <- data.frame(Position = 3, MutationFrequency = 57.02)
   nc <- data.frame(Position = c(1, 2, 4, 5), MutationFrequency = c(0.1, 8.93, 1.21, 2.76))
-  ms <- c(0.1, 0.2, 4, 11.2, 93, 2.1, 1.3, 7, 57.02, 2.3, 5, 87)
-  names(ms) <- c("TotalPercentMutated", "TotalPercentMutatedInMotif", "TotalPercentMutatedInCytosine", "MotifMutationAverage", "MotifMutationFrequencyofTotal", "MotifMutationNonCAverage", "MotifMutationNonCFrequencyOfTotal", "CytosineMutationAverage", "NonCytosineMutationAverage", "CytosineMutationFrequencyOfTotal", "CytosineMutationFrequencyOfMotif")
-  new("tas.mutations", AllMutations = a, CytosineMutations = c, NonCytosineMutations = nc, MotifSums = ms)
+  ms <-  c(AverageAllMutations = 0.91,
+                AverageCytosineMutations = 7.72,
+                AverageNonCytosineMutations = 0.63,
+                FrequencyOfAllMutationsAtCytosines = 77.3,
+                FrequencyOfAllMutationsAtNonCytosines = 22.7)
+  ap <- data.frame(Position = c(1, 2), MutationFrequency = c(4.3, 48.7))
+  mm <- consensusMatrix(pairwiseAlignment(AAStringSet(c("MQ", "ME")), AAStringSet("MQ")))
+  mm <- mm[1:(nrow(mm)-3),]
+
+  aidt <- list(WRCH = data.frame(Motif = "WRCH", Start = 1, End = 4, Cytosine = 3, CytosineMutationFrequency = 57.2),
+               WRCY = data.frame(Motif = "WRCY", Start = 1, End = 4, Cytosine = 3, CytosineMutationFrequency = 57.2))
+
+  new("tas.mutations", DNA = list(AllMutations = a, CytosineMutations = c, NonCytosineMutations = nc, MotifSums = ms),
+      AA = list(AllMutations = ap,
+                MutationMatrix = mm),
+      AIDTables = aidt
+      )
 }
 
 
@@ -52,19 +65,10 @@ makeTestMutationTypes <- function() {
 }
 
 
-makeTestAIDTables <- function() {
-  h <- data.frame(Motif = "WRCH", Start = 1, End = 4, Cytosine = 3, MotifMutagenesis = 64.3, CytosineMutagenesis = 57.2)
-  y <- data.frame(Motif = "WRCY", Start = 1, End = 4, Cytosine = 3, MotifMutagenesis = 64.3, CytosineMutagenesis = 57.2)
-  new("tas.aid.tables", WRCH = h, WRCY = y)
-}
-
-
 makeTestSettings <- function() {
   new("tas.object.settings", Name = "test",
                       IsAntibody = TRUE,
-                      MeasureSHM = TRUE,
-                      MeasureDNARepairTypes = FALSE,
-                      MergedFASTQPath = file.path(tempdir(), "test-merged.fastq"),
+                      MergedFASTQPath = file.path(tempdir(), "test-merged.fastq.gz"),
                       ReferenceSequence = "GTTCAACTGGTGGAAAGCGGCGGTGCTCTGGTACAACCGGGCGGTAGTCTGCGCCTGAGCTGTGCCGCAAGCGGTTTCCCAGTCAACCGCTACTCTATGCGTTGGTATCGCCAGGCGCCTGGTAAAGAACGTGAATGGGTTGCCGGCATGAGCAGTGCGGGCGATCGTTCTAGTTACGAGGACTCTGTTAAAGGTCGTTTTACAATTAGCCGTGATGATGCGCGCAATACCGTGTATCTGCAAATGAACAGTCTGAAGCCGGAGGACACCGCAGTATATTATTGCAATGTCAACGTGGGGTTTGAATATTGGGGCCAGGGGACTCAGGTGACGGTGAGCTCT",
                       ForwardExtensionType = "Barcode",
                       ForwardExtension = "GCTAGCC",
@@ -94,7 +98,7 @@ makeTestSettings <- function() {
 test_that("getAlignments, getDNAalign, and getAAalign return the expected outputs.", {
 
   # class tas.alignment
-  obj <- makeTestAlignment()
+  obj <- makeTestSeqTable()
   aln <- getAlignments(obj)
 
   expect_true(class(aln) == "list")
@@ -110,20 +114,20 @@ test_that("getAlignments, getDNAalign, and getAAalign return the expected output
   expect_all_true(subject(aln$AA) == AAStringSet(c("MQ", "MQ")))
 
   # class AmpliconSequencing
-  obj.as <- new("AmpliconSequencing", Alignment = makeTestAlignment())
-  aln.as <- getAlignments(obj)
-  expect_true(identical(aln, aln.as))
+  obj.as <- new("AmpliconSequencing", Sequences = obj)
+  aln.as <- getAlignments(obj.as)
+  expect_true(identical(aln.as, aln))
 
   #getDNAalign
   aln.dna <- getDNAalign(obj)
   expect_true(identical(aln.dna, aln$DNA))
-  aln.dna.as <- getDNAalign(aln.as)
+  aln.dna.as <- getDNAalign(obj.as)
   expect_true(identical(aln.dna.as, aln$DNA))
 
   #getAAalign
   aln.aa <- getAAalign(obj)
   expect_true(identical(aln.aa, aln$AA))
-  aln.aa.as <- getDNAalign(aln.as)
+  aln.aa.as <- getAAalign(obj.as)
   expect_true(identical(aln.aa.as, aln$AA))
 })
 
@@ -131,7 +135,7 @@ test_that("getAlignments, getDNAalign, and getAAalign return the expected output
 
 ### getSequenceTable ###
 
-test_that("getSequenceTable returns the expected outputs.", {
+test_that("Sequence Table getter methods return the expected outputs.", {
   obj <- makeTestSeqTable()
   seq <- getSequenceTable(obj)
 
@@ -145,9 +149,19 @@ test_that("getSequenceTable returns the expected outputs.", {
   expect_all_true(seq$AA == c("MQ", "ME", "M"))
   expect_all_true(seq$ProteinMutation == c("WT", "Q2E", "Q2-"))
 
+  dna.seq <- getSequencesDNA(obj)
+  expect_equal(dna.seq, seq$Sequences)
+  aa.seq <- getSequencesAA(obj)
+  expect_equal(aa.seq, seq$AA)
+
   obj.as <- new("AmpliconSequencing", Sequences = obj)
   seq.as <- getSequenceTable(obj.as)
   expect_true(identical(seq.as, seq))
+  dna.seq.as <- getSequencesDNA(obj.as)
+  expect_equal(dna.seq.as, seq.as$Sequences)
+  aa.seq.as <- getSequencesAA(obj.as)
+  expect_equal(aa.seq.as, seq.as$AA)
+
 })
 
 test_that("getSequenceSupplemental returns the expected outputs.", {
@@ -155,7 +169,7 @@ test_that("getSequenceSupplemental returns the expected outputs.", {
   sup <- getSequenceSupplemental(obj)
 
   expect_all_true(class(sup) == c("data.table", "data.frame"))
-  expect_all_true(colnames(sup) == c("Sequence", "UMIs", "IDs"))
+  expect_all_true(colnames(sup) == c("Sequence", "UMIs", "IDs", "IndelStart", "IndelType"))
   expect_all_true(sup$Sequence == c("ATGCAG", "ATGGAG", "ATGCG"))
   expect_true(identical(sup$UMIs, list(list("TGACG", "ACATA", "CGGTA", "GAACA", "TGGCA"), list("GGGCC", "ACCTC"), list("TCGTA"))))
   expect_true(length(sup$IDs) == 3)
@@ -171,43 +185,47 @@ test_that("getSequenceSupplemental returns the expected outputs.", {
 
 ### getMutations ###
 
-test_that("getMutations and sub-functions return the expected outputs.", {
+test_that("Getter functions for mutations return the expected outputs.", {
 
   ### class tas.mutations ###
   obj <- makeTestMutation()
-  mut <- getMutations(obj)
 
-  expect_true(class(mut) == "list")
-  expect_true(length(mut) == 4)
-  expect_all_true(names(mut) == c("AllMutations", "CytosineMutations", "NonCytosineMutations", "MotifSums"))
-  expect_true(identical(mut$AllMutations, data.frame(Position = c(1, 2, 3, 4, 5), MutationFrequency = c(0.1, 8.93, 57.02, 1.21, 2.76))))
-  expect_true(identical(mut$CytosineMutations, data.frame(Position = 3, MutationFrequency = 57.02)))
-  expect_true(identical(mut$NonCytosineMutations, data.frame(Position = c(1, 2, 4, 5), MutationFrequency = c(0.1, 8.93, 1.21, 2.76))))
-  expect_true(identical(mut$MotifSums, setNames(c(0.1, 0.2, 4, 11.2, 93, 2.1, 1.3, 7, 57.02, 2.3, 5, 87),
-                                                c("TotalPercentMutated", "TotalPercentMutatedInMotif", "TotalPercentMutatedInCytosine", "MotifMutationAverage", "MotifMutationFrequencyofTotal", "MotifMutationNonCAverage", "MotifMutationNonCFrequencyOfTotal", "CytosineMutationAverage", "NonCytosineMutationAverage", "CytosineMutationFrequencyOfTotal", "CytosineMutationFrequencyOfMotif")
-                                                )))
+  ### DNA ###
+  mut.dna <- getDNAMutations(obj)
+
+  expect_true(class(mut.dna) == "list")
+  expect_true(length(mut.dna) == 4)
+  expect_all_true(names(mut.dna) == c("AllMutations", "CytosineMutations", "NonCytosineMutations", "MotifSums"))
+  expect_true(identical(mut.dna$AllMutations, data.frame(Position = c(1, 2, 3, 4, 5), MutationFrequency = c(0.1, 8.93, 57.02, 1.21, 2.76))))
+  expect_true(identical(mut.dna$CytosineMutations, data.frame(Position = 3, MutationFrequency = 57.02)))
+  expect_true(identical(mut.dna$NonCytosineMutations, data.frame(Position = c(1, 2, 4, 5), MutationFrequency = c(0.1, 8.93, 1.21, 2.76))))
+  expect_true(identical(mut.dna$MotifSums, c(AverageAllMutations = 0.91,
+                                         AverageCytosineMutations = 7.72,
+                                         AverageNonCytosineMutations = 0.63,
+                                         FrequencyOfAllMutationsAtCytosines = 77.3,
+                                         FrequencyOfAllMutationsAtNonCytosines = 22.7)))
   # getMutationDistribution
-  mut.a <- getMutationDistribution(obj)
-  expect_true(identical(mut.a, mut$AllMutations))
+  mut.a <- getMutationDistributionDNA(obj)
+  expect_true(identical(mut.a, mut.dna$AllMutations))
 
   # getMutationDistributionCytosine
   mut.c <- getMutationDistributionCytosine(obj)
-  expect_true(identical(mut.c, mut$CytosineMutations))
+  expect_true(identical(mut.c, mut.dna$CytosineMutations))
 
    # getMutationDistributionNonCytosine
   mut.nc <- getMutationDistributionNonCytosine(obj)
-  expect_true(identical(mut.nc, mut$NonCytosineMutations))
+  expect_true(identical(mut.nc, mut.dna$NonCytosineMutations))
 
   # getMutationMotifSums
   mut.ms <- getMutationMotifSums(obj)
-  expect_true(identical(mut.ms, mut$MotifSums))
+  expect_true(identical(mut.ms, mut.dna$MotifSums))
 
 
-  ### class AmpliconSequencing ###
+  # class AmpliconSequencing #
   obj.as <- new("AmpliconSequencing", Mutations = obj)
-  mut.as <- getMutations(obj.as)
-  expect_true(identical(mut.as, mut))
-  mut.as.a <- getMutationDistribution(obj.as)
+  mut.as <- getDNAMutations(obj.as)
+  expect_true(identical(mut.as, mut.dna))
+  mut.as.a <- getMutationDistributionDNA(obj.as)
   expect_true(identical(mut.as.a, mut.as$AllMutations))
   mut.as.c <- getMutationDistributionCytosine(obj.as)
   expect_true(identical(mut.as.c, mut.as$CytosineMutations))
@@ -215,6 +233,47 @@ test_that("getMutations and sub-functions return the expected outputs.", {
   expect_true(identical(mut.as.nc, mut.as$NonCytosineMutations))
   mut.as.ms <- getMutationMotifSums(obj.as)
   expect_true(identical(mut.as.ms, mut.as$MotifSums))
+
+
+  ### AA ###
+  mut.aa <- getMutationDistributionAA(obj)
+  expect_true(class(mut.aa) == "data.frame")
+  expect_all_true(colnames(mut.aa) == c("Position", "MutationFrequency"))
+  expect_true(identical(mut.aa, data.frame(Position = c(1, 2), MutationFrequency = c(4.3, 48.7))))
+
+  mut.mm <- getMutationMatrixAA(obj)
+  expect_all_true(class(mut.mm) == c("matrix", "array"))
+
+  mm <- consensusMatrix(pairwiseAlignment(AAStringSet(c("MQ", "ME")), AAStringSet("MQ")))
+  mm <- mm[1:(nrow(mm)-3),]
+  expect_true(identical(mut.mm, mm))
+
+  mut.aa.as <- getMutationDistributionAA(obj.as)
+  expect_true(identical(mut.aa.as, mut.aa))
+  mut.mm.as <- getMutationMatrixAA(obj.as)
+  expect_true(identical(mut.mm.as, mut.mm))
+
+
+  ### AID Tables ###
+
+  aidt <- getAIDTables(obj)
+  expect_true(class(aidt) == "list")
+  expect_all_true(names(aidt) == c("WRCH", "WRCY"))
+  expect_true(identical(aidt$WRCH, data.frame(Motif = "WRCH", Start = 1, End = 4, Cytosine = 3, CytosineMutationFrequency = 57.2)))
+  expect_true(identical(aidt$WRCY, data.frame(Motif = "WRCY", Start = 1, End = 4, Cytosine = 3, CytosineMutationFrequency = 57.2)))
+
+  aidt.h <- getWRCHTable(obj)
+  expect_true(identical(aidt.h, aidt$WRCH))
+  aidt.y <- getWRCYTable(obj)
+  expect_true(identical(aidt.y, aidt$WRCY))
+
+  aidt.as <- getAIDTables(obj.as)
+  expect_true(identical(aidt.as, aidt))
+  aidt.h.as <- getWRCHTable(obj.as)
+  expect_true(identical(aidt.h.as, aidt.h))
+  aidt.y.as <- getWRCYTable(obj.as)
+  expect_true(identical(aidt.y.as, aidt.y))
+
 })
 
 
@@ -237,47 +296,6 @@ test_that("getMutationTypes returns the expected output.", {
   obj.as <- new("AmpliconSequencing", MutationTypes = obj)
   mt.as <- getMutationTypes(obj.as)
   expect_true(identical(mt.as, mt))
-})
-
-
-
-
-### getAIDTables ###
-
-test_that("getAIDTables and associated functions return the expected output.", {
-
-  ### clas tas.aid.tables ###
-  obj <- makeTestAIDTables()
-  aid <- getAIDTables(obj)
-
-  expect_true(class(aid) == "list")
-  expect_all_true(names(aid) == c("WRCH", "WRCY"))
-  expect_true(identical(aid$WRCH, data.frame(Motif = "WRCH", Start = 1, End = 4, Cytosine = 3, MotifMutagenesis = 64.3, CytosineMutagenesis = 57.2)))
-  expect_true(identical(aid$WRCY, data.frame(Motif = "WRCY", Start = 1, End = 4, Cytosine = 3, MotifMutagenesis = 64.3, CytosineMutagenesis = 57.2)))
-
-  # getWRCHTables
-  aid.h <- getWRCHTable(obj)
-  expect_true(identical(aid.h, aid$WRCH))
-
-  # getWRCYTables
-  aid.y <- getWRCYTable(obj)
-  expect_true(identical(aid.y, aid$WRCY))
-
-
-  ### class AmpliconSequencing ###
-
-  obj.as <- new("AmpliconSequencing", AIDTables = obj)
-  aid.as <- getAIDTables(obj.as)
-  expect_true(identical(aid.as, aid))
-
-  # getWRCHTables
-  aid.as.h <- getWRCHTable(obj.as)
-  expect_true(identical(aid.as.h, aid$WRCH))
-
-  # getWRCYTables
-  aid.as.y <- getWRCYTable(obj.as)
-  expect_true(identical(aid.as.y, aid$WRCY))
-
 })
 
 

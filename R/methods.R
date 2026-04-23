@@ -50,13 +50,14 @@ setMethod("isEmpty", "tas.object.settings", function(x) {
 #' @rdname isEmpty-tasaR
 #' @export
 setMethod("isEmpty", "tas.mutations", function(x) {
-  n <- slotNames(x)
+  dfs <- c(x@DNA$AllMutations, x@DNA$CytosineMutations, x@DNA$NonCytosineMutations, x@AA$AllMutations, x@AIDTables$WRCH, x@AIDTables$WRCY)
   df_empty <- logical()
-  for (i in n[1:3]){
-    df_empty <- c(df_empty, isEmpty(slot(x, i)))
+  for (i in dfs){
+    df_empty <- c(df_empty, isEmpty(i))
   }
-  ms <- all(is.na((x@MotifSums)))
-  if (all(df_empty) && ms){
+  ms <- all(is.na((x@DNA$MotifSums)))
+  mm <- is.na(x@AA$MutationMatrix)
+  if (all(df_empty) && ms && mm){
     return(TRUE)
   } else {
     return(FALSE)
@@ -71,36 +72,6 @@ setMethod("isEmpty", "tas.mutations", function(x) {
 setMethod("isEmpty", "tas.sequences", function(x) {
   df <- x@Table
   if (nrow(df) < 2 && all(is.na(df[1,c(2,3,5)])) && all(df[1,c(1,4,6,7)] == "")){
-    return(TRUE)
-  } else {
-    return(FALSE)
-  }
-})
-
-
-### class tas.aid.tables ###
-
-#' @rdname isEmpty-tasaR
-#' @export
-setMethod("isEmpty", "tas.aid.tables", function(x) {
-  empty.all <- logical()
-  for (i in slotNames(x)){
-    if (nrow(slot(x, i)) > 1){
-      empty.all <- c(empty.all, FALSE)
-    } else {
-      empty <- logical()
-      empty <- c(empty, slot(x, i)[1,1] == "")
-      for (j in 2:ncol(slot(x, i))) {
-        empty <- c(empty, is.na(slot(x, i)[1,j]))
-      }
-      if (all(empty)) {
-        empty.all <- c(empty.all, TRUE)
-      } else {
-        empty.all <- c(empty.all, FALSE)
-      }
-    }
-  }
-  if (all(empty.all)){
     return(TRUE)
   } else {
     return(FALSE)
@@ -125,23 +96,6 @@ setMethod("isEmpty", "tas.dna.repair", function(x) {
 })
 
 
-### class tas.alignment ###
-
-#' @rdname isEmpty-tasaR
-#' @export
-setMethod("isEmpty", "tas.alignment", function(x) {
-  n <- slotNames(x)
-  len <- numeric(0)
-  for (i in n){
-    len <- c(len, length(slot(x, i)) )
-  }
-  if (sum(len) == 0){
-    return(TRUE)
-  } else {
-    return(FALSE)
-  }
-})
-
 
 ### class AmpliconSequencing ###
 
@@ -160,8 +114,16 @@ setMethod("isEmpty", "AmpliconSequencing", function(x) {
 })
 
 
+### class PairwiseAlignmentsSingleSubject ###
 
-
+setMethod("isEmpty", "PairwiseAlignmentsSingleSubject", function(x) {
+  o <- capture.output(x)
+  if (length(o) == 1 && str_detect(o, "Empty")) {
+    return(TRUE)
+  } else {
+    return(FALSE)
+  }
+})
 
 # ------
 # show()
@@ -173,16 +135,14 @@ setMethod("isEmpty", "AmpliconSequencing", function(x) {
 #' @export
 setMethod("show", "tas.object.settings", function(object) {
   cat("Settings for ", object@Name, ":\n",
-      "IsAntibody : ", object@IsAntibody, "\n",
-      "MeasureSHM : ", object@MeasureSHM, "\n",
-      "MeasureDNARepairTypes : ", object@MeasureDNARepairTypes, "\n", sep = "")
-  for (i in slotNames(object)[6:12]) {
+      "IsAntibody : ", object@IsAntibody, "\n")
+  for (i in slotNames(object)[3:10]) {
     s <- slot(object, i)
     if (s != ""){
       s <- charDisplayTrim(s)
       cat("",i,": ", s, "\n", sep = "")}
   }
-  for (i in slotNames(object)[13:15]) {
+  for (i in slotNames(object)[11:13]) {
     if (!is.na(slot(object, i))){cat("",i,": ", slot(object, i), "\n", sep = "")}
   }
   if (!all(is.na(object@AntibodyRegions))){
@@ -203,27 +163,63 @@ setMethod("show", "tas.object.settings", function(object) {
 
 #' @export
 setMethod("show", "tas.mutations", function(object) {
-  cat("DNA mutation tables:\n")
-  for (i in slotNames(object)[1:3]) {
-    df <- slot(object, i)
+  cat("DNA mutation tables:\n\n")
+  for (i in names(object@DNA)[1:3]) {
+    df <- object@DNA[[i]]
     if (!isEmpty(df)) {
       cat("",i,":\n", sep = "")
       if (nrow(df) <= 6){
         show(df)
+        cat("\n-------------------------\n")
       } else {
         show(df[1:3,])
         cat("\n          ..........          \n\n")
         show(df[(nrow(df)-2):nrow(df),])
+        cat("\n-------------------------\n")
       }
     }
     cat("\n")
   }
   cat("Percent mutation for different motifs:\n")
-  for (i in names(object@MotifSums)) {
-    if (!is.na(object@MotifSums[i])) {
-      cat("",i,": ", object@MotifSums[i],"%\n", sep = "")
+  for (i in names(object@DNA$MotifSums)) {
+    if (!all(is.na(object@DNA$MotifSums[i]))) {
+      cat("",i,": ", object@DNA$MotifSums[i],"%\n", sep = "")
     }
   }
+  cat("\nProtein mutation tables:\n")
+  if (!isEmpty(object@AA$AllMutations)) {
+    df <- object@AA$AllMutations
+    if (nrow(df) <= 6){
+      show(df)
+      cat("\n-------------------------\n")
+    } else {
+      show(df[1:3,])
+      cat("\n          ..........          \n\n")
+      show(df[(nrow(df)-2):nrow(df),])
+      cat("\n-------------------------\n")
+    }
+  }
+  cat("\n")
+
+  if (!all(is.na(object@AA$MutationMatrix))) {
+    m <- object@AA$MutationMatrix
+    cat("MutationMatrix: maxrix of protein mutations for ", ncol(m), " amino acid positions.\n", sep = "")
+  }
+  cat("\nAID summary tables:\n")
+  for (df in object@AIDTables) {
+    if (!isEmpty(df)) {
+      if (nrow(df) <= 6){
+        show(df)
+        cat("\n-------------------------\n")
+      } else {
+        show(df[1:3,])
+        cat("\n          ..........          \n\n")
+        show(df[(nrow(df)-2):nrow(df),])
+        cat("\n-------------------------\n")
+      }
+    }
+  }
+
 })
 
 
@@ -253,28 +249,6 @@ setMethod("show", "tas.sequences", function(object) {
 })
 
 
-### class tas.aid.tables ###
-
-#' @export
-setMethod("show", "tas.aid.tables", function(object) {
-  for (i in slotNames(object)) {
-    cat("Slot",i,":\n", sep = "")
-
-    df <- slot(object, i)
-    if (nrow(df) <= 6){
-      show(df)
-    } else {
-      df <- rbind(df[1:3,], df[(nrow(df)-2):nrow(df),])
-      show(df[1:3,])
-      cat("\n               .........................               \n\n")
-      show(df[(nrow(df)-2):nrow(df),])
-    }
-
-    cat("\n\n")
-  }
-})
-
-
 ### class tas.dna.repair ###
 
 #' @export
@@ -293,7 +267,7 @@ setMethod("show", "tas.dna.repair", function(object) {
 #' @export
 setMethod("show", "AmpliconSequencing", function(object) {
   cat("An S4 object of class AmpliconSequencing:\n\n")
-  for (i in slotNames(object)[1:5]) {
+  for (i in slotNames(object)) {
     cat(i,":\n", sep = "")
     o <- slot(object, i)
     if (isEmpty(o)) {
@@ -302,7 +276,6 @@ setMethod("show", "AmpliconSequencing", function(object) {
       cat("Access using @",i,"\n\n")
     }
   }
-  show(object@Settings)
 })
 
 
@@ -340,8 +313,6 @@ setMethod("as.numeric", signature = "tas.dna.repair", function(x) {
 as.list.tas.object.settings <- function(x) {
   list(Name = x@Name,
        IsAntibody = x@IsAntibody,
-       MeasureSHM = x@MeasureSHM,
-       MeasureDNARepairTypes = x@MeasureDNARepairTypes,
        MergedFASTQPath = x@MergedFASTQPath,
        ReferenceSequence = x@ReferenceSequence,
        ForwardExtensionType = x@ForwardExtensionType,

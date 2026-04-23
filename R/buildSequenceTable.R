@@ -1,9 +1,46 @@
 ###############################################################################
+# buildSequenceTable()
+# --------------------
+
+#' Make a labeled table of sequences
+#'
+#' @description
+#' Uses the settings specified by a tas.settings object, including a file path to a merged .fastq file, to generate a labeled table of sequences, with counts, frequencies, DNA mutations, and AA mutations annotated.
+#'
+#' Will use barcodes for sequence filtering/demultiplexing if provided. Will bin sequences and count by UMIs if provided (only supports 1 UMI currently). Otherwise, will bin sequences and filter based on the global setting tasGlobalSettings$read.frequency.limit (the minimum % to accept a sequence).
+#'
+#' @param settings An object of S4 class tas.settings
+#'
+#' @returns An S4 object of class tas.sequences
+#' @export
+#'
+#' @examples
+#' buildSequenceTable(settings)
+buildSequenceTable <- function(settings) {
+  filter.counts <- numeric()
+  if (!file.exists(settings@MergedFASTQPath)) {stop("FASTQ file not found.")}
+  cat("Reading .fastq file...\n")
+  reads <- ShortRead::readFastq(settings@MergedFASTQPath)
+  filter.counts <- c(filter.counts, Merged = length(reads))
+  cat("Filtering reads...\n")
+  reads.filtered <- filterSequences(reads, settings)
+  filter.counts <- c(filter.counts, Filtered = length(reads.filtered))
+  reads <- NULL
+  #cat("Building sequence table...\n")
+  sequenceTable(reads.filtered, settings, filter.counts)
+}
+
+
+
+
+
+###############################################################################
 # Helper functions
 # ------
 
+### filter reads by primers + extensions ###
 
-tas_filter2 <- function(reads, settings) {
+filterSequences <- function(reads, settings) {
   fwd <- DNAString(str_c(settings@ForwardExtension, settings@ForwardPrimer))
   rev <- DNAString(str_c(settings@ReverseExtension, settings@ReversePrimer))
   temp <- ShortRead::sread(reads)
@@ -20,9 +57,11 @@ tas_filter2 <- function(reads, settings) {
   return(reads[both_idx])
 }
 
-##########
+### make sequence table ###
 
-tas_sequence_table2 <- function(reads.filtered, settings) {
+sequenceTable <- function(reads.filtered, settings, filter.counts = NA) {
+
+
   if (tolower(settings@ForwardExtensionType) == "umi" && tolower(settings@ReverseExtensionType) == "umi") {
     stop("tasaR does not currently support dual UMIs on both ends of the amplicon.")
   } else if (tolower(settings@ForwardExtensionType) == "umi") {
@@ -42,7 +81,7 @@ tas_sequence_table2 <- function(reads.filtered, settings) {
     cat("Binning UMIs...\n")
     # extract id, seq, umi from Reads.Filtered.List and remove any sequences containing N called nt's
     id_temp <- as.character(ShortRead::id(reads.filtered))
-    seq_temp <- ShortRead::sread(narrow(reads.filtered ,start = settings@InsertStart, end = settings@InsertEnd))
+    seq_temp <- ShortRead::sread(narrow(reads.filtered, start = settings@InsertStart, end = settings@InsertEnd))
     n_idx <- which(elementNROWS(Biostrings::vmatchPattern("n", seq_temp)) == 0)
     umi_temp <- as.character(umi_temp[n_idx])
     seq_temp <- as.character(seq_temp[n_idx])
@@ -69,6 +108,8 @@ tas_sequence_table2 <- function(reads.filtered, settings) {
     dt_merge_group <- dt_merge_group[seq != "Rejected"]
     dt <- dt_merge_group[, .(N = .N, umis = list(umi), ids = list(id)), by = seq]
     setorder(dt, -N)
+    umi.count <- length(unlist(dt$umis))
+    unique.count <- nrow(dt)
 
     ##########
 
@@ -94,6 +135,9 @@ tas_sequence_table2 <- function(reads.filtered, settings) {
   Reads.Unique.DNA <- Biostrings::DNAStringSet(dt$seq)
   Pairwise.Aligned.DNA <- pwalign::pairwiseAlignment(Reads.Unique.DNA, Reference.Sequence.DNA)
 
+  # write sequences to table with deletions marked by -
+  dt$seq <- as.character(pattern(Pairwise.Aligned.DNA))
+
   # table of indel counts and sizes
   dt.indel <- data.table(iNum = insertion(nindel(Pairwise.Aligned.DNA))[,"Length"],
                          iSize = str_c("+", insertion(nindel(Pairwise.Aligned.DNA))[,"WidthSum"]),
@@ -105,6 +149,7 @@ tas_sequence_table2 <- function(reads.filtered, settings) {
                           idSize = insertion(nindel(Pairwise.Aligned.DNA))[,"WidthSum"] - deletion(nindel(Pairwise.Aligned.DNA))[,"WidthSum"])
   idx.end.del <- which(len.check$pWidth != len.check$idSize)
   end.del.size <- str_c("-", str_count(as.character(alignedPattern(Pairwise.Aligned.DNA[idx.end.del])), "-") - as.numeric(dt.indel$dSize[idx.end.del]))
+  end.del.start <- str_locate(as.character(alignedPattern(Pairwise.Aligned.DNA[idx.end.del])), "-")[,"start"]
   dt.indel$dNum[idx.end.del] <- as.numeric(dt.indel$dNum[idx.end.del]) + 1
 
   # concatenate multiple insertions
@@ -160,33 +205,67 @@ tas_sequence_table2 <- function(reads.filtered, settings) {
   dt <- cbind(dt, data.table(Indels = str.indel, BasesChanged = vec.mm))
 
 
-  ##########
+
+
+  ############################################################################################
+  # Notes about annotating protein mutations:
+  #
+  # Insertions and deletions (indels) pose a significant challenge for quantifying the frequency
+  # of mutations in the protein sequence at each position. Because they can cause frameshifts,
+  # their effects can be propogated through the rest of the downstream sequence. To avoid this
+  # overestimation of downstream mutations, protein sequences are truncated at the site of the
+  # first indel within the Reference Sequence, and marked with a "-" for deletion and "+" for
+  # insertion.
+  #
+  # This allows pairwise alignments to ignore confounding downstream mutations and focus on
+  # where the mutation actually occurred. This also ensures that detection of protein mismatches
+  # depends on specific mutations rather than frameshifts.
+  ############################################################################################
 
   cat("Labeling protien mutations...\n")
-  Reads.Unique.Protein <- suppressWarnings(translate(Reads.Unique.DNA))
-  Reference.Sequence.Protein <- suppressWarnings(translate(Reference.Sequence.DNA))
-  aa <- as.character(Reads.Unique.Protein)
-  ns <- str_detect(aa,"\\*")
 
-  # truncate nonsense sequences after the stop codon
-  if (!S4Vectors::isEmpty(which(Biostrings::nchar(aa) != Biostrings::nchar(Reference.Sequence.Protein)))
-      || any(ns)){
-    s <- str_locate(aa[ns],"\\*")[,"start"]
-    names(s) <- NULL
-    aa[ns] <-  sapply(1:length(s),function(y){
-      i <- which(ns)[y]
-      str_trunc(aa[i],s[y],ellipsis = "")
-    })
-  }
+  Reference.Sequence.Protein <- AAStringSet(suppressWarnings(translate(Reference.Sequence.DNA)))
+
+  indel.start.dt <- rbindlist(list(cbind(as.data.table(deletion(Pairwise.Aligned.DNA))[,c("group", "start")], data.table(type = "deletion")),
+                                   cbind(as.data.table(insertion(Pairwise.Aligned.DNA))[,c("group", "start")], data.table(type = "insertion")),
+                                   cbind(data.table(group = idx.end.del, start = end.del.start), data.table(type = "deletion")),
+                                   data.table(group = 1:length(Pairwise.Aligned.DNA))
+  ), fill = TRUE)[, .(minStart = if (all(is.na(start))) {NA_integer_} else {min(start, na.rm = TRUE)}, type = type[which.min(start)]), by = group]
+  setorder(indel.start.dt, group)
+
+  prot.reads <- as.character(suppressWarnings(translate(Reads.Unique.DNA)))
+
+  # truncate at first indel
+  prot.trunc <- sapply(1:nrow(indel.start.dt), function(x) {
+    if (is.na(indel.start.dt$minStart[x])) {
+      return(prot.reads[x])
+    } else {
+      trunc <- ceiling(indel.start.dt$minStart[x]/3) - 1
+      st <- str_trunc(prot.reads[x], trunc, ellipsis = "")
+      if (indel.start.dt$type[x] == "deletion") {
+        return(str_c(st, "-"))
+      } else if (indel.start.dt$type[x] == "insertion") {
+        return(str_c(st, "+"))
+      }
+    }
+  })
+
+  # detect any non-indel nonsense mutations
+  idx_ns <- which(str_detect(prot.trunc, "[*]"))
+  ns.pos <- na.omit(str_locate(prot.trunc, "[*]")[,"start"])
+  prot.trunc[idx_ns] <- unlist(sapply(seq_along(idx_ns), function(x) {
+    str_trunc(prot.trunc[idx_ns[x]], (ns.pos[x]), ellipsis = "")
+  }))
+
+  prot.align <- pairwiseAlignment(AAStringSet(prot.trunc), Reference.Sequence.Protein)
 
   #Label each sequence with protein mutations
-  PAP <- pairwiseAlignment(Reads.Unique.Protein, Reference.Sequence.Protein)
-  aa.mut <- data.frame(rep("",length(PAP)))
+  aa.mut <- data.frame(rep("",length(prot.align)))
   colnames(aa.mut) <- "ProteinMutation"
 
-  mmT <- mismatchTable(PAP)
-  idx_indel <- !Biostrings::nchar(aa)==Biostrings::nchar(Reference.Sequence.Protein)
-  idx_WT <- !seq_along(PAP) %in% mmT$PatternId # indel multiples of 3 identified incorrectly
+  mmT <- mismatchTable(prot.align)
+  idx_indel <- !Biostrings::nchar(prot.trunc)==Biostrings::nchar(Reference.Sequence.Protein)
+  idx_WT <- !seq_along(prot.align) %in% mmT$PatternId # indel multiples of 3 identified incorrectly
   idx_WT[which((idx_indel+idx_WT)==2)] <- FALSE # remove false +ve from idx_WT
   idx_mm <- which((idx_indel+idx_WT)==0)
   mmT <- mmT[which(mmT$PatternId %in% idx_mm),]
@@ -202,9 +281,17 @@ tas_sequence_table2 <- function(reads.filtered, settings) {
   }
   aa.mut$ProteinMutation[idx_indel] <- "Indel"
   aa.mut$ProteinMutation[idx_WT] <- "WT"
-  aa.mut$ProteinMutation[str_detect(aa,"\\*")] <- "Nonsense"
+  aa.mut$ProteinMutation[str_detect(prot.trunc,"\\*")] <- "Nonsense"
 
-  dt <- cbind(dt, data.table(AA = aa, aa.mut))
+  dt <- cbind(dt, data.table(AA = prot.trunc, aa.mut))
+
+  if (exists("filter.counts")) {
+    if (all(is.na(filter.counts))) {
+      ReadCounts <- NA_integer_
+    } else {
+      ReadCounts <-  setNames(as.integer(c(filter.counts, umi.count, unique.count)), c(names(filter.counts), "UMIs", "UniqueSequences"))
+    }
+  } else {ReadCounts <- NA_integer_}
 
   ##########
 
@@ -215,40 +302,46 @@ tas_sequence_table2 <- function(reads.filtered, settings) {
                                           BasesChanged = dt$BasesChanged,
                                           AA = dt$AA,
                                           ProteinMutation = dt$ProteinMutation),
-      Supplemental = data.table(data.table(Sequence = dt$seq,
+      Supplemental = data.table(data.table(Index = 1:nrow(dt),
                                            UMIs = dt$umis,
-                                           IDs = dt$ids)))
+                                           IDs = dt$ids,
+                                           IndelStart = indel.start.dt$minStart,
+                                           IndelType = indel.start.dt$type)),
+      Alignments = list(DNA = Pairwise.Aligned.DNA,
+                        AA = prot.align),
+      ReadCounts = ReadCounts)
 }
 
 
-###############################################################################
-# buildSequenceTable()
-# --------------------
 
-#' Make a labeled table of sequences
-#'
-#' @description
-#' Uses the settings specified by a tas.settings object, including a file path to a merged .fastq file, to generate a labeled table of sequences, with counts, frequencies, DNA mutations, and AA mutations annotated.
-#'
-#' Will use barcodes for sequence filtering/demultiplexing if provided. Will bin sequences and count by UMIs if provided (only supports 1 UMI currently). Otherwise, will bin sequences and filter based on the global setting tasGlobalSettings$read.frequency.limit (the minimum % to accept a sequence).
-#'
-#' @param settings An object of S4 class tas.settings
-#'
-#' @returns An S4 object of class tas.sequences
-#' @export
-#'
-#' @examples
-#' buildSequenceTable(settings)
-buildSequenceTable <- function(settings) {
-  filter.counts <- numeric()
-  if (!file.exists(settings@MergedFASTQPath)) {stop("FASTQ file not found.")}
-  cat("Reading .fastq file...\n")
-  reads <- ShortRead::readFastq(settings@MergedFASTQPath)
-  filter.counts <- c(filter.counts, Merged = length(reads))
-  cat("Filtering reads...\n")
-  reads.filtered <- tas_filter2(reads, settings)
-  filter.counts <- c(filter.counts, Filtered = length(reads.filtered))
-  reads <- NULL
-  cat("Building sequence table...\n")
-  tas_sequence_table2(reads.filtered, settings)
-}
+
+
+
+# possible framework for fastqstreamer implementation
+# slower for amplicon-ez sized fastq files and seems not needed
+
+# infile <- "/Users/geoff/Google Drive/Amplicon EZ/test5/analyzed 2/merged/E1-J3-T3-merged.fastq.gz"
+# outfile <- file.path(tempdir(), "filtered.fastq.gz")
+#
+# strm <- FastqStreamer(infile, n = 1e6)
+#
+# first <- TRUE
+#
+# repeat {
+#   fq <- yield(strm)
+#   if (length(fq) == 0) break
+#
+#   fq.filt <- filterSequences(fq, settings)
+#
+#   if (length(fq.filt) > 0) {
+#     writeFastq(
+#       fq.filt,
+#       outfile,
+#       mode = if (first) "w" else "a",
+#       compress = TRUE
+#     )
+#     first <- FALSE
+#   }
+# }
+#
+# close(strm)

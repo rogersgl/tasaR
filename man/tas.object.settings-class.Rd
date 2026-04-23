@@ -14,10 +14,6 @@ S4 object containing analysis settings for tasaR
 
 \item{\code{IsAntibody}}{logical vector if sequence is an antibody}
 
-\item{\code{MeasureSHM}}{logical vector defining whether to measure somatic hypermutation (SHM)}
-
-\item{\code{MeasureDNARepairTypes}}{logical vector defining whether to measure DNA repair types}
-
 \item{\code{MergedFASTQPath}}{character vector of file path to the merged paired-end FASTQ file to be analyzed}
 
 \item{\code{ReferenceSequence}}{character vector of the reference (expected) amplicon sequence to be analyzed (do not include primers)}

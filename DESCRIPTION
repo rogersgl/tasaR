@@ -41,9 +41,30 @@ Depends:
     stringr,
     openxlsx,
     pwalign,
-    S4Vectors
+    S4Vectors,
+    ggplot2,
+    ggh4x
 RoxygenNote: 7.3.3
 Suggests: 
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
 Roxygen: list(markdown = TRUE)
+Collate: 
+    'analyzeAmplicon.R'
+    'buildSequenceTable.R'
+    'helper-fns.R'
+    'classes.R'
+    'export.R'
+    'filter.R'
+    'generics.R'
+    'global.R'
+    'import.R'
+    'measureDNArepair.R'
+    'measureMutations.R'
+    'methods.R'
+    'msa.R'
+    'mutations.R'
+    'pandaseq.R'
+    'plots.R'
+    'readSettings.R'
+    'shinyMerge.R'

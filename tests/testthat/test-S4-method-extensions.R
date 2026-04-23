@@ -7,8 +7,6 @@ test_that("Validate tasAnalyzer extensions for function isEmpty.", {
   #tas.object.settings
   obj.set <- new("tas.object.settings", Name = "unknown",
                  IsAntibody = FALSE,
-                 MeasureSHM = FALSE,
-                 MeasureDNARepairTypes = FALSE,
                  MergedFASTQPath = "",
                  ReferenceSequence = "",
                  ForwardExtensionType = "",
@@ -36,23 +34,22 @@ test_that("Validate tasAnalyzer extensions for function isEmpty.", {
   expect_false(isEmpty(obj.set))
 
   # tas.mutations
-  obj.mut <- new("tas.mutations", AllMutations = data.frame(Position = numeric(), MutationFrequency = numeric()),
-                                  CytosineMutations = data.frame(Position = numeric(), MutationFrequency = numeric()),
-                                  NonCytosineMutations = data.frame(Position = numeric(), MutationFrequency = numeric()),
-                                  MotifSums = c(TotalPercentMutated = NA_real_,
-                                                TotalPercentMutatedInMotif = NA_real_,
-                                                TotalPercentMutatedInCytosine = NA_real_,
-                                                MotifMutationAverage = NA_real_,
-                                                MotifMutationFrequencyofTotal = NA_real_,
-                                                MotifMutationNonCAverage = NA_real_,
-                                                MotifMutationNonCFrequencyOfTotal = NA_real_,
-                                                CytosineMutationAverage = NA_real_,
-                                                NonCytosineMutationAverage = NA_real_,
-                                                CytosineMutationFrequencyOfTotal = NA_real_,
-                                                CytosineMutationFrequencyOfMotif = NA_real_))
+  obj.mut <- new("tas.mutations", DNA = list(AllMutations = data.frame(Position = numeric(), MutationFrequency = numeric()),
+                                                        CytosineMutations = data.frame(Position = numeric(), MutationFrequency = numeric()),
+                                                        NonCytosineMutations = data.frame(Position = numeric(), MutationFrequency = numeric()),
+                                                        MotifSums = c(AverageAllMutations = NA_real_,
+                                                                      AverageCytosineMutations = NA_real_,
+                                                                      AverageNonCytosineMutations = NA_real_,
+                                                                      FrequencyOfAllMutationsAtCytosines = NA_real_,
+                                                                      FrequencyOfAllMutationsAtNonCytosines = NA_real_)),
+                                             AA = list(AllMutations = data.frame(Position = numeric(), MutationFrequency = numeric()),
+                                                       MutationMatrix = matrix()),
+                                             AIDTables = list(WRCH = data.frame(Motif = character(), Start = integer(), End = integer(), Cytosine = integer(), CytosineMutationFrequency = numeric()),
+                                                              WRCY = data.frame(Motif = character(), Start = integer(), End = integer(), Cytosine = integer(), CytosineMutationFrequency = numeric()))
+                  )
   expect_true(validObject(obj.mut))
   expect_true(isEmpty(obj.mut))
-  obj.mut@AllMutations <- data.frame(Position = 1, MutationFrequency = 15)
+  obj.mut@DNA$AllMutations <- data.frame(Position = 1, MutationFrequency = 15)
   expect_true(validObject(obj.mut))
   expect_false(isEmpty(obj.mut))
 
@@ -64,9 +61,14 @@ test_that("Validate tasAnalyzer extensions for function isEmpty.", {
                                                      BasesChanged = NA_real_,
                                                      AA = "",
                                                      ProteinMutation = ""),
-                                  Supplemental = data.table(Sequence = "",
-                                                            UMIs = list(),
-                                                            IDs = list()))
+                 Supplemental = data.table::data.table(Index = NA_integer_,
+                                                       UMIs = list(),
+                                                       IDs = list(),
+                                                       IndelStart = NA_real_,
+                                                       IndelType = NA_character_),
+                 Alignments = list(DNA = empty.pass(),
+                                   AA = empty.pass()),
+                 ReadCounts = NA_integer_)
   expect_true(validObject(obj.seq))
   expect_true(isEmpty(obj.seq))
   obj.seq@Table <- data.frame(Sequences = "ATGCAG",
@@ -79,29 +81,6 @@ test_that("Validate tasAnalyzer extensions for function isEmpty.", {
   expect_true(validObject(obj.seq))
   expect_false(isEmpty(obj.seq))
 
-  # tas.aid.tables
-  obj.aid <- new("tas.aid.tables", WRCH = data.frame(Motif = "",
-                                                     Start = NA_integer_,
-                                                     End = NA_integer_,
-                                                     Cytosine = NA_integer_,
-                                                     MotifMutagenesis = NA_real_,
-                                                     CytosineMutagenesis = NA_real_),
-                                   WRCY = data.frame(Motif = "",
-                                                     Start = NA_integer_,
-                                                     End = NA_integer_,
-                                                     Cytosine = NA_integer_,
-                                                     MotifMutagenesis = NA_real_,
-                                                     CytosineMutagenesis = NA_real_))
-  expect_true(validObject(obj.aid))
-  expect_true(isEmpty(obj.aid))
-  obj.aid@WRCH <- data.frame(Motif = "WRCH",
-                             Start = 1L,
-                             End = 4L,
-                             Cytosine = 3L,
-                             MotifMutagenesis = 11.3,
-                             CytosineMutagenesis = 10.7)
-  expect_true(validObject(obj.aid))
-  expect_false(isEmpty(obj.aid))
 
   # tas.dna.repair
   obj.dna <- new("tas.dna.repair", WT = NA_real_,
@@ -121,27 +100,14 @@ test_that("Validate tasAnalyzer extensions for function isEmpty.", {
   expect_true(validObject(obj.dna))
   expect_false(isEmpty(obj.dna))
 
-  # tas.alignment
-  obj.align <- new("tas.alignment", DNA = empty.pass(),
-                                    AA = empty.pass())
-  expect_true(validObject(obj.align))
-  expect_true(isEmpty(obj.align))
-  obj.align@DNA <- pairwiseAlignment(DNAStringSet(c("ATGCAG", "ATGGAG")), DNAString("ATGCAG"))
-  expect_error(validObject(obj.align), "pairwise alignments are not equal")
-  obj.align@AA <- pairwiseAlignment(AAStringSet(c("MQ", "ME")), AAString("MQ"))
-  expect_true(validObject(obj.align))
-  expect_false(isEmpty(obj.align))
-
   # AmpliconSequencing
-  obj.as <- new("AmpliconSequencing", Alignment = new("tas.alignment"),
-                                      Sequences = new("tas.sequences"),
+  obj.as <- new("AmpliconSequencing", Sequences = new("tas.sequences"),
                                       Mutations = new("tas.mutations"),
                                       MutationTypes = new("tas.dna.repair"),
-                                      AIDTables = new("tas.aid.tables"),
                                       Settings = new("tas.object.settings"))
   expect_true(validObject(obj.as))
   expect_true(isEmpty(obj.as))
-  obj.as@Mutations@AllMutations <- data.frame(Position = 1, MutationFrequency = 15)
+  obj.as@Mutations@DNA$AllMutations <- data.frame(Position = 1, MutationFrequency = 15)
   expect_true(validObject(obj.as))
   expect_false(isEmpty(obj.as))
 })

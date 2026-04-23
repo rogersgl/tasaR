@@ -5,17 +5,44 @@
 \alias{tas.mutations-class}
 \title{S4 class tas.mutations}
 \description{
-S4 object of sequence mutations by position
+S4 object of sequence mutations
 }
 \section{Slots}{
 
 \describe{
-\item{\code{AllMutations}}{data.frame showing position and frequency of mutations at all positions}
+\item{\code{DNA}}{a list of DNA mutation information}
 
-\item{\code{CytosineMutations}}{data.frame showing position and frequency of mutations at AID cytosines}
+\item{\code{AA}}{a list of protein mutation information}
 
-\item{\code{NonCytosineMutations}}{data.frame showing position and frequency of mutations at all positions that are not AID cytosines}
-
-\item{\code{MotifSums}}{numeric vector summarizing the frequency of mutations among different motifs and denominators}
+\item{\code{AIDTables}}{a list of summary information of mutations at AID hotspots}
 }}
+
+\section{DNA}{
+
+\describe{
+\item{AllMutations}{data.frame showing position and frequency of mutations at all positions}
+\item{CytosineMutations}{data.frame showing position and frequency of mutations at AID cytosines}
+\item{NonCytosineMutations}{data.frame showing position and frequency of mutations at all positions that are not AID cytosines}
+\item{MotifSums}{numeric vector summarizing the frequency of mutations among different motifs and denominators}
+}
+}
+
+\section{AA}{
+
+\describe{
+\item{AllMutations}{data.frame showing position and frequency of mutations at all positions}
+\item{MutationMatrix}{matrix showing frequency and identity of all protein mutations (WT omitted)}
+}
+}
+
+\section{AIDTables Columns}{
+
+\describe{
+\item{Motif}{character vector DNA motif (top strand = WRCH/WRCY, bottom strand = DGYW/RGYW)}
+\item{Start}{numeric vector of starting coordinates of AID motifs}
+\item{End}{numeric vector of ending coordinates of AID motifs}
+\item{Cytosine}{numeric vector of coordinates of AID cytosines}
+\item{CytosineMutationFrequency}{numeric vector of the mutation frequency at the AID cytosine}
+}
+}
 

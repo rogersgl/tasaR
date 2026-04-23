@@ -7,9 +7,7 @@
 \alias{isEmpty,tas.object.settings-method}
 \alias{isEmpty,tas.mutations-method}
 \alias{isEmpty,tas.sequences-method}
-\alias{isEmpty,tas.aid.tables-method}
 \alias{isEmpty,tas.dna.repair-method}
-\alias{isEmpty,tas.alignment-method}
 \alias{isEmpty,AmpliconSequencing-method}
 \title{isEmpty methods for package tasaR}
 \usage{
@@ -19,11 +17,7 @@
 
 \S4method{isEmpty}{tas.sequences}(x)
 
-\S4method{isEmpty}{tas.aid.tables}(x)
-
 \S4method{isEmpty}{tas.dna.repair}(x)
-
-\S4method{isEmpty}{tas.alignment}(x)
 
 \S4method{isEmpty}{AmpliconSequencing}(x)
 }
