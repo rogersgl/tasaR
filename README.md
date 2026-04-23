@@ -1,10 +1,11 @@
-# Targeted Amplicon Sequencing Analyzer
+# tasaR
+## Toolbox for Amplicon Sequencing Analysis in R
 
 #### About
 
 This software was developed to facilitate analysis of mutations within targeted amplicons sequences by Illumina deep sequencing. This was originally developed to facilitate analysis of somatic hypermutation (SHM) of specific antibody sequences in B cells introduced by site-specific genome editing, as other tools focused on this sort of analysis look at the population level rather than a specific starting sequence.
 
-tasAnalyzer can also be used to analyze the DNA mutations introduced at a specific site by a targeted nuclease. During my experiments, I found that some loci produce gene editing outcomes beyond simple insertions and deletions (indels). For loci that have close homeologs, gene conversion-like repair may result in the transfer of sequences from these genes to the targeted gene, likely via homology-directed repair. Other analysis softwares, both for Sanger sequencing and Illumina sequencing, miss these events and can drastically underestimate the rate of DNA change at these loci compared to when tasAnalyzer accounts for these gene coversion-like events.
+tasaR can also be used to analyze the DNA mutations introduced at a specific site by a targeted nuclease. During my experiments, I found that some loci produce gene editing outcomes beyond simple insertions and deletions (indels). For loci that have close homeologs, gene conversion-like repair may result in the transfer of sequences from these genes to the targeted gene, likely via homology-directed repair. Other analysis softwares, both for Sanger sequencing and Illumina sequencing, miss these events and can drastically underestimate the rate of DNA change at these loci compared to when tasaR accounts for these gene coversion-like events.
 
 Created by Geoffrey L. Rogers, PhD.
 Department of Immunology and Immune Therapeutics, Keck School of Medicine, University of Southern California, Los Angeles, CA, USA
@@ -33,19 +34,19 @@ To merge paired end reads from Illumina sequencing, this software also requires 
 
 ## **Options for tas_analyze**
 
-**Merge paired-end reads? -** Tells tasAnalyzer whether to call PANDAseq to merge paired-end reads.
+**Merge paired-end reads? -** Tells tasaR whether to call PANDAseq to merge paired-end reads.
 
-**Enable somatic hypermutation module? -** Tells tasAnalyzer whether to identify AID hotspot motifs and measure mutations at those sites.
+**Enable somatic hypermutation module? -** Tells tasaR whether to identify AID hotspot motifs and measure mutations at those sites.
 
-**Measure amino acid mutations? -** Tells tasAnalyzer whether to identify and classify mutations of the amino acid sequence.
+**Measure amino acid mutations? -** Tells tasaR whether to identify and classify mutations of the amino acid sequence.
 
 **Number of sequences to align? -** For multiple sequence alignments, tells how many sequences to align. A default of 10 is recommended for readability and processing time, as this step can be quite intensive.
 
 **Minimum read frequency for analysis? - Only for samples without UMIs.** The minimum frequency (%) of reads to be included in the analysis. A range of 1% (0.1) to 0.01% (0.0001) is recommended.
 
-**Predict DNA repair pathway use? -** Tells tasAnalyzer whether to measure the frequences of different types of mutations and predict the rate of usage for the likely underlying DNA repair pathways. Useful for amplicons spanning gene editing nuclease target sites to estimate the activity of the nuclease.
+**Predict DNA repair pathway use? -** Tells tasaR whether to measure the frequences of different types of mutations and predict the rate of usage for the likely underlying DNA repair pathways. Useful for amplicons spanning gene editing nuclease target sites to estimate the activity of the nuclease.
 
-**Plot phylogenetic trees of multiple sequence alignments? -** Tells tasAnalyzer whether to plot phylogenetic trees of the sequences aligned in the MSA module.
+**Plot phylogenetic trees of multiple sequence alignments? -** Tells tasaR whether to plot phylogenetic trees of the sequences aligned in the MSA module.
 
 ## Description of the Input.csv file
 
@@ -57,7 +58,7 @@ The Input.csv file specifies the analysis parameters for each sample used by the
 <br></br>
 **ReverseFASTQFileName -** File name of the R2 Illumina sequencing file for that sample. Files in .fastq.gz format are much smaller than uncompressed .fastq files and access speeds are comparable.
 <br></br>
-**MergedFASTQFileName -** File name of the merged .fastq.gz file if paired end merging is performed outside of tasAnalyzer. If using the scripts for PANDAseq merging, this column should be left blank and will be automatically filled by the software.
+**MergedFASTQFileName -** File name of the merged .fastq.gz file if paired end merging is performed outside of tasaR. If using the scripts for PANDAseq merging, this column should be left blank and will be automatically filled by the software.
 <br></br>
 **ForwardExtensionType -** The type of extension on the forward primer. Can be either "Barcode" or "UMI".
 <br></br>
@@ -105,7 +106,7 @@ Note: The **InsertStart** and **InsertEnd** coordinates are not affected by inde
 
 The tool outputs a variety of files, tables, and graphs that may be of use to the user:
 
-#### If merging was performed by tasAnalyzer
+#### If merging was performed by tasaR
 
 * Merged .fastq.gz files for each sample (output of PANDAseq).
 <br></br>
@@ -121,7 +122,7 @@ The tool outputs a variety of files, tables, and graphs that may be of use to th
 <br></br>
 * **Mutations.xlsx -** Quantification of the amount of mutation observed at each nucleotide along the sequence (in %). MutAll includes all nts in the ReferenceSequence. Other measures require measure.shm = TRUE. MutCyt pulls out the cytosines of AID hotspot motifs (WR**C**H), whereas MutNonC is all other nts in the sequence. MotifSums shows calculated % of mutation across different target motifs and denominantors, as described by the row titles.
 <br></br>
-* **WRCH/WRCY tables.xlsx -** Created if the SHM module is enabled. Tables showing each of the AID hotspots identified by tasAnalyzer and the mutation frequency at that site. One tab for each sample.
+* **WRCH/WRCY tables.xlsx -** Created if the SHM module is enabled. Tables showing each of the AID hotspots identified by tasaR and the mutation frequency at that site. One tab for each sample.
 <br></br>
 * **Mutation Types.xlsx -** Created if the DNA Repair Pathway module is enabled. For each sample, classifies and counts the frequency of mutations based on the predicted underlying DNA repair pathway. Non-homologous end joining (NHEJ): insertions and -1 or -2 deletions. Microhomology-mediated end joining (MMEJ): deletions > -2. Base change: changes in the sequence without indels. Indel + Base change: Sequencing with both 1 or more indels and base change outcomes. Other: Sequences not falling into any other category.
 
