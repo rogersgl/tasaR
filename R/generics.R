@@ -206,7 +206,11 @@ setMethod("getAAalign", signature(object = "AmpliconSequencing"), function(objec
 setGeneric("getFilterCounts", function(object) standardGeneric("getFilterCounts"))
 
 setMethod("getFilterCounts", signature(object = "tas.sequences"), function(object) {
-  if (!is.na(object@Sequences@ReadCounts)) {return(object@Sequences@ReadCounts)} else {return("Empty")}
+  if (!any(is.na(object@ReadCounts))) {return(object@ReadCounts)} else {return("Empty")}
+})
+
+setMethod("getFilterCounts", signature(object = "AmpliconSequencing"), function(object) {
+  if (!any(is.na(object@Sequences@ReadCounts))) {return(object@Sequences@ReadCounts)} else {return("Empty")}
 })
 
 
@@ -589,8 +593,14 @@ setMethod("getSettings", signature(object = "AmpliconSequencing"), function(obje
 
 
 ###############################################################################
-# Graphing functions
-# ------------------
+# Results functions
+# -----------------
+
+
+# --------
+# Graphing
+# --------
+
 
 #' Graph results of tasaR analysis
 #'
@@ -721,4 +731,119 @@ setMethod("graphResults", signature = "tas.dna.repair", function(results, output
   o <- gg.dna.mut.types(results, mutationTypes)
   return(o)
 })
+
+
+
+
+
+# -------------
+# Export tables
+# -------------
+
+
+
+
+#' Export tables of tasaR analysis
+#'
+#' @description
+#' Exports tables of the results of tasaR analyses to a series of .csv files, and copies them to a path specified by the user.
+#'
+#' @param results S4 object of class AmpliconSequencing, tas.mutation, tas.sequences, or tas.dna.repair
+#' @param path Character vector specifying the file path to write the .csv files to.
+#'
+#'
+#' @section Output Tables:
+#' \describe{
+#'  \item{\code{Sequence Table.csv}}{Overview table showing seqences, counts, mutations, and translations. From tas.mutations.}
+#'  \item{\code{Read Counts.csv}}{Table showing the read counts at different stages of filtering.}
+#'  \item{\code{All DNA Mutations.csv}}{Table showing the % DNA mutation at each nt position.}
+#'  \item{\code{Cytosine DNA Mutations.csv}}{Table showing the % DNA mutation at each AID cytosine position.}
+#'  \item{\code{Non-Cytosine DNA Mutations.csv}}{Table showing the % DNA mutation at each nt position that is not an AID cytosine.}
+#'  \item{\code{Motif Sums.csv}}{Table summarizing the frequency of mutation at different motifs and denominators.}
+#'  \item{\code{All Protein Mutations.csv}}{Table showing the % protein mutation at each amino acid position.}
+#'  \item{\code{Protein Mutation Matrix.csv}}{Table showing the frequency of each amino acid occurring at each position in the protein sequence.}
+#'  \item{\code{WRCH Table.csv}}{Table summarizing the position of AID hotspots (WRCH motif) and mutation frequency at the cytosine.}
+#'  \item{\code{WRCY Table.csv}}{Table summarizing the position of AID hotspots (WRCY motif) and mutation frequency at the cytosine.}
+#'  \item{\code{DNA Repair Types.csv}}{Table showing the inferred frequency of different DNA repair pathways..}
+#' }
+#'
+#' @usage NULL
+#' @returns NULL
+#' @export
+setGeneric("exportTables", function(results, path, ...) standardGeneric("exportTables"))
+
+
+#' @export
+setMethod("exportTables", signature = c("AmpliconSequencing", "character"), function(results, path, ...) {
+
+  if (!dir.exists(file.path(tempdir(), "export"))) {
+    dir.create(file.path(tempdir(), "export"))
+  }
+
+  write.csv(getSequenceTable(results), file = file.path(tempdir(), "export", "Sequence Table.csv"))
+  write.csv(getFilterCounts(results), file = file.path(tempdir(), "export", "Read Counts.csv"))
+  write.csv(getMutationDistributionDNA(results), file = file.path(tempdir(), "export", "All DNA Mutations.csv"))
+  write.csv(getMutationDistributionCytosine(results), file = file.path(tempdir(), "export", "Cytosine DNA Mutations.csv"))
+  write.csv(getMutationDistributionNonCytosine(results), file = file.path(tempdir(), "export", "Non-Cytosine DNA Mutations.csv"))
+  write.csv(getMutationMotifSums(results), file = file.path(tempdir(), "export", "Motif Sums.csv"))
+  write.csv(getMutationDistributionAA(results), file = file.path(tempdir(), "export", "All Protein Mutations.csv"))
+  write.csv(getMutationMatrixAA(results), file = file.path(tempdir(), "export", "Protein Mutation Matrix.csv"))
+  write.csv(getWRCHTable(results), file = file.path(tempdir(), "export", "WRCH Table.csv"))
+  write.csv(getWRCYTable(results), file = file.path(tempdir(), "export", "WRCY Table.csv"))
+  write.csv(getMutationTypes(results), file = file.path(tempdir(), "export", "DNA Repair Types.csv"))
+
+  if (!dir.exists(path)) {
+    dir.create(path)
+  }
+
+  file.copy(file.path(tempdir(), "export"), path, recursive = TRUE)
+
+})
+
+#' @export
+setMethod("exportTables", signature = c("tas.sequences", "character"), function(results, path, ...) {
+  if (!dir.exists(file.path(tempdir(), "export"))) {dir.create(file.path(tempdir(), "export"))}
+  write.csv(getSequenceTable(results), file = file.path(tempdir(), "export", "Sequence Table.csv"))
+  write.csv(getFilterCounts(results), file = file.path(tempdir(), "export", "Read Counts.csv"))
+  if (!dir.exists(path)) {dir.create(path)}
+  file.copy(file.path(tempdir(), "export"), path, recursive = TRUE)
+})
+
+#' @export
+setMethod("exportTables", signature = c("tas.mutations", "character"), function(results, path, ...) {
+  if (!dir.exists(file.path(tempdir(), "export"))) {dir.create(file.path(tempdir(), "export"))}
+  write.csv(getMutationDistributionDNA(results), file = file.path(tempdir(), "export", "All DNA Mutations.csv"))
+  write.csv(getMutationDistributionCytosine(results), file = file.path(tempdir(), "export", "Cytosine DNA Mutations.csv"))
+  write.csv(getMutationDistributionNonCytosine(results), file = file.path(tempdir(), "export", "Non-Cytosine DNA Mutations.csv"))
+  write.csv(getMutationMotifSums(results), file = file.path(tempdir(), "export", "Motif Sums.csv"))
+  write.csv(getMutationDistributionAA(results), file = file.path(tempdir(), "export", "All Protein Mutations.csv"))
+  write.csv(getMutationMatrixAA(results), file = file.path(tempdir(), "export", "Protein Mutation Matrix.csv"))
+  write.csv(getWRCHTable(results), file = file.path(tempdir(), "export", "WRCH Table.csv"))
+  write.csv(getWRCYTable(results), file = file.path(tempdir(), "export", "WRCY Table.csv"))
+  if (!dir.exists(path)) {dir.create(path)}
+  file.copy(file.path(tempdir(), "export"), path, recursive = TRUE)
+})
+
+#' @export
+setMethod("exportTables", signature = c("tas.dna.repair", "character"), function(results, path, ...) {
+  if (!dir.exists(file.path(tempdir(), "export"))) {dir.create(file.path(tempdir(), "export"))}
+  write.csv(getMutationTypes(results), file = file.path(tempdir(), "export", "DNA Repair Types.csv"))
+  if (!dir.exists(path)) {dir.create(path)}
+  file.copy(file.path(tempdir(), "export"), path, recursive = TRUE)
+})
+
+
+
+
+
+# --------------
+# Summary Report
+# --------------
+
+# TODO: might need some kind of LaTeX parser or something to write this?
+
+
+
+
+
 

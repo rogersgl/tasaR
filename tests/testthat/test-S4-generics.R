@@ -324,8 +324,8 @@ test_that("getSettings returns the expected output.", {
 
 
 ###############################################################################
-# Graphing functions
-# ------------------
+# Results functions
+# -----------------
 
 
 
@@ -396,6 +396,38 @@ test_that("graphResults works for class tas.mutations", {
 })
 
 
+test_that("exportTables writes tables to the correct path.", {
+
+  path <- file.path(tempdir(), "test-destination")
+  expect_output(test.results <- analyzeAmplicon(test.settings))
+  exportTables(test.results, path)
+  file.list <- c("Sequence Table.csv",
+                 "Read Counts.csv",
+                 "All DNA Mutations.csv",
+                 "Motif Sums.csv",
+                 "Cytosine DNA Mutations.csv",
+                 "Non-Cytosine DNA Mutations.csv",
+                 "All Protein Mutations.csv",
+                 "Protein Mutation Matrix.csv",
+                 "WRCH Table.csv",
+                 "WRCY Table.csv",
+                 "DNA Repair Types.csv")
+  expect_all_true(file.exists(file.path(path, "export", file.list)))
+  file.remove(file.path(path, "export", file.list))
+
+  exportTables(test.results@Sequences, path)
+  expect_all_true(file.exists(file.path(path, "export", file.list[1:2])))
+  file.remove(file.path(path, "export", file.list[1:2]))
+
+  exportTables(test.results@Mutations, path)
+  expect_all_true(file.exists(file.path(path, "export", file.list[3:10])))
+  file.remove(file.path(path, "export", file.list[3:10]))
+
+  exportTables(test.results@MutationTypes, path)
+  expect_true(file.exists(file.path(path, "export", file.list[11])))
+  file.remove(file.path(path, "export", file.list[11]))
+
+})
 
 
 

@@ -273,7 +273,12 @@ gg.aa.muts.stacked <- function(input) {
 }
 
 
-# graph sequence alignment
+# graph sequence alignments
+# TODO: consider how to improve speed while retaining features. These graphs
+# each take about as long as the entire analysis process to generate.
+# Possible to write a LaTeX parser to turn the DNA sequence alignments into
+# something matching this style? The output from msa package msaPrettyPrint
+# cannot replicate this functionality as far as I can determine.
 
 gg.dna.align <- function(input, seq.number = 10) {
 
