@@ -266,15 +266,17 @@ setMethod("show", "tas.dna.repair", function(object) {
 
 #' @export
 setMethod("show", "AmpliconSequencing", function(object) {
-  cat("An S4 object of class AmpliconSequencing:\n\n")
   for (i in slotNames(object)) {
-    cat(i,":\n", sep = "")
+    cat(rep("-", nchar(i)+1),
+        "\n", i,":\n",
+        rep("-", nchar(i)+1),"\n\n", sep = "")
     o <- slot(object, i)
     if (isEmpty(o)) {
       cat("Empty\n\n")
     } else {
-      cat("Access using @",i,"\n\n")
+      show(o)
     }
+    cat("\n\n\n")
   }
 })
 

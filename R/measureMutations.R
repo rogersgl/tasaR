@@ -31,8 +31,13 @@ measureMutations <- function(sequence.table, settings) {
 
     dt.d <- data.table(start = start(unlist(deletion(dna.align))), width = width(unlist(deletion(dna.align))))
     dt.d <- dt.d[, .(start = start, end = (start + width -1))]
-    dt.d <- dt.d[, .(Position = unlist(Map(seq, start, end)))]
-    dt.d <- dt.d[, .N, by = Position]
+    if (!isEmpty(dt.d)){
+      dt.d <- dt.d[, .(Position = unlist(Map(seq, start, end)))]
+      dt.d <- dt.d[, .N, by = Position]
+    } else {
+      dt.d <- data.table(Position = numeric(), N = integer())
+    }
+
 
     dt.merge <- rbindlist(list(dt.mm, dt.i, dt.d))[, .(MutationFrequency = sum(N)/sum(t$Count)*100), by = Position]
     idx.nz <- dt.merge$Position
@@ -58,6 +63,8 @@ measureMutations <- function(sequence.table, settings) {
     AverageNonCytosineMutations <-  mean(NonCytosineMutations$MutationFrequency)
     FrequencyOfAllMutationsAtCytosines <- sum(CytosineMutations$MutationFrequency)/sum(AllMutations$MutationFrequency)*100
     FrequencyOfAllMutationsAtNonCytosines <- sum(NonCytosineMutations$MutationFrequency)/sum(AllMutations$MutationFrequency)*100
+    if (is.nan(FrequencyOfAllMutationsAtCytosines)) {FrequencyOfAllMutationsAtCytosines <- 0}
+    if (is.nan(FrequencyOfAllMutationsAtNonCytosines)) {FrequencyOfAllMutationsAtNonCytosines <- 0}
     ms <- setNames(c(AverageAllMutations, AverageCytosineMutations, AverageNonCytosineMutations, FrequencyOfAllMutationsAtCytosines, FrequencyOfAllMutationsAtNonCytosines),
                    c("AverageAllMutations", "AverageCytosineMutations", "AverageNonCytosineMutations", "FrequencyOfAllMutationsAtCytosines", "FrequencyOfAllMutationsAtNonCytosines"))
 
@@ -90,12 +97,23 @@ measureMutations <- function(sequence.table, settings) {
     ids <- getSequenceSupplemental(sequence.table)$IndelStart
     idt <- getSequenceSupplemental(sequence.table)$IndelType
 
-    dt.p <- as.data.table(mismatchSummary(prot.align)$subject)[!Pattern %in% c("-", "+")]
-    dt.p <- dt.p[, .(.N, MutationFrequency = sum(Count)/sum(t$Count)*100, Position = SubjectPosition), by = SubjectPosition][,c("Position", "MutationFrequency")]
-    dt.idp <- data.table(Position = ceiling(ids/3), MutationFrequency = t$Percent)[!is.na(Position)]
+    dt.p <- as.data.table(mismatchSummary(prot.align)$subject)
+    if (!isEmpty(dt.p)) {
+      dt.p <- dt.p[!Pattern %in% c("-", "+")]
+      dt.p <- dt.p[, .(.N, MutationFrequency = sum(Count)/sum(t$Count)*100, Position = SubjectPosition), by = SubjectPosition][,c("Position", "MutationFrequency")]
+      dt.idp <- data.table(Position = ceiling(ids/3), MutationFrequency = t$Percent)
+      if (!isEmpty(dt.idp)) {
+        dt.idp <- data.table(Position = ceiling(ids/3), MutationFrequency = t$Percent)[!is.na(Position)]
+      } else {
+        dt.idp <- data.table(Position = numeric(), MutationFrequency = numeric())
+      }
+    } else {
+      dt.p <- data.table(Position = numeric(), MutationFrequency = numeric())
+      dt.idp <- data.table(Position = numeric(), MutationFrequency = numeric())
+    }
     dt.pl <- rbindlist(list(dt.p, dt.idp,
-                           data.table(Position = which(!1:prot.len %in% c(dt.p$Position, dt.idp$Position)), MutationFrequency = rep(0, length(which(!1:prot.len %in% c(dt.p$Position, dt.idp$Position))))))
-                           , fill = TRUE)[, .(MutationFrequency = sum(MutationFrequency)), by = Position]
+                            data.table(Position = which(!1:prot.len %in% c(dt.p$Position, dt.idp$Position)), MutationFrequency = rep(0, length(which(!1:prot.len %in% c(dt.p$Position, dt.idp$Position))))))
+                       , fill = TRUE)[, .(MutationFrequency = sum(MutationFrequency)), by = Position]
 
     setorder(dt.pl, Position)
 

@@ -321,3 +321,81 @@ test_that("getSettings returns the expected output.", {
 })
 
 
+
+
+###############################################################################
+# Graphing functions
+# ------------------
+
+
+
+test_that("graphResults works for class AmpliconSequencing", {
+  expect_output(test.results <- analyzeAmplicon(test.settings))
+  asg <- list()
+  for (i in c("dna.positions", "dna.positions.labeled",
+              "aa.positions", "aa.positions.labeled",
+              "aid.boxplot", "aa.mutations",
+              "mutation.types", "histogram",
+              "dna.align", "aa.align"
+  )) {
+    expect_no_error(asg[[i]] <- graphResults(test.results, output = i))
+  }
+  expect_all_true(suppressWarnings(str_detect(lapply(asg, class), "ggplot")))
+})
+
+
+test_that("graphResults works for class tas.sequences", {
+  expect_output(test.results <- buildSequenceTable(test.settings))
+  expect_no_error(stg <- graphResults(test.results, "histogram"))
+  expect_true(str_detect(class(stg)[1], "ggplot"))
+
+  for (i in c("dna.positions", "dna.positions.labeled",
+              "aa.positions", "aa.positions.labeled",
+              "aid.boxplot", "aa.mutations",
+              "mutation.types")) {
+    expect_error(graphResults(test.results, output = i))
+  }
+})
+
+
+test_that("graphResults works for class tas.dna.repair", {
+  expect_output(test.results <- measureDNArepair(buildSequenceTable(test.settings), test.settings))
+  expect_no_error(mtg <- graphResults(test.results, output = "mutation.types"))
+  expect_true(str_detect(class(mtg)[1], "ggplot"))
+
+  for (i in c("dna.positions", "dna.positions.labeled",
+              "aa.positions", "aa.positions.labeled",
+              "aid.boxplot", "aa.mutations",
+              "histogram")) {
+    expect_error(graphResults(test.results, output = i))
+  }
+})
+
+
+
+test_that("graphResults works for class tas.mutations", {
+  expect_output(test.results <- measureMutations(buildSequenceTable(test.settings), test.settings))
+
+  mmg <- list()
+  for (i in c("aid.boxplot", "aa.mutations")) {
+    expect_no_error(mmg[[i]] <- graphResults(test.results, output = i))
+  }
+
+  for (i in c("dna.positions", "dna.positions.labeled",
+              "aa.positions", "aa.positions.labeled"
+              )) {
+    expect_error(graphResults(test.results, output = i))
+  }
+
+  for (i in c("dna.positions", "dna.positions.labeled",
+              "aa.positions", "aa.positions.labeled"
+  )) {
+    expect_no_error(mmg[[i]] <- graphResults(test.results, output = i, settings = test.settings))
+  }
+  expect_all_true(suppressWarnings(str_detect(lapply(mmg, class), "ggplot")))
+})
+
+
+
+
+

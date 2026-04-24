@@ -43,7 +43,9 @@ Depends:
     pwalign,
     S4Vectors,
     ggplot2,
-    ggh4x
+    ggh4x,
+    msa,
+    ggmsa
 RoxygenNote: 7.3.3
 Suggests: 
     testthat (>= 3.0.0)

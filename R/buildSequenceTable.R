@@ -24,6 +24,7 @@ buildSequenceTable <- function(settings) {
   filter.counts <- c(filter.counts, Merged = length(reads))
   cat("Filtering reads...\n")
   reads.filtered <- filterSequences(reads, settings)
+  if (length(reads.filtered) == 0) {stop("No reads after filtering. Check that your primer and extension sequences match your sample and that primers were not trimmed during merging.")}
   filter.counts <- c(filter.counts, Filtered = length(reads.filtered))
   reads <- NULL
   #cat("Building sequence table...\n")
@@ -231,6 +232,7 @@ sequenceTable <- function(reads.filtered, settings, filter.counts = NA) {
                                    cbind(data.table(group = idx.end.del, start = end.del.start), data.table(type = "deletion")),
                                    data.table(group = 1:length(Pairwise.Aligned.DNA))
   ), fill = TRUE)[, .(minStart = if (all(is.na(start))) {NA_integer_} else {min(start, na.rm = TRUE)}, type = type[which.min(start)]), by = group]
+  indel.start.dt <- indel.start.dt[!is.na(indel.start.dt$group),]
   setorder(indel.start.dt, group)
 
   prot.reads <- as.character(suppressWarnings(translate(Reads.Unique.DNA)))

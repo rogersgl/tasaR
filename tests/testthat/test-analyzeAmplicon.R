@@ -22,3 +22,37 @@ test_that("analyzeAmplicon parses input data types as expected.", {
   expect_equal(amp.r, amp.a)
   expect_equal(amp.f, amp.a)
 })
+
+
+
+test_that("analyzeAmplicon does not fail with low-diversity inputs", {
+  sett <- test.settings
+  sett@MergedFASTQPath <- file.path(tempdir(), "test-merged-lowdiv.fastq.gz")
+  expect_output(expect_no_error(amp <- analyzeAmplicon(sett)))
+
+
+  if (file.exists(file.path(tempdir(), "test-merged-fem.fastq.gz"))) {file.remove(file.path(tempdir(), "test-merged-fem.fastq.gz"))}
+  writeFastq(makeFakeSRQ(DNAStringSet(rep("GCTgaCCGTAAAACGACGGCCAGTGTTCAACTGGTGGAAAGCGGCGGTGCTCTGGTACAACCGGGCGGTAGTCTGCGCCTGAGCTGTGCCGCAAGCGGTTTCCCAGTCAACCGCTACTCTATGCGTTGGTATCGCCAGGCGCCTGGTAAAGAACGTGAATGGGTTGCCGGCATGAGCAGTGCGGGCGATCGTTCTAGTTACGAGGACTCTGTTAAAGGTCGTTTTACAATTAGCCGTGATGATGCGCGCAATACCGTGTATCTGCAAATGAACAGTCTGAAGCCGGAGGACACCGCAGTATATTATTGCAATGTCAACGTGGGGTTTGAATATTGGGGCCAGGGGACTCAGGTGACGGTGAGCTCTGTCATAGCTGTTTCCTGAGCGAATTAGAG", 33))),
+             file.path(tempdir(), "test-merged-fem.fastq.gz"))
+  sett@MergedFASTQPath <- file.path(tempdir(), "test-merged-fem.fastq.gz")
+  expect_output(expect_error(buildSequenceTable(sett), "No reads"))
+
+  if (file.exists(file.path(tempdir(), "test-merged-fpm.fastq.gz"))) {file.remove(file.path(tempdir(), "test-merged-fpm.fastq.gz"))}
+  writeFastq(makeFakeSRQ(DNAStringSet(rep("GCTAGCCGTAAAACGAgcGCCAGTGTTCAACTGGTGGAAAGCGGCGGTGCTCTGGTACAACCGGGCGGTAGTCTGCGCCTGAGCTGTGCCGCAAGCGGTTTCCCAGTCAACCGCTACTCTATGCGTTGGTATCGCCAGGCGCCTGGTAAAGAACGTGAATGGGTTGCCGGCATGAGCAGTGCGGGCGATCGTTCTAGTTACGAGGACTCTGTTAAAGGTCGTTTTACAATTAGCCGTGATGATGCGCGCAATACCGTGTATCTGCAAATGAACAGTCTGAAGCCGGAGGACACCGCAGTATATTATTGCAATGTCAACGTGGGGTTTGAATATTGGGGCCAGGGGACTCAGGTGACGGTGAGCTCTGTCATAGCTGTTTCCTGAGCGAATTAGAG", 33))),
+             file.path(tempdir(), "test-merged-fpm.fastq.gz"))
+  sett@MergedFASTQPath <- file.path(tempdir(), "test-merged-fpm.fastq.gz")
+  expect_output(expect_error(buildSequenceTable(sett), "No reads"))
+
+  if (file.exists(file.path(tempdir(), "test-merged-rem.fastq.gz"))) {file.remove(file.path(tempdir(), "test-merged-rem.fastq.gz"))}
+  writeFastq(makeFakeSRQ(DNAStringSet(rep("GCTAGCCGTAAAACGACGGCCAGTGTTCAACTGGTGGAAAGCGGCGGTGCTCTGGTACAACCGGGCGGTAGTCTGCGCCTGAGCTGTGCCGCAAGCGGTTTCCCAGTCAACCGCTACTCTATGCGTTGGTATCGCCAGGCGCCTGGTAAAGAACGTGAATGGGTTGCCGGCATGAGCAGTGCGGGCGATCGTTCTAGTTACGAGGACTCTGTTAAAGGTCGTTTTACAATTAGCCGTGATGATGCGCGCAATACCGTGTATCTGCAAATGAACAGTCTGAAGCCGGAGGACACCGCAGTATATTATTGCAATGTCAACGTGGGGTTTGAATATTGGGGCCAGGGGACTCAGGTGACGGTGAGCTCTGTCATAGCTGTTTCCTGAGCGAATatGAG", 33))),
+             file.path(tempdir(), "test-merged-rem.fastq.gz"))
+  sett@MergedFASTQPath <- file.path(tempdir(), "test-merged-rem.fastq.gz")
+  expect_output(expect_error(buildSequenceTable(sett), "No reads"))
+
+  if (file.exists(file.path(tempdir(), "test-merged-rpm.fastq.gz"))) {file.remove(file.path(tempdir(), "test-merged-rpm.fastq.gz"))}
+  writeFastq(makeFakeSRQ(DNAStringSet(rep("GCTAGCCGTAAAACGACGGCCAGTGTTCAACTGGTGGAAAGCGGCGGTGCTCTGGTACAACCGGGCGGTAGTCTGCGCCTGAGCTGTGCCGCAAGCGGTTTCCCAGTCAACCGCTACTCTATGCGTTGGTATCGCCAGGCGCCTGGTAAAGAACGTGAATGGGTTGCCGGCATGAGCAGTGCGGGCGATCGTTCTAGTTACGAGGACTCTGTTAAAGGTCGTTTTACAATTAGCCGTGATGATGCGCGCAATACCGTGTATCTGCAAATGAACAGTCTGAAGCCGGAGGACACCGCAGTATATTATTGCAATGTCAACGTGGGGTTTGAATATTGGGGCCAGGGGACTCAGGTGACGGTGAGCTCTGTCATAGCTtgTTCCTGAGCGAATTAGAG", 33))),
+             file.path(tempdir(), "test-merged-rpm.fastq.gz"))
+  sett@MergedFASTQPath <- file.path(tempdir(), "test-merged-rpm.fastq.gz")
+  expect_output(expect_error(buildSequenceTable(sett), "No reads"))
+
+})
