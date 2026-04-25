@@ -820,6 +820,7 @@ setMethod("exportTables", signature = c("tas.mutations", "character"), function(
   write.csv(getMutationMatrixAA(results), file = file.path(tempdir(), "export", "Protein Mutation Matrix.csv"))
   write.csv(getWRCHTable(results), file = file.path(tempdir(), "export", "WRCH Table.csv"))
   write.csv(getWRCYTable(results), file = file.path(tempdir(), "export", "WRCY Table.csv"))
+  write.csv(getMutationTypes(results), file = file.path(tempdir(), "export", "DNA Repair Types.csv"))
   if (!dir.exists(path)) {dir.create(path)}
   file.copy(file.path(tempdir(), "export"), path, recursive = TRUE)
 })
