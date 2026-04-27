@@ -24,14 +24,11 @@ License: GPL (>= 3)
 Encoding: UTF-8
 LazyData: true
 Imports: 
-    ape,
     BiocManager,
     ggmsa,
     ggplot2,
     ggseqlogo,
-    msa,
     R.utils,
-    seqinr,
     zip,
     markdown
 Depends:
@@ -39,7 +36,6 @@ Depends:
     Biostrings,
     data.table,
     stringr,
-    openxlsx,
     pwalign,
     S4Vectors,
     ggplot2,
