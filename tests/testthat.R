@@ -7,6 +7,6 @@
 # * https://testthat.r-lib.org/articles/special-files.html
 
 library(testthat)
-library(tasAnalyzer)
+library(tasaR)
 
-test_check("tasAnalyzer")
+test_check("tasaR")

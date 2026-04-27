@@ -127,6 +127,8 @@ sequenceTable <- function(reads.filtered, settings, filter.counts = NA) {
     dt <- dt[N > min_freq]
     setorder(dt, -N)
     dt <- cbind(dt, data.table(umis = list(NA)))
+    umi.count <- NA
+    unique.count <- nrow(dt)
   }
 
   ##########

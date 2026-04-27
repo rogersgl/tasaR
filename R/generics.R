@@ -206,11 +206,11 @@ setMethod("getAAalign", signature(object = "AmpliconSequencing"), function(objec
 setGeneric("getFilterCounts", function(object) standardGeneric("getFilterCounts"))
 
 setMethod("getFilterCounts", signature(object = "tas.sequences"), function(object) {
-  if (!any(is.na(object@ReadCounts))) {return(object@ReadCounts)} else {return("Empty")}
+  if (!all(is.na(object@ReadCounts))) {return(object@ReadCounts)} else {return("Empty")}
 })
 
 setMethod("getFilterCounts", signature(object = "AmpliconSequencing"), function(object) {
-  if (!any(is.na(object@Sequences@ReadCounts))) {return(object@Sequences@ReadCounts)} else {return("Empty")}
+  if (!all(is.na(object@Sequences@ReadCounts))) {return(object@Sequences@ReadCounts)} else {return("Empty")}
 })
 
 

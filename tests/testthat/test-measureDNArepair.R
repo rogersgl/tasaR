@@ -105,5 +105,3 @@ test_that("measureDNArepair works", {
   obj.as <- new("AmpliconSequencing", MutationTypes = obj)
   expect_equal(getMutationTypes(obj), getMutationTypes(obj.as))
 })
-
-
