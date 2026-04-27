@@ -1,8 +1,4 @@
 
-
-
-
-
 #' Multi-sample analysis
 #'
 #' @description
@@ -32,11 +28,12 @@ batchAnalyzeAmplicon <- function(input.settings.list) {
 
     input.df <- read.csv(input.settings.list)
 
-    settings.list[input.df$Name] <- lapply(1:nrow(input.df), function(x) {
-      temp <- readSettings(input.df[x,])
+    settings.list<- lapply(1:nrow(input.df), function(x) {
+      temp <- suppressMessages(readSettings(input.df[x,]))
       validObject(temp)
       return(temp)
     })
+    names(settings.list) <- input.df$Name
   }
 
   # R list of settings
@@ -46,21 +43,33 @@ batchAnalyzeAmplicon <- function(input.settings.list) {
         validObject(x)
         return(x)
       } else {
-          temp <- readSettings(x)
+          temp <- suppressMessages(readSettings(x))
           validObject(temp)
           return(temp)
         }
       for (i in 1:length(settings.list)) {
-        names(settings.list[i]) <- getSettings(settings.list[i])$Name
+        names(settings.list)[i] <- getSettings(settings.list[[i]])$Name
       }
     })
   }
 
+  if (class(input.settings.list) == "data.frame") {
+    settings.list <- lapply(1:nrow(input.settings.list), function(x) {
+      temp <- suppressMessages(readSettings(input.settings.list[x,]))
+      validObject(temp)
+      return(temp)
+    })
+    for (i in 1:length(settings.list)) {
+      names(settings.list)[i] <- getSettings(settings.list[[i]])$Name
+    }
+  }
+
   sample.names <- names(settings.list)
   results.list <- list()
-  results.list[sample.names] <- lapply(settings.list, function(x) {
+  results.list <- lapply(settings.list, function(x) {
     analyzeAmplicon(x)
   })
+  names(results.list) <- sample.names
   return(results.list)
 }
 
@@ -134,7 +143,7 @@ batchSummarize <- function(results.list, export = FALSE, path = NULL, suppressCo
   p.aid <- gg.aid.box.batch(sample.names, merged.pos.list)
 
   # compare dna repair types stacked bar
-  p.mt <- gg.dna.mut.types.batch(sample.names, merged.pos.list)
+  p.mt <- gg.dna.mut.types.batch(sample.names, merged.pos.list, dt.mt)
 
 
   batsum <- list(Graphs = list(AvgMutAll = p.ams,
@@ -168,7 +177,7 @@ batchSummarize <- function(results.list, export = FALSE, path = NULL, suppressCo
     ggsave("DNA Repair Types.pdf", batsum$Graphs$MutTypes, path = file.path(tempdir(), "export"))
 
     if (!dir.exists(path)) {dir.create(path)}
-    file.copy(file.path(tempdir(), "export"), path, recursive = TRUE)
+    file.copy(list.files(file.path(tempdir(), "export"), full.names = TRUE), path, recursive = TRUE)
   } else if (export && is.null(path)) {
     warning("Could not export results, path not provided.")
   }

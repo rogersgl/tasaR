@@ -1,7 +1,7 @@
 Package: tasaR
 Type: Package
 Title: Tools for Amplicon Sequencing Analysis in R
-Version: 0.2.0-a
+Version: 0.2.0
 Authors@R: c(
     person(
       "Geoffrey", "Rogers",

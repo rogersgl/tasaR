@@ -191,7 +191,7 @@ gg.aid.box.batch <- function(sample.names, merged.pos.list) {
 }
 
 
-gg.dna.mut.types.batch <- function(sample.names, merged.pos.list){
+gg.dna.mut.types.batch <- function(sample.names, merged.pos.list, dt.mt){
 
   df.mt <- as.data.frame(rbindlist(lapply(sample.names, function(x) {
     data.table(rn = factor(dt.mt$rn,

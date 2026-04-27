@@ -338,7 +338,8 @@ test_that("graphResults works for class AmpliconSequencing", {
               "mutation.types", "histogram",
               "dna.align", "aa.align"
   )) {
-    expect_no_error(asg[[i]] <- graphResults(test.results, output = i))
+    suppressWarnings(expect_no_error(asg[[i]] <- graphResults(test.results, output = i)))
+    # suppress potential warning for package ggmsa using outdated ggplot2 nomenclature
   }
   expect_all_true(suppressWarnings(str_detect(lapply(asg, class), "ggplot")))
 })

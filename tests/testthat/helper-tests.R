@@ -203,6 +203,8 @@ makeTestMutationTypes <- function() {
 dfset <- make.set.df()
 write.csv(dfset, file = file.path(tempdir(), "settings.csv"), row.names = FALSE)
 
+write.csv(rbind(dfset, dfset), file = file.path(tempdir(), "settings-batch.csv"), row.names = FALSE)
+
 
 
 # ----------------------------------
