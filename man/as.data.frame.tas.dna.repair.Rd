@@ -2,7 +2,7 @@
 % Please edit documentation in R/methods.R
 \name{as.data.frame.tas.dna.repair}
 \alias{as.data.frame.tas.dna.repair}
-\alias{as.numeric,tasaR-method}
+\alias{as.data.frame,tasaR-method}
 \title{Coerce tas.dna.repair to data.frame}
 \usage{
 \method{as.data.frame}{tas.dna.repair}(x, ..., row.names = NULL)
@@ -11,6 +11,8 @@
 \item{x}{A tas.dna.repair object}
 
 \item{...}{Passed to data.frame}
+
+\item{row.names}{(Optional) character vector to give row names ot data.frame. Default is NULL.}
 }
 \description{
 Coerce tas.dna.repair to data.frame

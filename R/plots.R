@@ -19,8 +19,8 @@ gg.tasar.defaults <- list(
 
 
 label.cdrs <- function(plot, abr) {
-  if (!any(stringr::str_detect(class(plot), "ggplot"))) {
-    stop("Object 'plot' must be a ggplot2 object.")
+  if (!is(plot, "ggplot")) {
+    stop("Object 'plot' must be a ggplot object.")
   }
   p <- plot + ggplot2::annotate("rect", xmin = c(abr["CDR1Start"], abr["CDR2Start"], abr["CDR3Start"]),
                        xmax = c(abr["FR2Start"]-1, abr["FR3Start"]-1, abr["FR4Start"]-1),

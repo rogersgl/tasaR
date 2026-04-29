@@ -28,7 +28,7 @@ buildSequenceTable <- function(settings) {
   filter.counts <- c(filter.counts, Filtered = length(reads.filtered))
   reads <- NULL
   #cat("Building sequence table...\n")
-  sequenceTable(reads.filtered, settings, filter.counts)
+  sequenceTable(reads.filtered, settings, filter.counts, min.read.frequency = 0.1)
 }
 
 
@@ -61,7 +61,7 @@ filterSequences <- function(reads, settings) {
 
 ### make sequence table ###
 
-sequenceTable <- function(reads.filtered, settings, filter.counts = NA) {
+sequenceTable <- function(reads.filtered, settings, filter.counts = NA, min.read.frequency = 0.1) {
 
 
   if (tolower(settings@ForwardExtensionType) == "umi" && tolower(settings@ReverseExtensionType) == "umi") {
@@ -124,7 +124,7 @@ sequenceTable <- function(reads.filtered, settings, filter.counts = NA) {
     id_temp <- id_temp[n_idx]
     dt_all <- data.table(seq = seq_temp, id = id_temp)
     dt <- dt_all[, .(N = .N, ids = list(id)), by = seq]
-    min_freq <- sum(dt$N)*tasGlobalSettings$read.frequency.limit/100
+    min_freq <- sum(dt$N)*min.read.frequency/100
     dt <- dt[N > min_freq]
     setorder(dt, -N)
     dt <- cbind(dt, data.table(umis = list(NA)))

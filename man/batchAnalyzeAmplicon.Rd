@@ -18,8 +18,14 @@ provided, either as a .csv file (1 sample per row), or as an R object (a list
 or data.frame) containing the same information. See \code{\link{readSettings}} for
 more information.
 }
+\section{See also}{
+
+\code{\link{tasar::batchSummarize()}}
+}
+
 \examples{
 batchAnalyseAmplicon('/.../folder/settings.csv')
 batchAnalyzeAmplicon(data.frame)
 batchAnalyzeAmplicon(list)
+
 }

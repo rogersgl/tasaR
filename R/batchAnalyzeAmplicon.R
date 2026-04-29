@@ -18,6 +18,9 @@
 #' batchAnalyseAmplicon('/.../folder/settings.csv')
 #' batchAnalyzeAmplicon(data.frame)
 #' batchAnalyzeAmplicon(list)
+#'
+#' @section See also:
+#' \code{\link{tasar::batchSummarize()}}
 batchAnalyzeAmplicon <- function(input.settings.list) {
   settings.list <- list()
 
@@ -79,13 +82,13 @@ batchAnalyzeAmplicon <- function(input.settings.list) {
 #' Summary analyses for batch processing
 #'
 #' @description
-#' Performs comparison analyses of the results from \code{\link{batchAnalyzeAmlicon}}. Results are returned
+#' Performs comparison analyses of the results from \code{\link{tasaR::batchAnalyzeAmlicon()}}. Results are returned
 #' as an R list, and can be saved as a variable. Also includes the option to directly export the results
 #' to a folder specified by the user. Treats all samples equally, so is unaware of pairings of control/
 #' experimental samples to direct analysis.
 #'
 #'
-#' @param results.list A list of AmpliconSequencing objects from \code{\link{batchAnalyzeAmplicon}}
+#' @param results.list A list of AmpliconSequencing objects from \code{\link{tasaR::batchAnalyzeAmplicon()}}
 #' @param export A logical specifying whether the resulting tables and graphs should also be written to disk
 #' @param path (Optional) If \code{export = TRUE}, the file path to save the exported information to
 #' @param suppressConsoleOutput Logical vector specifying whether to print results to console or not, if applicable

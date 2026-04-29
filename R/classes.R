@@ -84,16 +84,6 @@ NULL
 
 
 
-setRefClass("tas.global.settings", fields = list(max.deletion = "integer",
-                                                 max.insertion = "integer",
-                                                 read.frequency.limit = "numeric"))
-tasGlobalSettings <- new("tas.global.settings",
-                         max.deletion = 25L,
-                         max.insertion = 25L,
-                         read.frequency.limit = 0.01)
-
-
-
 # -------------------
 # tas.object.settings
 # -------------------
@@ -222,6 +212,7 @@ setValidity("tas.object.settings", function(object) {
 #'
 #' @slot Alignments A list of DNA and protein (AA) pairwise alignments
 #' @slot Supplemental A data.table of DNA sequences paired with UMIs and Illumina sequence IDs
+#' @slot ReadCounts Integer vector showing number of reads after different filtering steps
 #'
 #' @export
 setClass("tas.sequences", slots = list(Table = "data.frame",

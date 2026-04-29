@@ -111,3 +111,14 @@ test_that("Validate tasAnalyzer extensions for function isEmpty.", {
   expect_true(validObject(obj.as))
   expect_false(isEmpty(obj.as))
 })
+
+
+test_that("Extended show() functions print to console", {
+  expect_output(show(methods::new("tas.object.settings")))
+  expect_output(show(methods::new("tas.sequences")))
+  expect_output(show(methods::new("tas.mutations")))
+  expect_output(show(methods::new("tas.dna.repair")))
+  expect_output(show(methods::new("AmpliconSequencing")))
+  test.results <- analyzeAmplicon(test.settings)
+  expect_output(show(test.results))
+})

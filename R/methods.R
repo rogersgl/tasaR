@@ -14,8 +14,8 @@
 #'
 #' @name isEmpty-tasaR
 #' @aliases isEmpty,tasaR-method
+#' @param x object to check for uninitialized values
 #' @docType methods
-#' @slot x object to check for uninitialized values
 NULL
 
 ### class tas.object.settings ###
@@ -309,10 +309,10 @@ setMethod("as.numeric", signature = "tas.dna.repair", function(x) {
 #' Coerce tas.object.settings to list
 #'
 #' @param x A tas.object.settings object
-#' @aliases as.numeric,tasaR-method
+#' @aliases as.list,tasaR-method
 #' @export
 #' @method as.list tas.object.settings
-as.list.tas.object.settings <- function(x) {
+as.list.tas.object.settings <- function(x, ...) {
   list(Name = x@Name,
        IsAntibody = x@IsAntibody,
        MergedFASTQPath = x@MergedFASTQPath,
@@ -348,7 +348,8 @@ as.list.tas.object.settings <- function(x) {
 #'
 #' @param x A tas.dna.repair object
 #' @param ... Passed to data.frame
-#' @aliases as.numeric,tasaR-method
+#' @param row.names (Optional) character vector to give row names ot data.frame. Default is NULL.
+#' @aliases as.data.frame,tasaR-method
 #' @export
 #' @method as.data.frame tas.dna.repair
 as.data.frame.tas.dna.repair <- function(x, ..., row.names = NULL) {

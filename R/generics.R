@@ -401,13 +401,13 @@ setGeneric("getMutationDistributionAA", function(object) standardGeneric("getMut
 
 #' @export
 setMethod("getMutationDistributionAA", signature(object = "tas.mutations"), function(object) {
-  if (!isEmpty(object@AA)) {return(object@AA$AllMutations)} else {return("Empty")}
+  if (!isEmpty(object)) {return(object@AA$AllMutations)} else {return("Empty")}
 })
 
 
 #' @export
 setMethod("getMutationDistributionAA", signature(object = "AmpliconSequencing"), function(object) {
-  if (!isEmpty(object@Mutations@AA)) {return(object@Mutations@AA$AllMutations)} else {return("Empty")}
+  if (!isEmpty(object@Mutations)) {return(object@Mutations@AA$AllMutations)} else {return("Empty")}
 })
 
 
@@ -428,13 +428,13 @@ setGeneric("getMutationMatrixAA", function(object) standardGeneric("getMutationM
 
 #' @export
 setMethod("getMutationMatrixAA", signature(object = "tas.mutations"), function(object) {
-  if (!isEmpty(object@AA)) {return(object@AA$MutationMatrix)} else {return("Empty")}
+  if (!isEmpty(object)) {return(object@AA$MutationMatrix)} else {return("Empty")}
 })
 
 
 #' @export
 setMethod("getMutationMatrixAA", signature(object = "AmpliconSequencing"), function(object) {
-  if (!isEmpty(object@Mutations@AA)) {return(object@Mutations@AA$MutationMatrix)} else {return("Empty")}
+  if (!isEmpty(object@Mutations)) {return(object@Mutations@AA$MutationMatrix)} else {return("Empty")}
 })
 
 

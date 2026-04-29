@@ -2,10 +2,10 @@
 % Please edit documentation in R/methods.R
 \name{as.list.tas.object.settings}
 \alias{as.list.tas.object.settings}
-\alias{as.numeric,tasaR-method}
+\alias{as.list,tasaR-method}
 \title{Coerce tas.object.settings to list}
 \usage{
-\method{as.list}{tas.object.settings}(x)
+\method{as.list}{tas.object.settings}(x, ...)
 }
 \arguments{
 \item{x}{A tas.object.settings object}

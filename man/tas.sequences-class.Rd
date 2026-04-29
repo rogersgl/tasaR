@@ -24,5 +24,7 @@ S4 object of analyzed sequence table
 \item{\code{Alignments}}{A list of DNA and protein (AA) pairwise alignments}
 
 \item{\code{Supplemental}}{A data.table of DNA sequences paired with UMIs and Illumina sequence IDs}
+
+\item{\code{ReadCounts}}{Integer vector showing number of reads after different filtering steps}
 }}
 

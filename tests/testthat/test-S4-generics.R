@@ -327,6 +327,16 @@ test_that("getSettings returns the expected output.", {
 # Results functions
 # -----------------
 
+test_that("labelCDRs helper rejects incorrect objects", {
+  expect_error(label.cdrs("test", numeric()))
+})
+
+test_that("graphResults rejects input without a specified output type", {
+  expect_error(graphResults(new("AmpliconSequencing"), output = NULL))
+  expect_error(graphResults(new("tas.sequences"), output = NULL))
+  expect_error(graphResults(new("tas.mutations"), output = NULL))
+  expect_error(graphResults(new("tas.dna.repair"), output = NULL))
+})
 
 
 test_that("graphResults works for class AmpliconSequencing", {
@@ -342,8 +352,11 @@ test_that("graphResults works for class AmpliconSequencing", {
     # suppress potential warning for package ggmsa using outdated ggplot2 nomenclature
   }
   expect_all_true(suppressWarnings(stringr::str_detect(S4Vectors::lapply(asg, class), "ggplot")))
+  suppressWarnings(expect_no_error(mtp <- graphResults(test.results, output = "mutation.types", mutationTypes = "pie")))
+  expect_true(is(mtp, "ggplot"))
+  suppressWarnings(expect_no_error(mtd <- graphResults(test.results, output = "mutation.types", mutationTypes = "donut")))
+  expect_true(is(mtd, "ggplot"))
 })
-
 
 test_that("graphResults works for class tas.sequences", {
   expect_output(test.results <- buildSequenceTable(test.settings))
@@ -431,4 +444,74 @@ test_that("exportTables writes tables to the correct path.", {
 })
 
 
+test_that("getter functions return empty with uninitialized objects", {
 
+  ### tas.sequences ###
+
+  expect_equal(getSequenceTable(methods::new("tas.sequences")), "Empty")
+  expect_equal(getSequenceTable(methods::new("AmpliconSequencing")), "Empty")
+
+  expect_equal(getSequencesDNA(methods::new("tas.sequences")), "Empty")
+  expect_equal(getSequencesDNA(methods::new("AmpliconSequencing")), "Empty")
+
+  expect_equal(getSequencesAA(methods::new("tas.sequences")), "Empty")
+  expect_equal(getSequencesAA(methods::new("AmpliconSequencing")), "Empty")
+
+  expect_equal(getSequenceSupplemental(methods::new("tas.sequences")), "Empty")
+  expect_equal(getSequenceSupplemental(methods::new("AmpliconSequencing")), "Empty")
+
+  expect_equal(getAlignments(methods::new("tas.sequences")), "Empty")
+  expect_equal(getAlignments(methods::new("AmpliconSequencing")), "Empty")
+
+  expect_equal(getDNAalign(methods::new("tas.sequences")), "Empty")
+  expect_equal(getDNAalign(methods::new("AmpliconSequencing")), "Empty")
+
+  expect_equal(getAAalign(methods::new("tas.sequences")), "Empty")
+  expect_equal(getAAalign(methods::new("AmpliconSequencing")), "Empty")
+
+  expect_equal(getFilterCounts(methods::new("tas.sequences")), "Empty")
+  expect_equal(getFilterCounts(methods::new("AmpliconSequencing")), "Empty")
+
+
+
+  ### tas.mutations ###
+
+  expect_equal(getDNAMutations(methods::new("tas.mutations")), "Empty")
+  expect_equal(getDNAMutations(methods::new("AmpliconSequencing")), "Empty")
+
+  expect_equal(getMutationDistributionDNA(methods::new("tas.mutations")), "Empty")
+  expect_equal(getMutationDistributionDNA(methods::new("AmpliconSequencing")), "Empty")
+
+  expect_equal(getMutationDistributionCytosine(methods::new("tas.mutations")), "Empty")
+  expect_equal(getMutationDistributionCytosine(methods::new("AmpliconSequencing")), "Empty")
+
+  expect_equal(getMutationDistributionNonCytosine(methods::new("tas.mutations")), "Empty")
+  expect_equal(getMutationDistributionNonCytosine(methods::new("AmpliconSequencing")), "Empty")
+
+  expect_equal(getMutationMotifSums(methods::new("tas.mutations")), "Empty")
+  expect_equal(getMutationMotifSums(methods::new("AmpliconSequencing")), "Empty")
+
+  expect_equal(getMutationDistributionAA(methods::new("tas.mutations")), "Empty")
+  expect_equal(getMutationDistributionAA(methods::new("AmpliconSequencing")), "Empty")
+
+  expect_equal(getMutationMatrixAA(methods::new("tas.mutations")), "Empty")
+  expect_equal(getMutationMatrixAA(methods::new("AmpliconSequencing")), "Empty")
+
+  expect_equal(getAIDTables(methods::new("tas.mutations")), "Empty")
+  expect_equal(getAIDTables(methods::new("AmpliconSequencing")), "Empty")
+
+  expect_equal(getWRCHTable(methods::new("tas.mutations")), "Empty")
+  expect_equal(getWRCHTable(methods::new("AmpliconSequencing")), "Empty")
+
+  expect_equal(getWRCYTable(methods::new("tas.mutations")), "Empty")
+  expect_equal(getWRCYTable(methods::new("AmpliconSequencing")), "Empty")
+
+
+  ### tas.dna.repair ###
+
+  expect_equal(getMutationTypes(methods::new("tas.dna.repair")), "Empty")
+  expect_equal(getMutationTypes(methods::new("AmpliconSequencing")), "Empty")
+
+
+
+})
