@@ -15,7 +15,7 @@
 #' @name isEmpty-tasaR
 #' @aliases isEmpty,tasaR-method
 #' @docType methods
-#' @importMethodsFrom S4Vectors isEmpty
+#' @slot x object to check for uninitialized values
 NULL
 
 ### class tas.object.settings ###
@@ -24,14 +24,14 @@ NULL
 #' @rdname isEmpty-tasaR
 #' @export
 setMethod("isEmpty", "tas.object.settings", function(x) {
-  n <- slotNames(x)
+  n <- methods::slotNames(x)
   n <- setdiff(n, c("Name", "AntibodyRegions"))
   empty <- logical()
   for (i in n) {
-    if (class(slot(x,i)) == "numeric" || class(slot(x,i)) == "integer"){
-      empty <- c(empty, is.na(slot(x,i)))
-    } else if (class(slot(x,i)) == "character") {
-      empty <- c(empty, (slot(x,i) == ""))
+    if (class(methods::slot(x,i)) == "numeric" || class(methods::slot(x,i)) == "integer"){
+      empty <- c(empty, is.na(methods::slot(x,i)))
+    } else if (class(methods::slot(x,i)) == "character") {
+      empty <- c(empty, (methods::slot(x,i) == ""))
     }
   }
   for (i in names(x@AntibodyRegions)) {
@@ -85,8 +85,8 @@ setMethod("isEmpty", "tas.sequences", function(x) {
 #' @export
 setMethod("isEmpty", "tas.dna.repair", function(x) {
   empty <- logical()
-  for (i in slotNames(x)) {
-    empty <- c(empty, is.na(slot(x, i)))
+  for (i in methods::slotNames(x)) {
+    empty <- c(empty, is.na(methods::slot(x, i)))
   }
   if (all(empty)) {
     return(TRUE)
@@ -103,8 +103,8 @@ setMethod("isEmpty", "tas.dna.repair", function(x) {
 #' @export
 setMethod("isEmpty", "AmpliconSequencing", function(x) {
   empty <- logical()
-  for (i in slotNames(x)) {
-    empty <- c(empty, isEmpty(slot(x, i)))
+  for (i in methods::slotNames(x)) {
+    empty <- c(empty, isEmpty(methods::slot(x, i)))
   }
   if (all(empty)) {
     return(TRUE)
@@ -117,8 +117,8 @@ setMethod("isEmpty", "AmpliconSequencing", function(x) {
 ### class PairwiseAlignmentsSingleSubject ###
 
 setMethod("isEmpty", "PairwiseAlignmentsSingleSubject", function(x) {
-  o <- capture.output(x)
-  if (length(o) == 1 && str_detect(o, "Empty")) {
+  o <- utils::capture.output(x)
+  if (length(o) == 1 && stringr::str_detect(o, "Empty")) {
     return(TRUE)
   } else {
     return(FALSE)
@@ -136,14 +136,14 @@ setMethod("isEmpty", "PairwiseAlignmentsSingleSubject", function(x) {
 setMethod("show", "tas.object.settings", function(object) {
   cat("Settings for ", object@Name, ":\n",
       "IsAntibody : ", object@IsAntibody, "\n")
-  for (i in slotNames(object)[3:10]) {
-    s <- slot(object, i)
+  for (i in methods::slotNames(object)[3:10]) {
+    s <- methods::slot(object, i)
     if (s != ""){
       s <- charDisplayTrim(s)
       cat("",i,": ", s, "\n", sep = "")}
   }
-  for (i in slotNames(object)[11:13]) {
-    if (!is.na(slot(object, i))){cat("",i,": ", slot(object, i), "\n", sep = "")}
+  for (i in methods::slotNames(object)[11:13]) {
+    if (!is.na(methods::slot(object, i))){cat("",i,": ", methods::slot(object, i), "\n", sep = "")}
   }
   if (!all(is.na(object@AntibodyRegions))){
     cat("Antibody region coordinates:\n",
@@ -254,9 +254,9 @@ setMethod("show", "tas.sequences", function(object) {
 #' @export
 setMethod("show", "tas.dna.repair", function(object) {
   cat("Inferred DNA repair pathways:\n")
-  for (i in slotNames(object)) {
-    if (!is.na(slot(object, i))){
-      cat(i,": ", slot(object, i), "%\n", sep = "")
+  for (i in methods::slotNames(object)) {
+    if (!is.na(methods::slot(object, i))){
+      cat(i,": ", methods::slot(object, i), "%\n", sep = "")
     }
   }
 })
@@ -266,11 +266,11 @@ setMethod("show", "tas.dna.repair", function(object) {
 
 #' @export
 setMethod("show", "AmpliconSequencing", function(object) {
-  for (i in slotNames(object)) {
+  for (i in methods::slotNames(object)) {
     cat(rep("-", nchar(i)+1),
         "\n", i,":\n",
         rep("-", nchar(i)+1),"\n\n", sep = "")
-    o <- slot(object, i)
+    o <- methods::slot(object, i)
     if (isEmpty(o)) {
       cat("Empty\n\n")
     } else {
@@ -296,7 +296,7 @@ setMethod("show", "AmpliconSequencing", function(object) {
 #' @aliases as.numeric,tasaR-method
 #' @export
 setMethod("as.numeric", signature = "tas.dna.repair", function(x) {
-  setNames(c(x@WT, x@NHEJ, x@MMEJ, x@BaseChange, x@IndelBaseChange, x@Other),
+  stats::setNames(c(x@WT, x@NHEJ, x@MMEJ, x@BaseChange, x@IndelBaseChange, x@Other),
            c("WT", "NHEJ", "MMEJ", "BaseChange", "IndelBaseChange", "Other"))
 })
 

@@ -14,6 +14,7 @@
 \alias{getAIDTables}
 \alias{getWRCHTable}
 \alias{getWRCYTable}
+\alias{getAbMutations}
 \title{Mutation retrieval methods}
 \arguments{
 \item{object}{An S4 object of class tas.mutations or AmpliconSequencing}
@@ -43,6 +44,8 @@ Methods to retrieve mutation information from an object of class tas.mutations o
 
 \item \code{getWRCYTable()}: Extracts a data.frame showing positions and mutations at WRCY AID hotspot motifs
 
+\item \code{getAbMutations()}: Extracts antibody-specific mutation information
+
 }}
 \examples{
 getDNAMutations(object)
@@ -55,4 +58,5 @@ getMutationMatrixAA(object)
 getAIDTables(object)
 getWRCHTable(object)
 getWRCYTable(object)
+getAbMutations(object)
 }

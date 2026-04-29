@@ -525,6 +525,30 @@ setMethod("getWRCYTable", signature(object = "AmpliconSequencing"), function(obj
 
 
 
+#' @describeIn getMutations Extracts antibody-specific mutation information
+#'
+#' @usage NULL
+#'
+#' @param object An S4 object of class tas.mutations or AmpliconSequencing
+#' @returns NULL
+#' @export
+#'
+#' @examples
+#' getAbMutations(object)
+setGeneric("getAbMutations", function(object) standardGeneric("getAbMutations"))
+
+
+#' @export
+setMethod("getAbMutations", signature(object = "tas.mutations"), function(object) {
+  if (!isEmpty(object)) {return(object@Antibody)} else {return("Empty")}
+})
+
+
+#' @export
+setMethod("getAbMutations", signature(object = "AmpliconSequencing"), function(object) {
+  if (!isEmpty(object@Mutations)) {return(object@Mutations@Antibody)} else {return("Empty")}
+})
+
 # ----------------
 # DNA Repair Types
 # ----------------

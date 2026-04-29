@@ -12,13 +12,13 @@ S4 object of analyzed sequence table
 \describe{
 \item{\code{Table}}{A data.frame with a variable number of rows and 7 named columns:
 \describe{
-\item{Sequences}{character vector of DNA sequences}
-\item{Count}{numeric vector of sequence counts}
-\item{Percent}{numeric vector of sequence frequencies}
-\item{Indels}{character vector annotating insertions and deletions in the sequence}
-\item{BasesChanged}{integer vector counting the number of mutated DNA bases in the sequence}
-\item{AA}{character vector of protein sequences}
-\item{ProteinMutation}{character vector annotating protein mutations in the sequence}
+\item{\code{Sequences}}{character vector of DNA sequences}
+\item{\code{Count}}{numeric vector of sequence counts}
+\item{\code{Percent}}{numeric vector of sequence frequencies}
+\item{\code{Indels}}{character vector annotating insertions and deletions in the sequence}
+\item{\code{BasesChanged}}{integer vector counting the number of mutated DNA bases in the sequence}
+\item{\code{AA}}{character vector of protein sequences}
+\item{\code{ProteinMutation}}{character vector annotating protein mutations in the sequence}
 }}
 
 \item{\code{Alignments}}{A list of DNA and protein (AA) pairwise alignments}

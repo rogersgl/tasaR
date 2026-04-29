@@ -4,60 +4,62 @@
 gg.tasar.defaults <- list(
   y_scale = list(expand = ggplot2::expansion(mult = c(0, .05))),
   x_scale = list(expand = ggplot2::expansion(mult = c(0, 0))),
-  theme = list(text = element_text(size = 8),
-               axis.line = element_line(linewidth = 0.5/.pt),
-               axis.ticks = element_line(linewidth = 0.5/.pt),
-               axis.title.y = element_text(margin = margin(r = 5)),
-               axis.title.x = element_text(margin = margin(t = 5)),
-               legend.title = element_blank(),
-               legend.box.spacing = unit(-0.1, "in"),
-               legend.key.height = unit(0.1, "in"),
-               legend.key.width = unit(0.2, "in"),
-               legend.key.spacing.y = unit(0.05, "in"))
+  theme = list(text = ggplot2::element_text(size = 8),
+               axis.line = ggplot2::element_line(linewidth = 0.5/.pt),
+               axis.ticks = ggplot2::element_line(linewidth = 0.5/.pt),
+               axis.title.y = ggplot2::element_text(margin = ggplot2::margin(r = 5)),
+               axis.title.x = ggplot2::element_text(margin = ggplot2::margin(t = 5)),
+               legend.title = ggplot2::element_blank(),
+               legend.box.spacing = ggplot2::unit(-0.1, "in"),
+               legend.key.height = ggplot2::unit(0.1, "in"),
+               legend.key.width = ggplot2::unit(0.2, "in"),
+               legend.key.spacing.y = ggplot2::unit(0.05, "in"))
 )
 
 
+
 label.cdrs <- function(plot, abr) {
-  if (!any(str_detect(class(plot), "ggplot"))) {
+  if (!any(stringr::str_detect(class(plot), "ggplot"))) {
     stop("Object 'plot' must be a ggplot2 object.")
   }
-  p <- plot + annotate("rect", xmin = c(abr["CDR1Start"], abr["CDR2Start"], abr["CDR3Start"]),
+  p <- plot + ggplot2::annotate("rect", xmin = c(abr["CDR1Start"], abr["CDR2Start"], abr["CDR3Start"]),
                        xmax = c(abr["FR2Start"]-1, abr["FR3Start"]-1, abr["FR4Start"]-1),
                        ymin = c(0, 0, 0),
                        ymax = c(Inf, Inf, Inf),
                        color = "gray90",
                        fill = "gray90") +
-    annotate("text", x = c(mean(c(abr["CDR1Start"], abr["FR2Start"] - 1)), mean(c(abr["CDR2Start"], abr["FR3Start"] - 1)), mean(c(abr["CDR3Start"], abr["FR4Start"] - 1))),
+    ggplot2::annotate("text", x = c(mean(c(abr["CDR1Start"], abr["FR2Start"] - 1)), mean(c(abr["CDR2Start"], abr["FR3Start"] - 1)), mean(c(abr["CDR3Start"], abr["FR4Start"] - 1))),
              y = Inf, label = c("CDR1", "CDR2", "CDR3"), size = 7/.pt, vjust = -1) +
-    coord_cartesian(clip = "off")
+    ggplot2::coord_cartesian(clip = "off")
 }
 
 
 
 # graph dna mut.pos
 
+
 gg.dna.pos <- function(input) {
 
   sett <- getSettings(input)
 
-  p <- ggplot2::ggplot(data = getMutationDistributionDNA(input), aes(x = Position, y = MutationFrequency))
+  p <- ggplot2::ggplot(data = getMutationDistributionDNA(input), ggplot2::aes(x = Position, y = MutationFrequency))
 
   if (sett$IsAntibody) {
     abr <- sett$AntibodyRegions
     p <- label.cdrs(p, abr)
   }
-  p <- p + geom_bar(stat = "identity", width = 1) +
-           theme_classic() +
-           scale_y_continuous(expand = gg.tasar.defaults$y_scale$expand) +
-           scale_x_continuous(expand =  gg.tasar.defaults$x_scale$expand) +
-           theme(text = gg.tasar.defaults$theme$text,
+  p <- p + ggplot2::geom_bar(stat = "identity", width = 1) +
+    ggplot2::theme_classic() +
+    ggplot2::scale_y_continuous(expand = gg.tasar.defaults$y_scale$expand) +
+    ggplot2::scale_x_continuous(expand =  gg.tasar.defaults$x_scale$expand) +
+    ggplot2::theme(text = gg.tasar.defaults$theme$text,
                  axis.line = gg.tasar.defaults$theme$axis.line,
                  axis.ticks = gg.tasar.defaults$theme$axis.ticks,
                  axis.title.y = gg.tasar.defaults$theme$axis.title.y,
                  axis.title.x = gg.tasar.defaults$theme$axis.title.x) +
-           ylab("Mutation (%)") +
-           xlab("Position (nt)") +
-           force_panelsizes(rows = unit(1.5, "in"), cols = unit(4, "in"))
+    ggplot2::ylab("Mutation (%)") +
+    ggplot2::xlab("Position (nt)") +
+    ggh4x::force_panelsizes(rows = ggplot2::unit(1.5, "in"), cols = ggplot2::unit(4, "in"))
   return(p)
 }
 
@@ -74,17 +76,17 @@ gg.dna.pos.cyt <- function(input) {
   ncyt <- cbind(ncyt, data.frame(Type = rep("Other Bases", nrow(ncyt))))
   df <- rbind(cyt, ncyt)
 
-  p <- ggplot(data = df, aes(x = Position, y = MutationFrequency, fill = Type))
+  p <- ggplot2::ggplot(data = df, ggplot2::aes(x = Position, y = MutationFrequency, fill = Type))
   if (sett$IsAntibody) {
     abr <- sett$AntibodyRegions
     p <- label.cdrs(p, abr)
   }
   p <- p +
-       geom_bar(stat = "identity", width = 1) +
-       theme_classic() +
-       scale_y_continuous(expand = gg.tasar.defaults$y_scale$expand) +
-       scale_x_continuous(expand =  gg.tasar.defaults$x_scale$expand) +
-       theme(text = gg.tasar.defaults$theme$text,
+    ggplot2::geom_bar(stat = "identity", width = 1) +
+    ggplot2::theme_classic() +
+    ggplot2::scale_y_continuous(expand = gg.tasar.defaults$y_scale$expand) +
+    ggplot2::scale_x_continuous(expand =  gg.tasar.defaults$x_scale$expand) +
+    ggplot2::theme(text = gg.tasar.defaults$theme$text,
              axis.line = gg.tasar.defaults$theme$axis.line,
              axis.ticks = gg.tasar.defaults$theme$axis.ticks,
              axis.title.y = gg.tasar.defaults$theme$axis.title.y,
@@ -94,15 +96,16 @@ gg.dna.pos.cyt <- function(input) {
              legend.key.height = gg.tasar.defaults$theme$legend.key.height,
              legend.key.width = gg.tasar.defaults$theme$legend.key.width,
              legend.key.spacing.y = gg.tasar.defaults$theme$legend.key.spacing.y) +
-       ylab("Mutation (%)") +
-       xlab("Position (nt)") +
-       scale_fill_manual(values = c("red", "black")) +
-       force_panelsizes(rows = unit(1.5, "in"), cols = unit(4, "in"))
+    ggplot2::ylab("Mutation (%)") +
+    ggplot2::xlab("Position (nt)") +
+    ggplot2::scale_fill_manual(values = c("red", "black")) +
+       ggh4x::force_panelsizes(rows = ggplot2::unit(1.5, "in"), cols = ggplot2::unit(4, "in"))
   return(p)
 }
 
 
 # graph box plot of %mutations at cytosine and non-cytosines
+
 
 gg.aid.box <- function(input) {
 
@@ -112,41 +115,43 @@ gg.aid.box <- function(input) {
   ncyt <- cbind(ncyt, data.frame(Type = rep("Other Bases", nrow(ncyt))))
   df <- rbind(cyt, ncyt)
 
-  ggplot(data = df, aes(x = Type, y = MutationFrequency)) +
-    geom_boxplot(width = 0.5, outlier.size = 1) +
-    labs(x = "Base Type",y = "% Mutation") +
-    theme_classic() +
-    scale_y_continuous(expand = gg.tasar.defaults$y_scale$expand) +
-    theme(text = gg.tasar.defaults$theme$text,
+  ggplot2::ggplot(data = df, ggplot2::aes(x = Type, y = MutationFrequency)) +
+    ggplot2::geom_boxplot(width = 0.5, outlier.size = 1) +
+    ggplot2::labs(x = "Base Type",y = "% Mutation") +
+    ggplot2::theme_classic() +
+    ggplot2::scale_y_continuous(expand = gg.tasar.defaults$y_scale$expand) +
+    ggplot2::theme(text = gg.tasar.defaults$theme$text,
           axis.line = gg.tasar.defaults$theme$axis.line,
           axis.ticks = gg.tasar.defaults$theme$axis.ticks,
           axis.title.y = gg.tasar.defaults$theme$axis.title.y,
           axis.title.x = gg.tasar.defaults$theme$axis.title.x) +
-    force_panelsizes(rows = unit(1.5, "in"), cols = unit(1.5, "in"))
+    ggh4x::force_panelsizes(rows = ggplot2::unit(1.5, "in"), cols = ggplot2::unit(1.5, "in"))
 }
 
 
 # graph aa mut.pos
 
+
 gg.aa.pos <- function(input) {
   sett <- getSettings(input)
-  p <- ggplot(data = getMutationDistributionAA(input), aes(x = Position, y = MutationFrequency))
+  p <- ggplot2::ggplot(data = getMutationDistributionAA(input), ggplot2::aes(x = Position, y = MutationFrequency))
   if (sett$IsAntibody) {
     abr <- ceiling(sett$AntibodyRegions/3)
     p <- label.cdrs(p, abr)
   }
-  p <- p + geom_bar(stat = "identity", width = 1) +
-    theme_classic() +
-    scale_y_continuous(expand = gg.tasar.defaults$y_scale$expand) +
-    scale_x_continuous(expand =  gg.tasar.defaults$x_scale$expand) +
-    theme(text = gg.tasar.defaults$theme$text,
+  p <- p +
+    ggplot2::geom_bar(stat = "identity", width = 1) +
+    ggplot2::theme_classic() +
+    ggplot2::scale_y_continuous(expand = gg.tasar.defaults$y_scale$expand) +
+    ggplot2::scale_x_continuous(expand =  gg.tasar.defaults$x_scale$expand) +
+    ggplot2::theme(text = gg.tasar.defaults$theme$text,
           axis.line = gg.tasar.defaults$theme$axis.line,
           axis.ticks = gg.tasar.defaults$theme$axis.ticks,
           axis.title.y = gg.tasar.defaults$theme$axis.title.y,
           axis.title.x = gg.tasar.defaults$theme$axis.title.x) +
-    ylab("Mutation (%)") +
-    xlab("Position (AA)") +
-    force_panelsizes(rows = unit(1.5, "in"), cols = unit(4, "in"))
+    ggplot2::ylab("Mutation (%)") +
+    ggplot2::xlab("Position (AA)") +
+    ggh4x::force_panelsizes(rows = ggplot2::unit(1.5, "in"), cols = ggplot2::unit(4, "in"))
   return(p)
 }
 
@@ -157,18 +162,18 @@ gg.aa.pos.cyt <- function(input) {
   df <- cbind(df, data.frame(Type = rep("Other Bases", nrow(df))))
   df$Type[df$Position %in% unique(ceiling(getMutationDistributionCytosine(input)$Position/3))] <- "AID Cytosines"
 
-  p <- ggplot(data = df, aes(x = Position, y = MutationFrequency, fill = Type))
+  p <- ggplot2::ggplot(data = df, ggplot2::aes(x = Position, y = MutationFrequency, fill = Type))
 
   if (sett$IsAntibody) {
     abr <- ceiling(sett$AntibodyRegions/3)
     p <- label.cdrs(p, abr)
   }
   p <- p +
-    geom_bar(stat = "identity", width = 1) +
-    theme_classic() +
-    scale_y_continuous(expand = gg.tasar.defaults$y_scale$expand) +
-    scale_x_continuous(expand =  gg.tasar.defaults$x_scale$expand) +
-    theme(text = gg.tasar.defaults$theme$text,
+    ggplot2::geom_bar(stat = "identity", width = 1) +
+    ggplot2::theme_classic() +
+    ggplot2::scale_y_continuous(expand = gg.tasar.defaults$y_scale$expand) +
+    ggplot2::scale_x_continuous(expand =  gg.tasar.defaults$x_scale$expand) +
+    ggplot2::theme(text = gg.tasar.defaults$theme$text,
           axis.line = gg.tasar.defaults$theme$axis.line,
           axis.ticks = gg.tasar.defaults$theme$axis.ticks,
           axis.title.y = gg.tasar.defaults$theme$axis.title.y,
@@ -178,10 +183,10 @@ gg.aa.pos.cyt <- function(input) {
           legend.key.height = gg.tasar.defaults$theme$legend.key.height,
           legend.key.width = gg.tasar.defaults$theme$legend.key.width,
           legend.key.spacing.y = gg.tasar.defaults$theme$legend.key.spacing.y) +
-    ylab("Mutation (%)") +
-    xlab("Position (AA)") +
-    scale_fill_manual(values = c("red", "black")) +
-    ggh4x::force_panelsizes(rows = unit(1.5, "in"), cols = unit(4, "in"))
+    ggplot2::ylab("Mutation (%)") +
+    ggplot2::xlab("Position (AA)") +
+    ggplot2::scale_fill_manual(values = c("red", "black")) +
+    ggh4x::force_panelsizes(rows = ggplot2::unit(1.5, "in"), cols = ggplot2::unit(4, "in"))
   return(p)
 }
 
@@ -242,6 +247,7 @@ AA_custom_colors2 <- c("#B40000",
 names(AA_custom_colors) <- AAvec
 names(AA_custom_colors2) <- AAvec
 
+
 gg.aa.muts.stacked <- function(input) {
   mm <- getMutationMatrixAA(input)[AAvec,]
   df <- data.frame(Position = c(sapply(1:ncol(mm), rep, nrow(mm))),
@@ -249,13 +255,13 @@ gg.aa.muts.stacked <- function(input) {
                    Frequency = c(mm)
                    )
 
-  p <- ggplot(data = df, aes(x = Position, y = Frequency, fill = AA))
+  p <- ggplot2::ggplot(data = df, ggplot2::aes(x = Position, y = Frequency, fill = AA))
   p <- p +
-    geom_col(position = position_stack(reverse = TRUE), stat = "identity", width = 1) +
-    theme_classic() +
-    scale_y_continuous(expand = gg.tasar.defaults$y_scale$expand) +
-    scale_x_continuous(expand =  gg.tasar.defaults$x_scale$expand) +
-    theme(text = gg.tasar.defaults$theme$text,
+    ggplot2::geom_col(position = ggplot2::position_stack(reverse = TRUE), stat = "identity", width = 1) +
+    ggplot2::theme_classic() +
+    ggplot2::scale_y_continuous(expand = gg.tasar.defaults$y_scale$expand) +
+    ggplot2::scale_x_continuous(expand =  gg.tasar.defaults$x_scale$expand) +
+    ggplot2::theme(text = gg.tasar.defaults$theme$text,
           axis.line = gg.tasar.defaults$theme$axis.line,
           axis.ticks = gg.tasar.defaults$theme$axis.ticks,
           axis.title.y = gg.tasar.defaults$theme$axis.title.y,
@@ -265,10 +271,10 @@ gg.aa.muts.stacked <- function(input) {
           legend.key.height = gg.tasar.defaults$theme$legend.key.height,
           legend.key.width = gg.tasar.defaults$theme$legend.key.width,
           legend.key.spacing.y = gg.tasar.defaults$theme$legend.key.spacing.y) +
-    ylab("% Mutated Residues") +
-    xlab("Position (AA)") +
-    scale_fill_manual(values = AA_custom_colors2) +
-    ggh4x::force_panelsizes(rows = unit(2, "in"), cols = unit(5, "in"))
+    ggplot2::ylab("% Mutated Residues") +
+    ggplot2::xlab("Position (AA)") +
+    ggplot2::scale_fill_manual(values = AA_custom_colors2) +
+    ggh4x::force_panelsizes(rows = ggplot2::unit(2, "in"), cols = ggplot2::unit(5, "in"))
   return(p)
 }
 
@@ -280,6 +286,7 @@ gg.aa.muts.stacked <- function(input) {
 # something matching this style? The output from msa package msaPrettyPrint
 # cannot replicate this functionality as far as I can determine.
 
+
 gg.dna.align <- function(input, seq.number = 10) {
 
   sett <- getSettings(input)
@@ -290,15 +297,15 @@ gg.dna.align <- function(input, seq.number = 10) {
   indel.label <- stl$Indels
   indel.idx <- which(nzchar(indel.label))
 
-  n <- str_c(ifelse(nzchar(stl$Indels), stl$Indels, ""),
+  n <- stringr::str_c(ifelse(nzchar(stl$Indels), stl$Indels, ""),
              ifelse(stl$BasesChanged != 0,
                 ifelse(nzchar(stl$Indels), ", ", "") |>
-                    str_c(stl$BasesChanged, " SNV"), ""),
-             str_c(" - ", round(stl$Percent, 2), "%")
+                    stringr::str_c(stl$BasesChanged, " SNV"), ""),
+             stringr::str_c(" - ", round(stl$Percent, 2), "%")
             )
   n <- c("Reference", n)
-  seqs <- DNAStringSet(c(sett$ReferenceSequence,
-    str_remove_all(stl$Sequences, "[+\\-]")))
+  seqs <- Biostrings::DNAStringSet(c(sett$ReferenceSequence,
+    stringr::str_remove_all(stl$Sequences, "[+\\-]")))
 
   names(seqs) <- n
   sink(tempfile())
@@ -306,17 +313,17 @@ gg.dna.align <- function(input, seq.number = 10) {
   sink()
 
   p <- suppressMessages(
-    ggmsa(DNAMultipleAlignment(as(align,"BStringSet")),
+    ggmsa::ggmsa(Biostrings::DNAMultipleAlignment(as(align,"BStringSet")),
           consensus_views = TRUE,
           ref = "Reference",
           color = "Taylor_NT",
           char_width = 0.7,
           border = NA,
           seq_name = TRUE)+
-      coord_cartesian()+
-      facet_msa(field = 100)+
-      theme(plot.margin = margin(0.5,0.5,0.5,0.5,unit = "in"))+
-      theme(axis.text = element_text(size = 6))
+      ggplot2::coord_cartesian()+
+      ggmsa::facet_msa(field = 100)+
+      ggplot2::theme(plot.margin = ggplot2::margin(0.5,0.5,0.5,0.5,unit = "in"))+
+      ggplot2::theme(axis.text = ggplot2::element_text(size = 6))
   )
 
   return(p)
@@ -332,12 +339,12 @@ gg.aa.align <- function(input, seq.number = 10) {
   if (len < seq.number) {seq.number <- len}
   stl <- getSequenceTable(input)[(1:seq.number),]
 
-  n <- str_c(1:seq.number, ". ", stl$ProteinMutation,
-             str_c("- ", round(stl$Percent, 2), "%")
+  n <- stringr::str_c(1:seq.number, ". ", stl$ProteinMutation,
+             stringr::str_c("- ", round(stl$Percent, 2), "%")
   )
   n <- c("Reference", n)
-  ref <- as.character(suppressWarnings(translate(DNAString(sett$ReferenceSequence))))
-  seqs <- AAStringSet(str_remove_all(c(ref, stl$AA), "[+\\-]"))
+  ref <- as.character(suppressWarnings(Biostrings::translate(Biostrings::DNAString(sett$ReferenceSequence))))
+  seqs <- Biostrings::AAStringSet(stringr::str_remove_all(c(ref, stl$AA), "[+\\-]"))
 
   # names(seqs) <- as.character(seq_along(seqs))
   names(seqs) <- n
@@ -347,17 +354,17 @@ gg.aa.align <- function(input, seq.number = 10) {
   sink()
 
   p <- suppressMessages(
-    ggmsa(AAMultipleAlignment(as(align,"BStringSet")),
+    ggmsa::ggmsa(Biostrings::AAMultipleAlignment(as(align,"BStringSet")),
           consensus_views = TRUE,
           ref = "Reference",
           color = "Taylor_NT",
           char_width = 0.7,
           border = NA,
           seq_name = TRUE)+
-      coord_cartesian()+
-      facet_msa(field = 100)+
-      theme(plot.margin = margin(0.5,0.5,0.5,0.5,unit = "in"))+
-      theme(axis.text = element_text(size = 6))
+      ggplot2::coord_cartesian()+
+      ggmsa::facet_msa(field = 100)+
+      ggplot2::theme(plot.margin = ggplot2::margin(0.5,0.5,0.5,0.5,unit = "in"))+
+      ggplot2::theme(axis.text = ggplot2::element_text(size = 6))
   )
 
   return(p)
@@ -373,24 +380,24 @@ gg.dna.mut.count.hist <- function(input) {
   idx.wt <- which(stl$Indels == "WT")
   idx.id <- idx.id[idx.id != idx.wt]
 
-  nid <- str_count(stl$Indels[idx.id], ",") + 1
+  nid <- stringr::str_count(stl$Indels[idx.id], ",") + 1
 
   nmut <- stl$BasesChanged
   nmut[idx.id] <- nmut[idx.id] + nid
 
-  p <- ggplot(data = data.frame(Mutations = nmut), aes(x = Mutations)) +
-        geom_histogram(binwidth = 1) +
-        theme_classic() +
-        scale_y_continuous(expand = gg.tasar.defaults$y_scale$expand) +
-        scale_x_continuous(expand =  gg.tasar.defaults$x_scale$expand) +
-        theme(text = gg.tasar.defaults$theme$text,
+  p <- ggplot2::ggplot(data = data.frame(Mutations = nmut), ggplot2::aes(x = Mutations)) +
+    ggplot2::geom_histogram(binwidth = 1) +
+    ggplot2::theme_classic() +
+    ggplot2::scale_y_continuous(expand = gg.tasar.defaults$y_scale$expand) +
+    ggplot2::scale_x_continuous(expand =  gg.tasar.defaults$x_scale$expand) +
+    ggplot2::theme(text = gg.tasar.defaults$theme$text,
               axis.line = gg.tasar.defaults$theme$axis.line,
               axis.ticks = gg.tasar.defaults$theme$axis.ticks,
               axis.title.y = gg.tasar.defaults$theme$axis.title.y,
               axis.title.x = gg.tasar.defaults$theme$axis.title.x) +
-        ylab("# of sequences") +
-        xlab("# of mutations") +
-        force_panelsizes(rows = unit(1, "in"), cols = unit(1.5, "in"))
+    ggplot2::ylab("# of sequences") +
+    ggplot2::xlab("# of mutations") +
+    ggh4x::force_panelsizes(rows = ggplot2::unit(1, "in"), cols = ggplot2::unit(1.5, "in"))
 
   return(p)
 }
@@ -417,66 +424,54 @@ gg.dna.mut.types <- function(input, type = "bar") {
   # geom_text(x = 1, y = freq.ypos, label = colnames(mt))
   # text overlaps too much to be useful with this
 
-  p <- ggplot(data = mt.df, aes(x = 2, y = Frequency, fill = Names)) +
-          geom_bar(position = position_stack(reverse = TRUE), stat = "identity", width = 1.5) +
-          theme_classic() +
-          theme(text = gg.tasar.defaults$theme$text,
+  p <- ggplot2::ggplot(data = mt.df, ggplot2::aes(x = 2, y = Frequency, fill = Names)) +
+    ggplot2::geom_bar(position = ggplot2::position_stack(reverse = TRUE), stat = "identity", width = 1.5) +
+    ggplot2::theme_classic() +
+    ggplot2::theme(text = gg.tasar.defaults$theme$text,
                 axis.line = gg.tasar.defaults$theme$axis.line,
                 axis.ticks.y = gg.tasar.defaults$theme$axis.ticks,
                 axis.title.y = gg.tasar.defaults$theme$axis.title.y,
                 legend.title = gg.tasar.defaults$theme$legend.title,
-                axis.title.x = element_blank(),
-                axis.ticks.x = element_blank(),
-                axis.text.x = element_blank()) +
-          scale_fill_brewer(type = "qual", palette = "Set1") +
-          ylab("Frequency (%)")
+                axis.title.x = ggplot2::element_blank(),
+                axis.ticks.x = ggplot2::element_blank(),
+                axis.text.x = ggplot2::element_blank()) +
+    ggplot2::scale_fill_brewer(type = "qual", palette = "Set1") +
+    ggplot2::ylab("Frequency (%)")
 
   if (type == "bar") {
-    p <- p + scale_y_continuous(expand = gg.tasar.defaults$y_scale$expand) +
-      theme(legend.box.spacing = unit(0, "in"),
+    p <- p +
+      ggplot2::scale_y_continuous(expand = gg.tasar.defaults$y_scale$expand) +
+      ggplot2::theme(legend.box.spacing = ggplot2::unit(0, "in"),
             legend.key.height = gg.tasar.defaults$theme$legend.key.height,
             legend.key.width = gg.tasar.defaults$theme$legend.key.width,
             legend.key.spacing.y = gg.tasar.defaults$theme$legend.key.spacing.y) +
-      scale_x_continuous(limits = c(1, 3)) +
-      force_panelsizes(rows = unit(1, "in"), cols = unit(0.3, "in"))
+      ggplot2::scale_x_continuous(limits = c(1, 3)) +
+      ggh4x::force_panelsizes(rows = ggplot2::unit(1, "in"), cols = ggplot2::unit(0.3, "in"))
   }
 
   if (type == "donut") {
     p <- p +
-      theme_void() +
-      theme(legend.title = element_blank(),
-            legend.box.spacing = unit(0, "in"),
+      ggplot2::theme_void() +
+      ggplot2::theme(legend.title = ggplot2::element_blank(),
+            legend.box.spacing = ggplot2::unit(0, "in"),
             legend.key.height = gg.tasar.defaults$theme$legend.key.height,
             legend.key.width = gg.tasar.defaults$theme$legend.key.width,
             legend.key.spacing.y = gg.tasar.defaults$theme$legend.key.spacing.y) +
-      coord_polar(theta = "y") +
-      xlim(0.1, 3.5) +
-      force_panelsizes(rows = unit(1.5, "in"), cols = unit(1.5, "in"))
+      ggplot2::coord_polar(theta = "y") +
+      ggplot2::xlim(0.1, 3.5) +
+      ggh4x::force_panelsizes(rows = ggplot2::unit(1.5, "in"), cols = ggplot2::unit(1.5, "in"))
   }
 
   if (type == "pie") {
     p <- p +
-      theme_void() +
-      theme(legend.title = element_blank(),
-            legend.box.spacing = unit(0, "in"),
+      ggplot2::theme_void() +
+      ggplot2::theme(legend.title = ggplot2::element_blank(),
+            legend.box.spacing = ggplot2::unit(0, "in"),
             legend.key.height = gg.tasar.defaults$theme$legend.key.height,
             legend.key.width = gg.tasar.defaults$theme$legend.key.width,
             legend.key.spacing.y = gg.tasar.defaults$theme$legend.key.spacing.y) +
-      coord_polar(theta = "y") +
-      force_panelsizes(rows = unit(1.5, "in"), cols = unit(1.5, "in"))
+      ggplot2::coord_polar(theta = "y") +
+      ggh4x::force_panelsizes(rows = ggplot2::unit(1.5, "in"), cols = ggplot2::unit(1.5, "in"))
   }
   return(p)
 }
-
-
-
-
-
-
-
-
-
-
-
-
-

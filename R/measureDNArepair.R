@@ -29,10 +29,10 @@ measureDNArepair <- function(sequence.table, settings) {
   config <- getSettings(settings)
   t <- getSequenceTable(sequence.table)
 
-  idx.other <- grep("[,]", t$Indels) # multiple indels
+  idx.other <- BiocGenerics::grep("[,]", t$Indels) # multiple indels
   idx.ibc <- which((nzchar(t$Indels) + (t$BasesChanged != 0)) == 2)[!which((nzchar(t$Indels) + (t$BasesChanged != 0)) == 2) %in% idx.other]
-  idx.nhej <- grep("\\+|-(?:1|2)\\b", t$Indels)[!grep("\\+|-(?:1|2)\\b", t$Indels) %in% c(idx.other, idx.ibc)]
-  idx.mmej <- grep("[-]", t$Indels)[!grep("[-]", t$Indels) %in% c(idx.other, idx.ibc, idx.nhej)]
+  idx.nhej <- BiocGenerics::grep("\\+|-(?:1|2)\\b", t$Indels)[!BiocGenerics::grep("\\+|-(?:1|2)\\b", t$Indels) %in% c(idx.other, idx.ibc)]
+  idx.mmej <- BiocGenerics::grep("[-]", t$Indels)[!BiocGenerics::grep("[-]", t$Indels) %in% c(idx.other, idx.ibc, idx.nhej)]
   idx.mm <- which(((!nzchar(t$Indels)) + (t$BasesChanged != 0) == 2))[!(which(((!nzchar(t$Indels)) + (t$BasesChanged != 0) == 2)) %in% c(idx.other, idx.ibc))]
   idx.wt <- which(t$Indels == "WT")
 

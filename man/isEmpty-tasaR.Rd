@@ -24,3 +24,9 @@
 \description{
 Extends the isEmpty function to S4 objects in package tasaR to detect whether S4 classes in tasa are empty, holding only initialized values.
 }
+\section{Slots}{
+
+\describe{
+\item{\code{x}}{object to check for uninitialized values}
+}}
+

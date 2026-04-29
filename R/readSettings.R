@@ -12,6 +12,7 @@
 #' @param row If using a .csv input, the row number in the sheet that contains the information for this sample. Use the **displayed number**, the function will account for and remove the header row during processing.
 #'
 #' @returns An S4 object of class tas.object.settings
+#'
 #' @export
 #'
 #' @examples
@@ -20,11 +21,11 @@
 #' readSettings(list)
 readSettings <- function(x, row = NULL){
   snames <- c(slotNames("tas.object.settings")[1:(length(slotNames("tas.object.settings")) - 1)], names(new("tas.object.settings")@AntibodyRegions))
-  if (length(x) == 1 && str_detect(x, ".csv")) {
+  if (length(x) == 1 && stringr::str_detect(x, ".csv")) {
     message("Processing 'x' as a .csv file.\n")
-    if (!file.exists(x)) {stop(str_c("File not found at ",x,"\n"))}
+    if (!file.exists(x)) {stop(stringr::str_c("File not found at ",x,"\n"))}
     if (is.null(row)) {stop("Row number NULL is invalid.")}
-    t <- suppressWarnings(read.csv(x))
+    t <- suppressWarnings(utils::read.csv(x))
     if (any(colnames(t) != snames)) {stop("Invalid column names.")}
     out <- t[(row-1),]
   } else if (length(x) > 1 || (class(x) == "data.frame" && ncol(x) > 1)) {
@@ -131,8 +132,8 @@ buildSettings <- function(Name = 'unknown',
 #' Write a .CSV file to input settings
 #'
 #' @param filedest Destination for the .csv file to be written to. May be a folder or file path ("./" or "./X.csv"). If folder, will be automatically named 'settings.csv'.
-#' @export
 #'
+#' @export
 #' @examples
 #' makeSettingsCSV('/.../folder')
 #' makeSettingsCSV('/.../folder/file.csv')
@@ -141,11 +142,11 @@ makeSettingsCSV <- function(filedest) {
   abr <- new("tas.object.settings")@AntibodyRegions
   df <- data.frame(matrix("", 1, (length(titles) - 1 + length(abr))))
   colnames(df) <- c(titles[1:(length(titles)-1)], names(abr))
-  if (str_detect(filedest, ".csv")){
-    write.csv(df, file = filedest, quote = FALSE, row.names = FALSE)
+  if (stringr::str_detect(filedest, ".csv")){
+    utils::write.csv(df, file = filedest, quote = FALSE, row.names = FALSE)
     message("Created file ", filedest, "\n")
   } else {
-    write.csv(df, file = file.path(filedest, "settings.csv"), quote = FALSE, row.names = FALSE)
+    utils::write.csv(df, file = file.path(filedest, "settings.csv"), quote = FALSE, row.names = FALSE)
     message("Created file ", file.path(filedest, "settings.csv"),"\n", sep = "")
   }
 }

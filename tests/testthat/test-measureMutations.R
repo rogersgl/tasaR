@@ -1,91 +1,3 @@
-# # ----------------
-# # Helper functions
-# # ----------------
-#
-# test.settings <- buildSettings(Name = "test",
-#                                IsAntibody = TRUE,
-#                                MergedFASTQPath = file.path(tempdir(), "test-merged.fastq.gz"),
-#                                ReferenceSequence = "GTTCAACTGGTGGAAAGCGGCGGTGCTCTGGTACAACCGGGCGGTAGTCTGCGCCTGAGCTGTGCCGCAAGCGGTTTCCCAGTCAACCGCTACTCTATGCGTTGGTATCGCCAGGCGCCTGGTAAAGAACGTGAATGGGTTGCCGGCATGAGCAGTGCGGGCGATCGTTCTAGTTACGAGGACTCTGTTAAAGGTCGTTTTACAATTAGCCGTGATGATGCGCGCAATACCGTGTATCTGCAAATGAACAGTCTGAAGCCGGAGGACACCGCAGTATATTATTGCAATGTCAACGTGGGGTTTGAATATTGGGGCCAGGGGACTCAGGTGACGGTGAGCTCT",
-#                                ForwardExtensionType = "Barcode",
-#                                ForwardExtension = "GCTAGCC",
-#                                ForwardPrimer = "GTAAAACGACGGCCAGT",
-#                                ReverseExtensionType = "UMI",
-#                                ReverseExtension = "NNNYRNNNYRNN",
-#                                ReversePrimer = "CAGGAAACAGCTATGAC",
-#                                AmpliconLength = 395L,
-#                                InsertStart = 25L,
-#                                InsertEnd = -30L,
-#                                FR1Start = 1L,
-#                                CDR1Start = 73L,
-#                                FR2Start = 97L,
-#                                CDR2Start = 148L,
-#                                FR3Start = 172L,
-#                                CDR3Start = 286L,
-#                                FR4Start = 310L,
-#                                FR4End = 342L)
-#
-#
-# fakeIlluminaId <- function() {
-#   str_c("A90033:281:WB24762987th.Miseq:1:", sample(100:50000, 1), ":", sample(100:50000, 1), ":AAGAGGCA+CGGAGAGA")
-# }
-#
-# makeTestSequences <- function(test.settings) {
-#   seqs <-  c("GTTCAACTGGTGGAAAGCGGCGGTGCTCTGGTACAACCGGGCGGTAGTCTGCGCCTGAGCTGTGCCGCAAGCGGTTTCCCAGTCAACCGCTACTCTATGCGTTGGTATCGCCAGGCGCCTGGTAAAGAACGTGAATGGGTTGCCGGCATGAGCAGTGCGGGCGATCGTTCTAGTTACGAGGACTCTGTTAAAGGTCGTTTTACAATTAGCCGTGATGATGCGCGCAATACCGTGTATCTGCAAATGAACAGTCTGAAGCCGGAGGACACCGCAGTATATTATTGCAATGTCAACGTGGGGTTTGAATATTGGGGCCAGGGGACTCAGGTGACGGTGAGCTCT",
-#              "GTTCAACTGGTGGAAAGCGGCGGTGCTCTGGTACAACCGGGCGGTAGTCTGCGCCTGAGCTGTGCCGCAAGCGGTTTCCCAGTCAACCGCTATTCTATGCGTTGGTATCGCCAGGCGCCTGGTAAAGAACGTGAATGGGTTGCCGGCATGAGGAGTGCGGGCGATCGTTCTAGTTACGAGGACTCTGTTAAAGGTCGTTTTACAATTAGCCGTGATGATGCGCGCAATACCGTGTATCTGCAAATGAACAGTCTGAAGCCGGAGGACACCGCAGTATATTATTGCAATGTCAACGTGGGGTTTGAATATTGGGGCCAGGGGACTCAGGTGACGGTGAGCTCT",
-#              "GTTCAACTGGTGGAAAGCGGCGGTGCTCTGGTACAACCGGGCGGTAGTCTGCGCCTGAGCTGTGCCGCAAGCGGTTTCCCAGTCAACCGCTACTCTATGCGTTGGTATCGCCAGGCGCCTGGTAAAGAACGTGAATGGGTTGCCGGCATGAGCAGTGCGGGCGATCGTTCTAGTTACGAGGACTCTGTTAAAGGTCGTTTTACAATTAGCCGTGATGATGCGCGCAATACCGTGTATCTGCAAATGAACAGTCTGAAGCCGGAGGACACCGCAGTATATTATTGCAATGTCAACGT----TTTGAATATTGGGGCCAGGGGACTCAGGTGACGGTGAGCTCT",
-#              "GTTCAACTGGTGGAAAGCGGCGGTGCTCTGGTACAACCGGGCGGTAGTCTGCGCCTGAGCTGTGCCGCAAGCGGTTTCCCAGTCAACCGCTACTCTATGCGTTGGTATCGCCAGGCGCCTGGTAAAGAACGTGAATGGGTTGCCGGCATGAGCAGTGCGGGCGATCGTTCTAGTTACGAGGACTCTGTTAAAGGTCGTTTTACAATTAGCCGTGATGATGCGCGCAATACCGTGTATCTGCAAATGAACAGTCTGAAGCCGGAGGACACCGCAGTATATTATTGCAATGTCAACGTGGGGTTTGAATATTGGGGCCAGGGGACTCAGGTGACGGTGA",
-#              "GTTCAACTGGTGGAAAGCGGCGGTGCTCTGGTACAACCGGGCGGTAGTCTGCGCCTGAGCTGTGCCGCAAGCGGTTTCCCAGTCAACCGCTACTCTATGCGTTGGTATCGCCAGGCGCCTGGTAAAGAACGTGAATGGGTTGCCGGCATGAGCAGTGCGGGCGATCGTTCTAGTTACGAGGACTCTGTTAAAGGTCGTTTTACAATTAGCCGTGATGATGCGCGCAATACCGTGTATCTGCAAATGAACAGTCTGAAGCCGGAGGACACCGCAGTATAGTTATTGCAATGTCAACGTGGGGTTTGAATATTGGGGCCAGGGGACTCAGGTGACGGTGAGCTCT",
-#              "GTTCAACTGGTGGAAAGCGGCGGTGCTCTGGTACAACCGGGCGGTAGTCTGCGCCTGAGCTGTGCCGCAAGCGGTTTCCCAGTCAACCGCTACTCTATGCGTTGGTATCGCCAGGCGCCTGGTAAAGAACGTGAATGGGTTGCCGGCATGAGCAGTGCGGGCGATCGTTCTAGTTACGAGGACTCTGTTAAAGGTCGTTTTACAATTAGCCGTGATGATGCGCGCAATACCGTGTATCTGCAAATGAACAGTCTGAAGCCGGAGGACACCGCAGTATAGTTATTGTAATGTCAACGTGGGGTTTGAATATTGGGGCCAGGGGACTCAGGTGACGGTGAGCTCT",
-#              "GTTCAACTGGTGGAAAGCGGCGGTGCTCTGGTACAACCGGGCGGTAGTCTGCGCCTGAGCTGTGCCGCAAGCGGTTTCCCAGTCAACCGCTACTCTATGCGTTGGTATCGCCAGGCGCCTGGTAAAGAACGTGAATGGGTTGCCGGCATGAGCAGTGCGGGCGATCGTTCTAGTTACGAGGACTCTGTTAAAGGTCGTTTTACAATTAGCCGTGATGATGCGCGCAATACCGTGTATCTGCAAATGAACAGTCTTGAAGCCGGAGGACACCGCAGTATATTATTGCAATGTCAACGT----TTTGAATATTGGGGCCAGGGGACTCAGGTGACGGTGAGCTCT")
-#   count <-  c(2, 1, 1, 1, 1, 1, 1)
-#   pct <-  c(25, 12.5, 12.5, 12.5, 12.5, 12.5, 12.5)
-#   ind <-  c("WT", "", "-4", "-5", "+1", "+1", "+1, -4")
-#   bc <-  c(0, 2, 0, 0, 0, 1, 0)
-#   aa <-  c("VQLVESGGALVQPGGSLRLSCAASGFPVNRYSMRWYRQAPGKEREWVAGMSSAGDRSSYEDSVKGRFTISRDDARNTVYLQMNSLKPEDTAVYYCNVNVGFEYWGQGTQVTVSS",
-#            "VQLVESGGALVQPGGSLRLSCAASGFPVNRYSMRWYRQAPGKEREWVAGMRSAGDRSSYEDSVKGRFTISRDDARNTVYLQMNSLKPEDTAVYYCNVNVGFEYWGQGTQVTVSS",
-#            "VQLVESGGALVQPGGSLRLSCAASGFPVNRYSMRWYRQAPGKEREWVAGMSSAGDRSSYEDSVKGRFTISRDDARNTVYLQMNSLKPEDTAVYYCNVNVLNIGARGLR*",
-#            "VQLVESGGALVQPGGSLRLSCAASGFPVNRYSMRWYRQAPGKEREWVAGMSSAGDRSSYEDSVKGRFTISRDDARNTVYLQMNSLKPEDTAVYYCNVNVGFEYWGQGTQVTV",
-#            "VQLVESGGALVQPGGSLRLSCAASGFPVNRYSMRWYRQAPGKEREWVAGMSSAGDRSSYEDSVKGRFTISRDDARNTVYLQMNSLKPEDTAV*",
-#            "VQLVESGGALVQPGGSLRLSCAASGFPVNRYSMRWYRQAPGKEREWVAGMSSAGDRSSYEDSVKGRFTISRDDARNTVYLQMNSLKPEDTAV*",
-#            "VQLVESGGALVQPGGSLRLSCAASGFPVNRYSMRWYRQAPGKEREWVAGMSSAGDRSSYEDSVKGRFTISRDDARNTVYLQMNSLEAGGHRSILLQCQRFEYWGQGTQVTVSS")
-#
-#   pm <-  c("WT", "S51R", "Nonsense", "Indel", "Nonsense", "Nonsense", "Indel")
-#
-#
-#
-#   t <- data.frame(Sequences = seqs,
-#                   Count = count,
-#                   Percent = pct,
-#                   Indels = ind,
-#                   BasesChanged = bc,
-#                   AA = aa,
-#                   ProteinMutation = pm)
-#
-#   s <- data.table(Index = as.integer(1:length(seqs)),
-#                   UMIs = list(list(c("AGCGAATTAGAG", "CTCGAATTAGTA")), list("TTTAGCGCGTAG"), list("GGCGTATTAACC"), list("CATGTGGCACGC"), list("CTTATGACGCTC"), list("TCCAGGGTATTC"), list("CTTAGGGCATGT")),
-#                   IDs = list(list(list(replicate(33, fakeIlluminaId())), list(replicate(24, fakeIlluminaId()))),
-#                              list(replicate(11, fakeIlluminaId())),
-#                              list(replicate(8, fakeIlluminaId())),
-#                              list(replicate(7, fakeIlluminaId())),
-#                              list(replicate(6, fakeIlluminaId())),
-#                              list(replicate(4, fakeIlluminaId())),
-#                              list(replicate(3, fakeIlluminaId()))),
-#                   IndelStart = as.numeric(c(NA_real_, NA_real_, 297, 338, 279, 279, 255)),
-#                   IndelType = c(NA_character_, NA_character_, "deletion", "deletion", "insertion", "insertion", "insertion")
-#                   )
-#
-#   dss <- DNAStringSet(str_remove_all(seqs, "-"))
-#   da <- pairwiseAlignment(dss, DNAStringSet(test.settings@ReferenceSequence))
-#   pa <- pairwiseAlignment(AAStringSet(aa), AAStringSet(suppressWarnings(translate(DNAString(test.settings@ReferenceSequence)))))
-#   ReadCounts <- c(Merged = 53L, Filtered = 44L, UMIs = 8L, UniqueSequences = 3L)
-#
-#   new("tas.sequences", Table = t, Supplemental = s, Alignments = list(DNA = da, AA = pa), ReadCounts = ReadCounts)
-# }
-
-
-
-
-
 
 # --------------
 # findAIDtargets
@@ -124,7 +36,7 @@ test_that("measureMutations and associated getter functions work.", {
 
   expect_true(class(obj) == "tas.mutations")
   expect_all_true(slotNames(obj) == slotNames("tas.mutations"))
-  expect_all_true(slotNames(obj) == c("DNA", "AA", "AIDTables"))
+  expect_all_true(slotNames(obj) == c("DNA", "AA", "AIDTables", "Antibody"))
 
   ### DNA ###
 
@@ -182,6 +94,15 @@ test_that("measureMutations and associated getter functions work.", {
   expect_equal(getWRCHTable(obj), aidt$WRCH)
   expect_equal(getWRCYTable(obj), aidt$WRCY)
 
+  ### Antibody ###
+  abml <- getAbMutations(obj)
+  expect_true(class(abml) == "list")
+  expect_true(names(abml) == "RegionMutations")
+  expect_true(class(abml$RegionMutations) == "numeric")
+  expect_all_true(names(abml$RegionMutations) == c("FR1", "CDR1", "FR2", "CDR2", "FR3", "CDR3", "FR4"))
+  expect_equal(abml$RegionMutations, c(FR1 = -100.000000, CDR1 = 1.785714, FR2 = -100.000000, CDR2 = 1.785714, FR3 = -78.571429, CDR3 = 714.285714, FR4 = -100.000000))
+
+
   ####################
   # AmpliconSequencing
   # ------------------
@@ -197,6 +118,7 @@ test_that("measureMutations and associated getter functions work.", {
   expect_equal(getAIDTables(obj), getAIDTables(obj.as))
   expect_equal(getWRCHTable(obj), getWRCHTable(obj.as))
   expect_equal(getWRCYTable(obj), getWRCYTable(obj.as))
+  expect_equal(getAbMutations(obj), getAbMutations(obj.as))
 })
 
 

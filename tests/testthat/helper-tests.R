@@ -36,10 +36,12 @@ make.set.df <- function() {
 # ShortReadQ
 # ----------
 
+
+
 makeFakeSRQ <- function(seqs) {
-  qs <- BStringSet(vapply(width(seqs), function(len) paste(rep("I", len), collapse = ""), character(1)))
-  ids <- BStringSet(replicate(n = length(seqs), fakeIlluminaId()))
-  ShortReadQ(sread = seqs, quality = qs, id = ids)
+  qs <- Biostrings::BStringSet(vapply(Biostrings::width(seqs), function(len) paste(rep("I", len), collapse = ""), character(1)))
+  ids <- Biostrings::BStringSet(replicate(n = length(seqs), fakeIlluminaId()))
+  ShortRead::ShortReadQ(sread = seqs, quality = qs, id = ids)
 }
 
 
@@ -49,8 +51,9 @@ makeFakeSRQ <- function(seqs) {
 
 
 fakeIlluminaId <- function() {
-  str_c("A90033:281:WB24762987th.Miseq:1:", sample(100:50000, 1), ":", sample(100:50000, 1), ":AAGAGGCA+CGGAGAGA")
+  stringr::str_c("A90033:281:WB24762987th.Miseq:1:", sample(100:50000, 1), ":", sample(100:50000, 1), ":AAGAGGCA+CGGAGAGA")
 }
+
 
 makeTestSequences <- function(test.settings) {
   seqs <-  c("GTTCAACTGGTGGAAAGCGGCGGTGCTCTGGTACAACCGGGCGGTAGTCTGCGCCTGAGCTGTGCCGCAAGCGGTTTCCCAGTCAACCGCTACTCTATGCGTTGGTATCGCCAGGCGCCTGGTAAAGAACGTGAATGGGTTGCCGGCATGAGCAGTGCGGGCGATCGTTCTAGTTACGAGGACTCTGTTAAAGGTCGTTTTACAATTAGCCGTGATGATGCGCGCAATACCGTGTATCTGCAAATGAACAGTCTGAAGCCGGAGGACACCGCAGTATATTATTGCAATGTCAACGTGGGGTTTGAATATTGGGGCCAGGGGACTCAGGTGACGGTGAGCTCT",
@@ -97,9 +100,9 @@ makeTestSequences <- function(test.settings) {
                   IndelType = c(NA_character_, NA_character_, "deletion", "deletion", "insertion", "insertion", "insertion")
   )
 
-  dss <- DNAStringSet(str_remove_all(seqs, "-"))
-  da <- pairwiseAlignment(dss, DNAStringSet(test.settings@ReferenceSequence))
-  pa <- pairwiseAlignment(AAStringSet(aa), AAStringSet(suppressWarnings(translate(DNAString(test.settings@ReferenceSequence)))))
+  dss <- Biostrings::DNAStringSet(stringr::str_remove_all(seqs, "-"))
+  da <- pwalign::pairwiseAlignment(dss, Biostrings::DNAStringSet(test.settings@ReferenceSequence))
+  pa <- pwalign::pairwiseAlignment(Biostrings::AAStringSet(aa), Biostrings::AAStringSet(suppressWarnings(Biostrings::translate(Biostrings::DNAString(test.settings@ReferenceSequence)))))
   ReadCounts <- c(Merged = 118L, Filtered = 98L, UMIs = 8L, UniqueSequences = 7L)
 
   new("tas.sequences", Table = t, Supplemental = s, Alignments = list(DNA = da, AA = pa), ReadCounts = ReadCounts)
@@ -108,6 +111,7 @@ makeTestSequences <- function(test.settings) {
 # -------------
 # tas.mutations
 # -------------
+
 
 makeTestMutation <- function() {
   all.dna <- data.frame(Position = sort(c(as.numeric(1:342), 255.5, 279.5)),
@@ -153,33 +157,6 @@ makeTestMutation <- function() {
       AA = list(AllMutations = all.aa, MutationMatrix = mm.aa),
       AIDTables = list(WRCH = aidt.h, WRCY = aidt.y))
 }
-
-
-
-
-
-# makeTestMutation.old <- function() {
-#   a <- data.frame(Position = c(1, 2, 3, 4, 5), MutationFrequency = c(0.1, 8.93, 57.02, 1.21, 2.76))
-#   c <- data.frame(Position = 3, MutationFrequency = 57.02)
-#   nc <- data.frame(Position = c(1, 2, 4, 5), MutationFrequency = c(0.1, 8.93, 1.21, 2.76))
-#   ms <-  c(AverageAllMutations = 0.91,
-#            AverageCytosineMutations = 7.72,
-#            AverageNonCytosineMutations = 0.63,
-#            FrequencyOfAllMutationsAtCytosines = 77.3,
-#            FrequencyOfAllMutationsAtNonCytosines = 22.7)
-#   ap <- data.frame(Position = c(1, 2), MutationFrequency = c(4.3, 48.7))
-#   mm <- consensusMatrix(pairwiseAlignment(AAStringSet(c("MQ", "ME")), AAStringSet("MQ")))
-#   mm <- mm[1:(nrow(mm)-3),]
-#
-#   aidt <- list(WRCH = data.frame(Motif = "WRCH", Start = 1, End = 4, Cytosine = 3, CytosineMutationFrequency = 57.2),
-#                WRCY = data.frame(Motif = "WRCY", Start = 1, End = 4, Cytosine = 3, CytosineMutationFrequency = 57.2))
-#
-#   new("tas.mutations", DNA = list(AllMutations = a, CytosineMutations = c, NonCytosineMutations = nc, MotifSums = ms),
-#       AA = list(AllMutations = ap,
-#                 MutationMatrix = mm),
-#       AIDTables = aidt
-#   )
-# }
 
 
 # --------------
@@ -245,7 +222,7 @@ test.seq <- makeTestSequences(test.settings)
 # Write a simulated .fastq.gz file
 # --------------------------------
 
-srq.test <- makeFakeSRQ(DNAStringSet(c(rep("GCTAGCCGTAAAACGACGGCCAGTGTTCAACTGGTGGAAAGCGGCGGTGCTCTGGTACAACCGGGCGGTAGTCTGCGCCTGAGCTGTGCCGCAAGCGGTTTCCCAGTCAACCGCTACTCTATGCGTTGGTATCGCCAGGCGCCTGGTAAAGAACGTGAATGGGTTGCCGGCATGAGCAGTGCGGGCGATCGTTCTAGTTACGAGGACTCTGTTAAAGGTCGTTTTACAATTAGCCGTGATGATGCGCGCAATACCGTGTATCTGCAAATGAACAGTCTGAAGCCGGAGGACACCGCAGTATATTATTGCAATGTCAACGTGGGGTTTGAATATTGGGGCCAGGGGACTCAGGTGACGGTGAGCTCTGTCATAGCTGTTTCCTGAGCGAATTAGAG", 33),  # WT            AGCGAATTAGAG
+srq.test <- makeFakeSRQ(Biostrings::DNAStringSet(c(rep("GCTAGCCGTAAAACGACGGCCAGTGTTCAACTGGTGGAAAGCGGCGGTGCTCTGGTACAACCGGGCGGTAGTCTGCGCCTGAGCTGTGCCGCAAGCGGTTTCCCAGTCAACCGCTACTCTATGCGTTGGTATCGCCAGGCGCCTGGTAAAGAACGTGAATGGGTTGCCGGCATGAGCAGTGCGGGCGATCGTTCTAGTTACGAGGACTCTGTTAAAGGTCGTTTTACAATTAGCCGTGATGATGCGCGCAATACCGTGTATCTGCAAATGAACAGTCTGAAGCCGGAGGACACCGCAGTATATTATTGCAATGTCAACGTGGGGTTTGAATATTGGGGCCAGGGGACTCAGGTGACGGTGAGCTCTGTCATAGCTGTTTCCTGAGCGAATTAGAG", 33),  # WT            AGCGAATTAGAG
                                   rep("GCTAGCCGTAAAACGACGGCCAGTGTTCAACTGGTGGAAAGCGGCGGTGCTCTGGTACAACCGGGCGGTAGTCTGCGCCTGAGCTGTGCCGCAAGCGGTTTCCCAGTCAACCGCTACTCTATGCGTTGGTATCGCCAGGCGCCTGGTAAAGAACGTGAATGGGTTGCCGGCATGAGCAGTGCGGGCGATCGTTCTAGTTACGAGGACTCTGTTAAAGGTCGTTTTACAATTAGCCGTGATGATGCGCGCAATACCGTGTATCTGCAAATGAACAGTCTGAAGCCGGAGGACACCGCAGTATATTATTGCAATGTCAACGTGGGGTTTGAATATTGGGGCCAGGGGACTCAGGTGACGGTGAGCTCTGTCATAGCTGTTTCCTGCTCGAATTAGTA", 24),  # WT            CTCGAATTAGTA
                                   rep("GCTAGCCGTAAAACGACGGCCAGTGTTCAACTGGTGGAAAGCGGCGGTGCTCTGGTACAACCGGGCGGTAGTCTGCGCCTGAGCTGTGCCGCAAGCGGTTTCCCAGTCAACCGCTATTCTATGCGTTGGTATCGCCAGGCGCCTGGTAAAGAACGTGAATGGGTTGCCGGCATGAGGAGTGCGGGCGATCGTTCTAGTTACGAGGACTCTGTTAAAGGTCGTTTTACAATTAGCCGTGATGATGCGCGCAATACCGTGTATCTGCAAATGAACAGTCTGAAGCCGGAGGACACCGCAGTATATTATTGCAATGTCAACGTGGGGTTTGAATATTGGGGCCAGGGGACTCAGGTGACGGTGAGCTCTGTCATAGCTGTTTCCTGTTTAGCGCGTAG", 11),  # 2 base change TTTAGCGCGTAG
                                   rep("GCTAGCCGTAAAACGACGGCCAGTGTTCAACTGGTGGAAAGCGGCGGTGCTCTGGTACAACCGGGCGGTAGTCTGCGCCTGAGCTGTGCCGCAAGCGGTTTCCCAGTCAACCGCTACTCTATGCGTTGGTATCGCCAGGCGCCTGGTAAAGAACGTGAATGGGTTGCCGGCATGAGCAGTGCGGGCGATCGTTCTAGTTACGAGGACTCTGTTAAAGGTCGTTTTACAATTAGCCGTGATGATGCGCGCAATACCGTGTATCTGCAAATGAACAGTCTGAAGCCGGAGGACACCGCAGTATATTATTGCAATGTCAACGTTTTGAATATTGGGGCCAGGGGACTCAGGTGACGGTGAGCTCTGTCATAGCTGTTTCCTGGGCGTATTAACC", 8),       # -4, internal  GGCGTATTAACC
@@ -260,12 +237,12 @@ srq.test <- makeFakeSRQ(DNAStringSet(c(rep("GCTAGCCGTAAAACGACGGCCAGTGTTCAACTGGTG
                                   rep("GCTAGCCGTAAAACGACGGCCAGTGTTCAACTGGTGGAAAGCGGCGGTGCTCTGGTACAACCGGGCGGTAGTCTGCGCCTGAGCTGTGCCGCAAGCGGTTTCCCAGTCAACCGCTACTCTATGCGTTGGTATCGCCAGGCGCCTGGTAAAGAACGTGAATGGGTTGCCGGCATGAGCAGTGCGGGCGATCGTTCTAGTTACGAGGACTCTGTTAAAGGTCGTTTTACAATTAGCCGTGATGATGCGCGCAATACCGTGTATCTGCAAATGAACAGTCTGAAGCCGGAGGACACCGCAGTATATTATTGCAATGTCAACGTGGGGTTTGAATATTGGGGCCAGGGGACTCAGGTGACGGTGAGCTCTGTCATAGCTGTTTCCTGGTTATGTTGTTA", 2)    # < reads       GTTATGTTGTTA
 )))
 if (file.exists(file.path(tempdir(), "test-merged.fastq.gz"))) {file.remove(file.path(tempdir(), "test-merged.fastq.gz"))}
-writeFastq(srq.test, file = file.path(tempdir(), "test-merged.fastq.gz"))
+ShortRead::writeFastq(srq.test, file = file.path(tempdir(), "test-merged.fastq.gz"))
 
 
-srq.test.lowdiv <- makeFakeSRQ(DNAStringSet(rep("GCTAGCCGTAAAACGACGGCCAGTGTTCAACTGGTGGAAAGCGGCGGTGCTCTGGTACAACCGGGCGGTAGTCTGCGCCTGAGCTGTGCCGCAAGCGGTTTCCCAGTCAACCGCTACTCTATGCGTTGGTATCGCCAGGCGCCTGGTAAAGAACGTGAATGGGTTGCCGGCATGAGCAGTGCGGGCGATCGTTCTAGTTACGAGGACTCTGTTAAAGGTCGTTTTACAATTAGCCGTGATGATGCGCGCAATACCGTGTATCTGCAAATGAACAGTCTGAAGCCGGAGGACACCGCAGTATATTATTGCAATGTCAACGTGGGGTTTGAATATTGGGGCCAGGGGACTCAGGTGACGGTGAGCTCTGTCATAGCTGTTTCCTGAGCGAATTAGAG", 33)))
+srq.test.lowdiv <- makeFakeSRQ(Biostrings::DNAStringSet(rep("GCTAGCCGTAAAACGACGGCCAGTGTTCAACTGGTGGAAAGCGGCGGTGCTCTGGTACAACCGGGCGGTAGTCTGCGCCTGAGCTGTGCCGCAAGCGGTTTCCCAGTCAACCGCTACTCTATGCGTTGGTATCGCCAGGCGCCTGGTAAAGAACGTGAATGGGTTGCCGGCATGAGCAGTGCGGGCGATCGTTCTAGTTACGAGGACTCTGTTAAAGGTCGTTTTACAATTAGCCGTGATGATGCGCGCAATACCGTGTATCTGCAAATGAACAGTCTGAAGCCGGAGGACACCGCAGTATATTATTGCAATGTCAACGTGGGGTTTGAATATTGGGGCCAGGGGACTCAGGTGACGGTGAGCTCTGTCATAGCTGTTTCCTGAGCGAATTAGAG", 33)))
 if (file.exists(file.path(tempdir(), "test-merged-lowdiv.fastq.gz"))) {file.remove(file.path(tempdir(), "test-merged-lowdiv.fastq.gz"))}
-writeFastq(srq.test.lowdiv, file = file.path(tempdir(), "test-merged-lowdiv.fastq.gz"))
+ShortRead::writeFastq(srq.test.lowdiv, file = file.path(tempdir(), "test-merged-lowdiv.fastq.gz"))
 
 
 

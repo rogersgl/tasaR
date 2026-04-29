@@ -11,6 +11,7 @@
 #' @param input.settings.list A character vector describing a path to a .csv file to read settings from. Alternatively, an R data.frame or list containing those settings.
 #'
 #' @returns A list of AmpliconSequencing objects
+#'
 #' @export
 #'
 #' @examples
@@ -23,12 +24,12 @@ batchAnalyzeAmplicon <- function(input.settings.list) {
   # file path to .csv
   if (class(input.settings.list) == "character") {
 
-    if (!str_ends(input.settings.list, ".csv")) {stop("A character vector input.settings.list must specify the file path to a .csv file.")}
+    if (!stringr::str_ends(input.settings.list, ".csv")) {stop("A character vector input.settings.list must specify the file path to a .csv file.")}
     if (!file.exists(input.settings.list)) {stop("File not found: ", input.settings.list)}
 
-    input.df <- read.csv(input.settings.list)
+    input.df <- utils::read.csv(input.settings.list)
 
-    settings.list<- lapply(1:nrow(input.df), function(x) {
+    settings.list<- S4Vectors::lapply(1:nrow(input.df), function(x) {
       temp <- suppressMessages(readSettings(input.df[x,]))
       validObject(temp)
       return(temp)
@@ -38,7 +39,7 @@ batchAnalyzeAmplicon <- function(input.settings.list) {
 
   # R list of settings
   if (class(input.settings.list) == "list") {
-    settings.list <- lapply(1:length(input.settings.list), function(x) {
+    settings.list <- S4Vectors::lapply(1:length(input.settings.list), function(x) {
       if (class(x) == "tas.object.settings"){
         validObject(x)
         return(x)
@@ -54,7 +55,7 @@ batchAnalyzeAmplicon <- function(input.settings.list) {
   }
 
   if (class(input.settings.list) == "data.frame") {
-    settings.list <- lapply(1:nrow(input.settings.list), function(x) {
+    settings.list <- S4Vectors::lapply(1:nrow(input.settings.list), function(x) {
       temp <- suppressMessages(readSettings(input.settings.list[x,]))
       validObject(temp)
       return(temp)
@@ -66,7 +67,7 @@ batchAnalyzeAmplicon <- function(input.settings.list) {
 
   sample.names <- names(settings.list)
   results.list <- list()
-  results.list <- lapply(settings.list, function(x) {
+  results.list <- S4Vectors::lapply(settings.list, function(x) {
     analyzeAmplicon(x)
   })
   names(results.list) <- sample.names
@@ -106,21 +107,21 @@ batchSummarize <- function(results.list, export = FALSE, path = NULL, suppressCo
                    "getMutationDistributionAA"
                    )
 
-  merged.pos.list <- lapply(dt.funcs, function(func){
-    dt <- as.data.table(Reduce(function(x, y) merge(x, y, by = "Position", all = TRUE), lapply(results.list, func)))
+  merged.pos.list <- S4Vectors::lapply(dt.funcs, function(func){
+    dt <- as.data.table(Reduce(function(x, y) merge(x, y, by = "Position", all = TRUE), S4Vectors::lapply(results.list, func)))
     dt[is.na(dt)] <- 0
     colnames(dt)[colnames(dt) != "Position"] <- sample.names
     return(dt)
   })
   names(merged.pos.list) <- c("AllMutationsDNA", "CytosineMutations", "NonCytosineMutations", "AllMutationsAA")
 
-  dt.ms <- as.data.table(Reduce(function(x, y) merge(x, y, by = "rn", all = TRUE), lapply(results.list, function(x){
+  dt.ms <- as.data.table(Reduce(function(x, y) merge(x, y, by = "rn", all = TRUE), S4Vectors::lapply(results.list, function(x){
     data.table(getMutationMotifSums(x), keep.rownames = TRUE)
     })))
   colnames(dt.ms)[colnames(dt.ms) != "rn"] <- sample.names
 
-  dt.mt <- as.data.table(Reduce(function(x, y) merge(x, y, by = "rn", all = TRUE), lapply(results.list, function(x){
-    data.table(t(getMutationTypes(x)), keep.rownames = TRUE)
+  dt.mt <- as.data.table(Reduce(function(x, y) merge(x, y, by = "rn", all = TRUE), S4Vectors::lapply(results.list, function(x){
+    data.table(BiocGenerics::t(getMutationTypes(x)), keep.rownames = TRUE)
   })))
   colnames(dt.mt)[colnames(dt.mt) != "rn"] <- sample.names
 
@@ -154,27 +155,27 @@ batchSummarize <- function(results.list, export = FALSE, path = NULL, suppressCo
                             AIDBox = p.aid,
                             MutTypes = p.mt),
               Tables = c(list(MotifSums = as.data.frame(dt.ms)),
-                              lapply(merged.pos.list, as.data.frame),
+                              S4Vectors::lapply(merged.pos.list, as.data.frame),
                          list(MutationTypes = as.data.frame(dt.mt))
                          )
               )
 
   if (export && !is.null(path)) {
     if (!dir.exists(file.path(tempdir(), "export"))) {dir.create(file.path(tempdir(), "export"))}
-    write.csv(batsum$Tables$MotifSums, file = file.path(tempdir(), "export", "Motif Sums (batch).csv"))
-    write.csv(batsum$Tables$AllMutationsDNA, file = file.path(tempdir(), "export", "All DNA Mutations (batch).csv"))
-    write.csv(batsum$Tables$CytosineMutations, file = file.path(tempdir(), "export", "Cytosine DNA Mutations (batch).csv"))
-    write.csv(batsum$Tables$NonCytosineMutations, file = file.path(tempdir(), "export", "Non-Cytosine DNA Mutations (batch).csv"))
-    write.csv(batsum$Tables$AllMutationsAA, file = file.path(tempdir(), "export", "All Protein Mutations (batch).csv"))
-    write.csv(batsum$Tables$MutationTypes, file = file.path(tempdir(), "export", "DNA Repair Types (batch).csv"))
+    utils::write.csv(batsum$Tables$MotifSums, file = file.path(tempdir(), "export", "Motif Sums (batch).csv"))
+    utils::write.csv(batsum$Tables$AllMutationsDNA, file = file.path(tempdir(), "export", "All DNA Mutations (batch).csv"))
+    utils::write.csv(batsum$Tables$CytosineMutations, file = file.path(tempdir(), "export", "Cytosine DNA Mutations (batch).csv"))
+    utils::write.csv(batsum$Tables$NonCytosineMutations, file = file.path(tempdir(), "export", "Non-Cytosine DNA Mutations (batch).csv"))
+    utils::write.csv(batsum$Tables$AllMutationsAA, file = file.path(tempdir(), "export", "All Protein Mutations (batch).csv"))
+    utils::write.csv(batsum$Tables$MutationTypes, file = file.path(tempdir(), "export", "DNA Repair Types (batch).csv"))
 
-    ggsave("Average DNA Mutation Rate.pdf", batsum$Graphs$AvgMutAll, path = file.path(tempdir(), "export"))
-    ggsave("Average AID Cytosine Mutation Rate.pdf", batsum$Graphs$AvgMutCyt, path = file.path(tempdir(), "export"))
-    ggsave("DNA Mutation Distributions.pdf", batsum$Graphs$MutPosDNA, path = file.path(tempdir(), "export"))
-    ggsave("Protein Mutation Distributions.pdf", batsum$Graphs$MutPosAA, path = file.path(tempdir(), "export"))
-    ggsave("AID Cytosine Mutation Heatmap.pdf", batsum$Graphs$MutCytHM, path = file.path(tempdir(), "export"))
-    ggsave("AID Mutation Boxplot.pdf", batsum$Graphs$AIDBox, path = file.path(tempdir(), "export"))
-    ggsave("DNA Repair Types.pdf", batsum$Graphs$MutTypes, path = file.path(tempdir(), "export"))
+    ggplot2::ggsave("Average DNA Mutation Rate.pdf", batsum$Graphs$AvgMutAll, path = file.path(tempdir(), "export"))
+    ggplot2::ggsave("Average AID Cytosine Mutation Rate.pdf", batsum$Graphs$AvgMutCyt, path = file.path(tempdir(), "export"))
+    ggplot2::ggsave("DNA Mutation Distributions.pdf", batsum$Graphs$MutPosDNA, path = file.path(tempdir(), "export"))
+    ggplot2::ggsave("Protein Mutation Distributions.pdf", batsum$Graphs$MutPosAA, path = file.path(tempdir(), "export"))
+    ggplot2::ggsave("AID Cytosine Mutation Heatmap.pdf", batsum$Graphs$MutCytHM, path = file.path(tempdir(), "export"))
+    ggplot2::ggsave("AID Mutation Boxplot.pdf", batsum$Graphs$AIDBox, path = file.path(tempdir(), "export"))
+    ggplot2::ggsave("DNA Repair Types.pdf", batsum$Graphs$MutTypes, path = file.path(tempdir(), "export"))
 
     if (!dir.exists(path)) {dir.create(path)}
     file.copy(list.files(file.path(tempdir(), "export"), full.names = TRUE), path, recursive = TRUE)

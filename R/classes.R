@@ -168,18 +168,18 @@ setValidity("tas.object.settings", function(object) {
 
   # sanity checks for input values
   if (object@ReferenceSequence != "" && nchar(object@ReferenceSequence) > object@AmpliconLength) {return("@ReferenceSequence cannot be longer than the AmpliconLength.")}
-  if (any(grepl("[^ACGTMRWSYKVHDBN-]", object@ReferenceSequence, ignore.case = TRUE))) {return("@ReferenceSequence must be a DNA sequence. Invalid characters detected.")}
+  if (any(S4Vectors::grepl("[^ACGTMRWSYKVHDBN-]", object@ReferenceSequence, ignore.case = TRUE))) {return("@ReferenceSequence must be a DNA sequence. Invalid characters detected.")}
 
-  if (any(grepl("[^ACGTMRWSYKVHDBN-]", object@ForwardExtension, ignore.case = TRUE))) {return("@ForwardExtension must be a DNA sequence. Invalid characters detected.")}
-  if (any(grepl("[^ACGTMRWSYKVHDBN-]", object@ForwardPrimer, ignore.case = TRUE))) {return("@ForwardPrimer must be a DNA sequence. Invalid characters detected.")}
-  if (any(grepl("[^ACGTMRWSYKVHDBN-]", object@ReverseExtension, ignore.case = TRUE))) {return("@ReverseExtension must be a DNA sequence. Invalid characters detected.")}
-  if (any(grepl("[^ACGTMRWSYKVHDBN-]", object@ReversePrimer, ignore.case = TRUE))) {return("@ReversePrimer must be a DNA sequence. Invalid characters detected.")}
+  if (any(S4Vectors::grepl("[^ACGTMRWSYKVHDBN-]", object@ForwardExtension, ignore.case = TRUE))) {return("@ForwardExtension must be a DNA sequence. Invalid characters detected.")}
+  if (any(S4Vectors::grepl("[^ACGTMRWSYKVHDBN-]", object@ForwardPrimer, ignore.case = TRUE))) {return("@ForwardPrimer must be a DNA sequence. Invalid characters detected.")}
+  if (any(S4Vectors::grepl("[^ACGTMRWSYKVHDBN-]", object@ReverseExtension, ignore.case = TRUE))) {return("@ReverseExtension must be a DNA sequence. Invalid characters detected.")}
+  if (any(S4Vectors::grepl("[^ACGTMRWSYKVHDBN-]", object@ReversePrimer, ignore.case = TRUE))) {return("@ReversePrimer must be a DNA sequence. Invalid characters detected.")}
   if (!any(c("barcode", "umi", "") %in% tolower(object@ForwardExtensionType))) {return("@ForwardExtensionType must be either 'barcode' or 'umi'.")}
   if (!any(c("barcode", "umi", "") %in% tolower(object@ReverseExtensionType))) {return("@ReverseExtensionType must be either 'barcode' or 'umi'.")}
   if (!is.na(object@InsertStart) && !object@InsertStart >= 1) {return("@InsertStart must be a positive number >= 1.")}
   if (!is.na(object@InsertEnd) &&!object@InsertEnd < 0) {return("@InsertEnd must be a negative number. Count backwards from the 3' end of the amplicon.")}
 
-  if ((object@MergedFASTQPath != "") && !str_detect(object@MergedFASTQPath, ".fastq")) {
+  if ((object@MergedFASTQPath != "") && !stringr::str_detect(object@MergedFASTQPath, ".fastq")) {
     return("@MergedFASTQPath should be a file path to a .fastq file.")
   }
 
@@ -211,19 +211,17 @@ setValidity("tas.object.settings", function(object) {
 #' @description S4 object of analyzed sequence table
 #' @slot Table A data.frame with a variable number of rows and 7 named columns:
 #' \describe{
-#'   \item{Sequences}{character vector of DNA sequences}
-#'   \item{Count}{numeric vector of sequence counts}
-#'   \item{Percent}{numeric vector of sequence frequencies}
-#'   \item{Indels}{character vector annotating insertions and deletions in the sequence}
-#'   \item{BasesChanged}{integer vector counting the number of mutated DNA bases in the sequence}
-#'   \item{AA}{character vector of protein sequences}
-#'   \item{ProteinMutation}{character vector annotating protein mutations in the sequence}
+#'   \item{\code{Sequences}}{character vector of DNA sequences}
+#'   \item{\code{Count}}{numeric vector of sequence counts}
+#'   \item{\code{Percent}}{numeric vector of sequence frequencies}
+#'   \item{\code{Indels}}{character vector annotating insertions and deletions in the sequence}
+#'   \item{\code{BasesChanged}}{integer vector counting the number of mutated DNA bases in the sequence}
+#'   \item{\code{AA}}{character vector of protein sequences}
+#'   \item{\code{ProteinMutation}}{character vector annotating protein mutations in the sequence}
 #' }
 #'
 #' @slot Alignments A list of DNA and protein (AA) pairwise alignments
 #' @slot Supplemental A data.table of DNA sequences paired with UMIs and Illumina sequence IDs
-#' @importFrom S4Vectors isEmpty
-#' @import data.table
 #'
 #' @export
 setClass("tas.sequences", slots = list(Table = "data.frame",
@@ -250,8 +248,8 @@ setClass("tas.sequences", slots = list(Table = "data.frame",
 setValidity("tas.sequences", function(object) {
   if (ncol(object@Table) != 7) {return("tas.sequences must contain exactly 7 columns.")}
   if (any(colnames(object@Table) != c("Sequences", "Count", "Percent", "Indels", "BasesChanged", "AA", "ProteinMutation"))) {return("Column names in @Table are incorrect.")}
-  if (any(grepl("[^ACGTMRWSYKVHDBN-]", object@Table$Sequences, ignore.case = TRUE))) {return("Sequences must be valid DNA sequences.")}
-  if (any(grepl("[^ARNDCQEGHILKMFPSTWYVUOBJZX*+-]", object@Table$AA, ignore.case = TRUE))) {return("AA must be valid protein sequences.")}
+  if (any(S4Vectors::grepl("[^ACGTMRWSYKVHDBN-]", object@Table$Sequences, ignore.case = TRUE))) {return("Sequences must be valid DNA sequences.")}
+  if (any(S4Vectors::grepl("[^ARNDCQEGHILKMFPSTWYVUOBJZX*+-]", object@Table$AA, ignore.case = TRUE))) {return("AA must be valid protein sequences.")}
   if (any(colnames(object@Supplemental) != c("Index", "UMIs", "IDs", "IndelStart", "IndelType"))) {return("Column names in @Supplemental are incorrect.")}
 
   if (all(names(object@Alignments) != c("DNA", "AA"))) {return("Invalid list names in @Alignments.")}
@@ -273,39 +271,44 @@ setValidity("tas.sequences", function(object) {
 #' @slot DNA a list of DNA mutation information
 #' @slot AA a list of protein mutation information
 #' @slot AIDTables a list of summary information of mutations at AID hotspots
+#' @slot Antibody a list of antibody-specific mutation information
 #'
 #' @section DNA:
 #' \describe{
-#'  \item{AllMutations}{data.frame showing position and frequency of mutations at all positions}
-#'  \item{CytosineMutations}{data.frame showing position and frequency of mutations at AID cytosines}
-#'  \item{NonCytosineMutations}{data.frame showing position and frequency of mutations at all positions that are not AID cytosines}
-#'  \item{MotifSums}{numeric vector summarizing the frequency of mutations among different motifs and denominators}
+#'  \item{\code{AllMutations}}{data.frame showing position and frequency of mutations at all positions}
+#'  \item{\code{CytosineMutations}}{data.frame showing position and frequency of mutations at AID cytosines}
+#'  \item{\code{NonCytosineMutations}}{data.frame showing position and frequency of mutations at all positions that are not AID cytosines}
+#'  \item{\code{MotifSums}}{numeric vector summarizing the frequency of mutations among different motifs and denominators}
 #' }
 #'
 #'
 #' @section AA:
 #' \describe{
-#'  \item{AllMutations}{data.frame showing position and frequency of mutations at all positions}
-#'  \item{MutationMatrix}{matrix showing frequency and identity of all protein mutations (WT omitted)}
+#'  \item{\code{AllMutations}}{data.frame showing position and frequency of mutations at all positions}
+#'  \item{\code{MutationMatrix}}{matrix showing frequency and identity of all protein mutations (WT omitted)}
 #' }
 #'
 #'
 #' @section AIDTables Columns:
 #' \describe{
-#'   \item{Motif}{character vector DNA motif (top strand = WRCH/WRCY, bottom strand = DGYW/RGYW)}
-#'   \item{Start}{numeric vector of starting coordinates of AID motifs}
-#'   \item{End}{numeric vector of ending coordinates of AID motifs}
-#'   \item{Cytosine}{numeric vector of coordinates of AID cytosines}
-#'   \item{CytosineMutationFrequency}{numeric vector of the mutation frequency at the AID cytosine}
+#'   \item{\code{Motif}}{character vector DNA motif (top strand = WRCH/WRCY, bottom strand = DGYW/RGYW)}
+#'   \item{\code{Start}}{numeric vector of starting coordinates of AID motifs}
+#'   \item{\code{End}}{numeric vector of ending coordinates of AID motifs}
+#'   \item{\code{Cytosine}}{numeric vector of coordinates of AID cytosines}
+#'   \item{\code{CytosineMutationFrequency}}{numeric vector of the mutation frequency at the AID cytosine}
 #' }
 #'
+#' @section Antibody:
+#' \describe{
+#'   \item{\code{RegionMutations}}{numeric vector of percent deviation from expected mutation rate for each antibody region, assuming an equal distribution across length}
+#' }
 #'
-#' @importFrom S4Vectors isEmpty
 #'
 #' @export
 setClass("tas.mutations", slots = list(DNA = "list",
                                        AA = "list",
-                                       AIDTables = "list"),
+                                       AIDTables = "list",
+                                       Antibody = "list"),
          prototype = list(DNA = list(AllMutations = data.frame(Position = numeric(), MutationFrequency = numeric()),
                                      CytosineMutations = data.frame(Position = numeric(), MutationFrequency = numeric()),
                                      NonCytosineMutations = data.frame(Position = numeric(), MutationFrequency = numeric()),
@@ -317,28 +320,37 @@ setClass("tas.mutations", slots = list(DNA = "list",
                           AA = list(AllMutations = data.frame(Position = numeric(), MutationFrequency = numeric()),
                                     MutationMatrix = matrix()),
                           AIDTables = list(WRCH = data.frame(Motif = character(), Start = integer(), End = integer(), Cytosine = integer(), CytosineMutationFrequency = numeric()),
-                                           WRCY = data.frame(Motif = character(), Start = integer(), End = integer(), Cytosine = integer(), CytosineMutationFrequency = numeric()))
+                                           WRCY = data.frame(Motif = character(), Start = integer(), End = integer(), Cytosine = integer(), CytosineMutationFrequency = numeric())),
+                          Antibody = list(RegionMutations = c(FR1 = NA_real_,
+                                                              CDR1 = NA_real_,
+                                                              FR2 = NA_real_,
+                                                              CDR2 = NA_real_,
+                                                              FR3 = NA_real_,
+                                                              CDR3 = NA_real_,
+                                                              FR4 = NA_real_))
                                     ))
 
 
 setValidity("tas.mutations", function(object) {
-  if (any(slotNames(object) != c("DNA", "AA", "AIDTables"))) {return("Invalid slot names.")}
+  if (any(slotNames(object) != c("DNA", "AA", "AIDTables", "Antibody"))) {return("Invalid slot names.")}
   if (class(object@DNA) != "list" ||
       any(names(object@DNA) != c("AllMutations", "CytosineMutations", "NonCytosineMutations", "MotifSums")) ||
       any(sapply(object@DNA, class) != c("data.frame", "data.frame", "data.frame", "numeric"))) {return("Invalid @DNA.")}
   if (class(object@AA) != "list" ||
       any(names(object@AA) != c("AllMutations", "MutationMatrix")) ||
-      any(unlist(sapply(object@AA, class)) != c("data.frame", "matrix", "array"))) {return("Invalid @AA.")}
+      any(BiocGenerics::unlist(sapply(object@AA, class)) != c("data.frame", "matrix", "array"))) {return("Invalid @AA.")}
   if (class(object@AIDTables) != "list" ||
       any(names(object@AIDTables) != c("WRCH", "WRCY")) ||
       any(sapply(object@AIDTables, class) != c("data.frame", "data.frame"))) {return("Invalid @AIDTables.")}
-
+  if (class(object@Antibody) != "list" ||
+      any(sapply(object@Antibody, names) != c("FR1", "CDR1", "FR2", "CDR2", "FR3", "CDR3", "FR4")) ||
+      any(sapply(object@Antibody, class) != c("numeric"))) {return("Invalid @Antibody")}
   dfs <- list(object@DNA$AllMutations, object@DNA$CytosineMutations, object@DNA$NonCytosineMutations, object@AA$AllMutations)
   for (i in dfs) {
-    if (ncol(i) != 2) {return(str_c("@",i," must have exactly 2 columns."))}
-    if (any(!sapply(i, is.numeric))) {return(str_c("Columns in @",i," must be numeric vectors."))}
-    if (any(colnames(i) != c("Position", "MutationFrequency"))) {return(str_c("Columns in @",i," must be named 'Position' and 'MutationFrequency'."))}
-    if (length(i$Position) != length(i$MutationFrequency)) {return(str_c("Columns in @",i," must be of equal length."))}
+    if (ncol(i) != 2) {return(stringr::str_c("@",i," must have exactly 2 columns."))}
+    if (any(!sapply(i, is.numeric))) {return(stringr::str_c("Columns in @",i," must be numeric vectors."))}
+    if (any(colnames(i) != c("Position", "MutationFrequency"))) {return(stringr::str_c("Columns in @",i," must be named 'Position' and 'MutationFrequency'."))}
+    if (length(i$Position) != length(i$MutationFrequency)) {return(stringr::str_c("Columns in @",i," must be of equal length."))}
   }
   if (!all(sapply(object@DNA$MotifSums, class)=="numeric")) {return("MotifSums must a numeric vector.")}
   if (!all(is.na(object@DNA$MotifSums)) && any(object@DNA$MotifSums < 0)) {return("MotifSums values must be >= 0.")}
@@ -367,7 +379,6 @@ setValidity("tas.mutations", function(object) {
 #' @slot IndelBaseChange numeric vector of percent of sequences with mutated bases and indels
 #' @slot Other numeric vector of percent of sequences not fitting into any other category above
 #'
-#' @importFrom S4Vectors isEmpty
 #'
 #' @export
 setClass("tas.dna.repair", slots = list(WT = "numeric",
@@ -434,7 +445,6 @@ setValidity("tas.dna.repair", function(object) {
 #'   \item{`getSettings()`}{returns list of object-specific tasaR settings used for analysis}
 #' }
 #'
-#' @importFrom S4Vectors isEmpty
 #'
 #' @export
 setClass("AmpliconSequencing", slots = list(Sequences = "tas.sequences",
@@ -453,7 +463,7 @@ setValidity("AmpliconSequencing", function(object) {
   }
   for (i in slotNames(object)) {
     if (!validObject(slot(object, i))) {
-      return(str_c("Invalid slot ",i," detected."))
+      return(stringr::str_c("Invalid slot ",i," detected."))
     }
   }
   return(TRUE)

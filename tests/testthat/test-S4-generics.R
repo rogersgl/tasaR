@@ -3,7 +3,7 @@
 # -------------
 
 fakeIlluminaId <- function() {
-  str_c("A90033:281:WB24762987th.Miseq:1:", sample(100:50000, 1), ":", sample(100:50000, 1), ":AAGAGGCA+CGGAGAGA")
+  stringr::str_c("A90033:281:WB24762987th.Miseq:1:", sample(100:50000, 1), ":", sample(100:50000, 1), ":AAGAGGCA+CGGAGAGA")
 }
 
 makeTestSeqTable <- function() {
@@ -28,11 +28,11 @@ makeTestSeqTable <- function() {
                   ),
                   IndelStart = NA_real_,
                   IndelType = NA_character_)
-  da <- pairwiseAlignment(DNAStringSet(c("ATGCAG", "ATGGAG")), DNAString("ATGCAG"))
-  pa <- pairwiseAlignment(AAStringSet(c("MQ", "ME")), AAString("MQ"))
+  da <- pwalign::pairwiseAlignment(Biostrings::DNAStringSet(c("ATGCAG", "ATGGAG")), Biostrings::DNAString("ATGCAG"))
+  pa <- pwalign::pairwiseAlignment(Biostrings::AAStringSet(c("MQ", "ME")), Biostrings::AAString("MQ"))
   ReadCounts <- c(Merged = 53L, Filtered = 44L, UMIs = 8L, UniqueSequences = 3L)
 
-  new("tas.sequences", Table = t, Supplemental = s, Alignments = list(DNA = da, AA = pa), ReadCounts = ReadCounts)
+  methods::new("tas.sequences", Table = t, Supplemental = s, Alignments = list(DNA = da, AA = pa), ReadCounts = ReadCounts)
 }
 
 
@@ -46,13 +46,13 @@ makeTestMutation <- function() {
                 FrequencyOfAllMutationsAtCytosines = 77.3,
                 FrequencyOfAllMutationsAtNonCytosines = 22.7)
   ap <- data.frame(Position = c(1, 2), MutationFrequency = c(4.3, 48.7))
-  mm <- consensusMatrix(pairwiseAlignment(AAStringSet(c("MQ", "ME")), AAStringSet("MQ")))
+  mm <- pwalign::consensusMatrix(pwalign::pairwiseAlignment(Biostrings::AAStringSet(c("MQ", "ME")), Biostrings::AAStringSet("MQ")))
   mm <- mm[1:(nrow(mm)-3),]
 
   aidt <- list(WRCH = data.frame(Motif = "WRCH", Start = 1, End = 4, Cytosine = 3, CytosineMutationFrequency = 57.2),
                WRCY = data.frame(Motif = "WRCY", Start = 1, End = 4, Cytosine = 3, CytosineMutationFrequency = 57.2))
 
-  new("tas.mutations", DNA = list(AllMutations = a, CytosineMutations = c, NonCytosineMutations = nc, MotifSums = ms),
+  methods::new("tas.mutations", DNA = list(AllMutations = a, CytosineMutations = c, NonCytosineMutations = nc, MotifSums = ms),
       AA = list(AllMutations = ap,
                 MutationMatrix = mm),
       AIDTables = aidt
@@ -61,12 +61,12 @@ makeTestMutation <- function() {
 
 
 makeTestMutationTypes <- function() {
-  new("tas.dna.repair", WT = 100, NHEJ = 0, MMEJ = 0, BaseChange = 0, IndelBaseChange = 0, Other = 0)
+  methods::new("tas.dna.repair", WT = 100, NHEJ = 0, MMEJ = 0, BaseChange = 0, IndelBaseChange = 0, Other = 0)
 }
 
 
 makeTestSettings <- function() {
-  new("tas.object.settings", Name = "test",
+  methods::new("tas.object.settings", Name = "test",
                       IsAntibody = TRUE,
                       MergedFASTQPath = file.path(tempdir(), "test-merged.fastq.gz"),
                       ReferenceSequence = "GTTCAACTGGTGGAAAGCGGCGGTGCTCTGGTACAACCGGGCGGTAGTCTGCGCCTGAGCTGTGCCGCAAGCGGTTTCCCAGTCAACCGCTACTCTATGCGTTGGTATCGCCAGGCGCCTGGTAAAGAACGTGAATGGGTTGCCGGCATGAGCAGTGCGGGCGATCGTTCTAGTTACGAGGACTCTGTTAAAGGTCGTTTTACAATTAGCCGTGATGATGCGCGCAATACCGTGTATCTGCAAATGAACAGTCTGAAGCCGGAGGACACCGCAGTATATTATTGCAATGTCAACGTGGGGTTTGAATATTGGGGCCAGGGGACTCAGGTGACGGTGAGCTCT",
@@ -107,14 +107,14 @@ test_that("getAlignments, getDNAalign, and getAAalign return the expected output
   expect_true(class(aln$DNA) == "PairwiseAlignmentsSingleSubject")
   expect_true(class(aln$AA) == "PairwiseAlignmentsSingleSubject")
 
-  expect_all_true(pattern(aln$DNA) == DNAStringSet(c("ATGCAG", "ATGGAG")))
-  expect_all_true(subject(aln$DNA) == DNAStringSet(c("ATGCAG", "ATGCAG")))
+  expect_all_true(pwalign::pattern(aln$DNA) == Biostrings::DNAStringSet(c("ATGCAG", "ATGGAG")))
+  expect_all_true(pwalign::subject(aln$DNA) == Biostrings::DNAStringSet(c("ATGCAG", "ATGCAG")))
 
-  expect_all_true(pattern(aln$AA) == AAStringSet(c("MQ", "ME")))
-  expect_all_true(subject(aln$AA) == AAStringSet(c("MQ", "MQ")))
+  expect_all_true(pwalign::pattern(aln$AA) == Biostrings::AAStringSet(c("MQ", "ME")))
+  expect_all_true(pwalign::subject(aln$AA) == Biostrings::AAStringSet(c("MQ", "MQ")))
 
   # class AmpliconSequencing
-  obj.as <- new("AmpliconSequencing", Sequences = obj)
+  obj.as <- methods::new("AmpliconSequencing", Sequences = obj)
   aln.as <- getAlignments(obj.as)
   expect_true(identical(aln.as, aln))
 
@@ -154,7 +154,7 @@ test_that("Sequence Table getter methods return the expected outputs.", {
   aa.seq <- getSequencesAA(obj)
   expect_equal(aa.seq, seq$AA)
 
-  obj.as <- new("AmpliconSequencing", Sequences = obj)
+  obj.as <- methods::new("AmpliconSequencing", Sequences = obj)
   seq.as <- getSequenceTable(obj.as)
   expect_true(identical(seq.as, seq))
   dna.seq.as <- getSequencesDNA(obj.as)
@@ -174,9 +174,9 @@ test_that("getSequenceSupplemental returns the expected outputs.", {
   expect_true(identical(sup$UMIs, list(list("TGACG", "ACATA", "CGGTA", "GAACA", "TGGCA"), list("GGGCC", "ACCTC"), list("TCGTA"))))
   expect_true(length(sup$IDs) == 3)
   expect_true(length(unlist(sup$IDs)) == 42)
-  expect_all_true(str_detect(unlist(sup$IDs), "A90033:281:WB24762987th.Miseq:1:"))
+  expect_all_true(stringr::str_detect(unlist(sup$IDs), "A90033:281:WB24762987th.Miseq:1:"))
 
-  obj.as <- new("AmpliconSequencing", Sequences = obj)
+  obj.as <- methods::new("AmpliconSequencing", Sequences = obj)
   sup.as <- getSequenceSupplemental(obj.as)
   expect_true(identical(sup.as, sup))
 })
@@ -222,7 +222,7 @@ test_that("Getter functions for mutations return the expected outputs.", {
 
 
   # class AmpliconSequencing #
-  obj.as <- new("AmpliconSequencing", Mutations = obj)
+  obj.as <- methods::new("AmpliconSequencing", Mutations = obj)
   mut.as <- getDNAMutations(obj.as)
   expect_true(identical(mut.as, mut.dna))
   mut.as.a <- getMutationDistributionDNA(obj.as)
@@ -244,7 +244,7 @@ test_that("Getter functions for mutations return the expected outputs.", {
   mut.mm <- getMutationMatrixAA(obj)
   expect_all_true(class(mut.mm) == c("matrix", "array"))
 
-  mm <- consensusMatrix(pairwiseAlignment(AAStringSet(c("MQ", "ME")), AAStringSet("MQ")))
+  mm <- pwalign::consensusMatrix(pwalign::pairwiseAlignment(Biostrings::AAStringSet(c("MQ", "ME")), Biostrings::AAStringSet("MQ")))
   mm <- mm[1:(nrow(mm)-3),]
   expect_true(identical(mut.mm, mm))
 
@@ -293,7 +293,7 @@ test_that("getMutationTypes returns the expected output.", {
 
   ### class AmpliconSequencing ###
 
-  obj.as <- new("AmpliconSequencing", MutationTypes = obj)
+  obj.as <- methods::new("AmpliconSequencing", MutationTypes = obj)
   mt.as <- getMutationTypes(obj.as)
   expect_true(identical(mt.as, mt))
 })
@@ -314,7 +314,7 @@ test_that("getSettings returns the expected output.", {
   expect_true(identical(s, l))
 
   ### class AmpliconSequencing ###
-  obj.as <- new("AmpliconSequencing", Settings = obj)
+  obj.as <- methods::new("AmpliconSequencing", Settings = obj)
   s.as <- getSettings(obj.as)
   expect_true(identical(s.as, s))
 
@@ -341,14 +341,14 @@ test_that("graphResults works for class AmpliconSequencing", {
     suppressWarnings(expect_no_error(asg[[i]] <- graphResults(test.results, output = i)))
     # suppress potential warning for package ggmsa using outdated ggplot2 nomenclature
   }
-  expect_all_true(suppressWarnings(str_detect(lapply(asg, class), "ggplot")))
+  expect_all_true(suppressWarnings(stringr::str_detect(S4Vectors::lapply(asg, class), "ggplot")))
 })
 
 
 test_that("graphResults works for class tas.sequences", {
   expect_output(test.results <- buildSequenceTable(test.settings))
   expect_no_error(stg <- graphResults(test.results, "histogram"))
-  expect_true(str_detect(class(stg)[1], "ggplot"))
+  expect_true(stringr::str_detect(class(stg)[1], "ggplot"))
 
   for (i in c("dna.positions", "dna.positions.labeled",
               "aa.positions", "aa.positions.labeled",
@@ -362,7 +362,7 @@ test_that("graphResults works for class tas.sequences", {
 test_that("graphResults works for class tas.dna.repair", {
   expect_output(test.results <- measureDNArepair(buildSequenceTable(test.settings), test.settings))
   expect_no_error(mtg <- graphResults(test.results, output = "mutation.types"))
-  expect_true(str_detect(class(mtg)[1], "ggplot"))
+  expect_true(stringr::str_detect(class(mtg)[1], "ggplot"))
 
   for (i in c("dna.positions", "dna.positions.labeled",
               "aa.positions", "aa.positions.labeled",
@@ -393,7 +393,7 @@ test_that("graphResults works for class tas.mutations", {
   )) {
     expect_no_error(mmg[[i]] <- graphResults(test.results, output = i, settings = test.settings))
   }
-  expect_all_true(suppressWarnings(str_detect(lapply(mmg, class), "ggplot")))
+  expect_all_true(suppressWarnings(stringr::str_detect(S4Vectors::lapply(mmg, class), "ggplot")))
 })
 
 

@@ -15,34 +15,43 @@ S4 object of sequence mutations
 \item{\code{AA}}{a list of protein mutation information}
 
 \item{\code{AIDTables}}{a list of summary information of mutations at AID hotspots}
+
+\item{\code{Antibody}}{a list of antibody-specific mutation information}
 }}
 
 \section{DNA}{
 
 \describe{
-\item{AllMutations}{data.frame showing position and frequency of mutations at all positions}
-\item{CytosineMutations}{data.frame showing position and frequency of mutations at AID cytosines}
-\item{NonCytosineMutations}{data.frame showing position and frequency of mutations at all positions that are not AID cytosines}
-\item{MotifSums}{numeric vector summarizing the frequency of mutations among different motifs and denominators}
+\item{\code{AllMutations}}{data.frame showing position and frequency of mutations at all positions}
+\item{\code{CytosineMutations}}{data.frame showing position and frequency of mutations at AID cytosines}
+\item{\code{NonCytosineMutations}}{data.frame showing position and frequency of mutations at all positions that are not AID cytosines}
+\item{\code{MotifSums}}{numeric vector summarizing the frequency of mutations among different motifs and denominators}
 }
 }
 
 \section{AA}{
 
 \describe{
-\item{AllMutations}{data.frame showing position and frequency of mutations at all positions}
-\item{MutationMatrix}{matrix showing frequency and identity of all protein mutations (WT omitted)}
+\item{\code{AllMutations}}{data.frame showing position and frequency of mutations at all positions}
+\item{\code{MutationMatrix}}{matrix showing frequency and identity of all protein mutations (WT omitted)}
 }
 }
 
 \section{AIDTables Columns}{
 
 \describe{
-\item{Motif}{character vector DNA motif (top strand = WRCH/WRCY, bottom strand = DGYW/RGYW)}
-\item{Start}{numeric vector of starting coordinates of AID motifs}
-\item{End}{numeric vector of ending coordinates of AID motifs}
-\item{Cytosine}{numeric vector of coordinates of AID cytosines}
-\item{CytosineMutationFrequency}{numeric vector of the mutation frequency at the AID cytosine}
+\item{\code{Motif}}{character vector DNA motif (top strand = WRCH/WRCY, bottom strand = DGYW/RGYW)}
+\item{\code{Start}}{numeric vector of starting coordinates of AID motifs}
+\item{\code{End}}{numeric vector of ending coordinates of AID motifs}
+\item{\code{Cytosine}}{numeric vector of coordinates of AID cytosines}
+\item{\code{CytosineMutationFrequency}}{numeric vector of the mutation frequency at the AID cytosine}
+}
+}
+
+\section{Antibody}{
+
+\describe{
+\item{\code{RegionMutations}}{numeric vector of percent deviation from expected mutation rate for each antibody region, assuming an equal distribution across length}
 }
 }
 

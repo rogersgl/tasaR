@@ -2,19 +2,28 @@
 # measureMutations()
 # ------------------
 
+#' Measure mutations
+#'
+#' @param sequence.table S4 object of class tas.sequences
+#' @param settings S4 object of class tas.settings
+#'
+#'
+#' @returns An S4 object of class tas.mutations
+#' @export
+#'
+#' @examples
+#' measureMutations(sequence.table, settings)
 measureMutations <- function(sequence.table, settings) {
     config <- getSettings(settings)
     t <- getSequenceTable(sequence.table)
 
-
     AID.targets <- findAIDtargets(config)
-
 
     cat("Measuring DNA mutations...\n")
 
-    wt.dna <- DNAString(config$ReferenceSequence)
+    wt.dna <- Biostrings::DNAString(config$ReferenceSequence)
     seq.len <- Biostrings::nchar(wt.dna)
-    seqs <- DNAStringSet(t$Sequences)
+    seqs <- Biostrings::DNAStringSet(t$Sequences)
     # pw <- pairwiseAlignment(seqs, wt.dna)
     # dna.align <- rep(pw, t$Count)
     dna.align <- rep(getDNAalign(sequence.table), t$Count)
@@ -22,17 +31,17 @@ measureMutations <- function(sequence.table, settings) {
 
     ### All Mutations ###
 
-    mm.df <- mismatchSummary(dna.align)$subject
+    mm.df <- pwalign::mismatchSummary(dna.align)$subject
     dt.mm <- data.table(Position = mm.df$SubjectPosition, N = mm.df$Count)
 
-    dt.i <- data.table(Position = (start(unlist(insertion(dna.align))) + 0.5))
+    dt.i <- data.table(Position = (Biostrings::start(BiocGenerics::unlist(pwalign::insertion(dna.align))) + 0.5))
     dt.i <- dt.i[, .N, by = Position]
     setorder(dt.i, -N)
 
-    dt.d <- data.table(start = start(unlist(deletion(dna.align))), width = width(unlist(deletion(dna.align))))
+    dt.d <- data.table(start = Biostrings::start(BiocGenerics::unlist(pwalign::deletion(dna.align))), width = Biostrings::width(BiocGenerics::unlist(pwalign::deletion(dna.align))))
     dt.d <- dt.d[, .(start = start, end = (start + width -1))]
     if (!isEmpty(dt.d)){
-      dt.d <- dt.d[, .(Position = unlist(Map(seq, start, end)))]
+      dt.d <- dt.d[, .(Position = BiocGenerics::unlist(Map(seq, start, end)))]
       dt.d <- dt.d[, .N, by = Position]
     } else {
       dt.d <- data.table(Position = numeric(), N = integer())
@@ -65,7 +74,7 @@ measureMutations <- function(sequence.table, settings) {
     FrequencyOfAllMutationsAtNonCytosines <- sum(NonCytosineMutations$MutationFrequency)/sum(AllMutations$MutationFrequency)*100
     if (is.nan(FrequencyOfAllMutationsAtCytosines)) {FrequencyOfAllMutationsAtCytosines <- 0}
     if (is.nan(FrequencyOfAllMutationsAtNonCytosines)) {FrequencyOfAllMutationsAtNonCytosines <- 0}
-    ms <- setNames(c(AverageAllMutations, AverageCytosineMutations, AverageNonCytosineMutations, FrequencyOfAllMutationsAtCytosines, FrequencyOfAllMutationsAtNonCytosines),
+    ms <- stats::setNames(c(AverageAllMutations, AverageCytosineMutations, AverageNonCytosineMutations, FrequencyOfAllMutationsAtCytosines, FrequencyOfAllMutationsAtNonCytosines),
                    c("AverageAllMutations", "AverageCytosineMutations", "AverageNonCytosineMutations", "FrequencyOfAllMutationsAtCytosines", "FrequencyOfAllMutationsAtNonCytosines"))
 
     ### AID Tables ###
@@ -75,14 +84,11 @@ measureMutations <- function(sequence.table, settings) {
     row.names(AID.tables$WRCY) <- NULL
 
 
-
-
-
     ### Antibody Regions ###
     if (config$IsAntibody) {
       region.coords <- getAntibodyCoordinates(config$AntibodyRegions)
       total.mut <- sum(dt.merge$MutationFrequency)
-      region.mut.dev <- lapply(region.coords, function(x) {
+      region.mut.dev <- sapply(region.coords, function(x) {
         region.mut <- dt.merge[(dt.merge$Position %in% x),"MutationFrequency"]
         (sum(region.mut)/total.mut-length(x)/seq.len)/(length(x)/seq.len)*100 # percent deviation from expected mutation rate if distribution was even across the sequence
       })
@@ -90,14 +96,14 @@ measureMutations <- function(sequence.table, settings) {
 
     ### Protein Mutations ###
 
-    wt.prot <- suppressWarnings(AAStringSet(translate(wt.dna)))
+    wt.prot <- suppressWarnings(Biostrings::AAStringSet(Biostrings::translate(wt.dna)))
     prot.len <- Biostrings::nchar(wt.prot)
 
     prot.align <- rep(getAAalign(sequence.table), t$Count)
     ids <- getSequenceSupplemental(sequence.table)$IndelStart
     idt <- getSequenceSupplemental(sequence.table)$IndelType
 
-    dt.p <- as.data.table(mismatchSummary(prot.align)$subject)
+    dt.p <- as.data.table(pwalign::mismatchSummary(prot.align)$subject)
     if (!isEmpty(dt.p)) {
       dt.p <- dt.p[!Pattern %in% c("-", "+")]
       dt.p <- dt.p[, .(.N, MutationFrequency = sum(Count)/sum(t$Count)*100, Position = SubjectPosition), by = SubjectPosition][,c("Position", "MutationFrequency")]
@@ -119,8 +125,8 @@ measureMutations <- function(sequence.table, settings) {
 
     all.mut.prot <- as.data.frame(dt.pl)
 
-    cm.wt <- consensusMatrix(wt.prot)
-    cm.prot <- consensusMatrix(AAStringSet(getSequencesAA(sequence.table)))
+    cm.wt <- pwalign::consensusMatrix(wt.prot)
+    cm.prot <- pwalign::consensusMatrix(Biostrings::AAStringSet(getSequencesAA(sequence.table)))
     cm.prot <- cm.prot/(sum(t$Count))*100
     cm.prot[cm.wt==1] <- 0
 
@@ -130,7 +136,8 @@ measureMutations <- function(sequence.table, settings) {
                                     MotifSums = ms),
                          AA = list(AllMutations = all.mut.prot, # data.frame
                                    MutationMatrix = cm.prot), # matrix
-                         AIDTables = AID.tables) # list(WRCH, WRCY)
+                         AIDTables = AID.tables, # list(WRCH, WRCY)
+                         Antibody = list(RegionMutations = region.mut.dev))
 
 }
 
@@ -151,10 +158,10 @@ findAIDtargets <- function(settings) {
   AID.Motifs <- c("WRCY","RGYW","WRCH","DGYW")
 
   aid <- list()
-  aid[AID.Motifs] <- lapply(AID.Motifs, function(x){
-    pat.views <- matchPattern(x, DNAString(settings$ReferenceSequence), fixed = FALSE)
-    s <- start(pat.views)
-    e <- end(pat.views)
+  aid[AID.Motifs] <- S4Vectors::lapply(AID.Motifs, function(x){
+    pat.views <- Biostrings::matchPattern(x, Biostrings::DNAString(settings$ReferenceSequence), fixed = FALSE)
+    s <- Biostrings::start(pat.views)
+    e <- Biostrings::end(pat.views)
 
     if (x=="WRCY" | x=="WRCH"){
       cyt <- e-1
@@ -162,7 +169,7 @@ findAIDtargets <- function(settings) {
     if (x=="RGYW" | x=="DGYW"){
       cyt <- e-2
     }
-    data.frame(Motif=rep(x,length(pat.views)), Start=s, End=e, Cytosine=cyt)
+    data.frame(Motif=rep(x, length(pat.views)), Start=s, End=e, Cytosine=cyt)
   })
 
   y.df <- rbind(aid[["WRCY"]], aid[["RGYW"]])
@@ -179,7 +186,7 @@ getAntibodyCoordinates <- function(abr) {
   for (i in seq_along(abr)[-length(abr)]) {
     out[[i]] <- abr[i]:(abr[i+1] - 1)
   }
-  names(out) <- str_remove(names(abr), "Start")[-length(abr)]
+  names(out) <- stringr::str_remove(names(abr), "Start")[-length(abr)]
   return(out)
 }
 
