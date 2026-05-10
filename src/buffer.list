@@ -1,0 +1,2 @@
+BUFFER(static, char, BUFFER_SIZE)
+BUFFER(seqid, char, BUFFER_SIZE)

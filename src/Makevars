@@ -1,0 +1,36 @@
+.DEFAULT_GOAL := all
+
+PKG_CPPFLAGS = -I. \
+	-DPANDA_LIB_COMPILING \
+	-DHAVE_PTHREAD=1 \
+	-DMAX_LEN=450 \
+	-DLIB_MAJOR=7 \
+	-DLIB_MINOR=0 \
+	-DVERSION_MAJOR=2 \
+	-DVERSION_MINOR=11
+
+PKG_LIBS = -lm -lltdl -lbz2 -lz
+
+all: config.h table.c table.h $(SHLIB)
+
+config.h:
+	@printf '%s\n' \
+		'/* minimal config for vendored PANDAseq build on macOS */' \
+		'#define HAVE_PTHREAD 1' \
+		'#define HAVE_SYS_PARAM_H 1' \
+		'#define HAVE_SYS_SYSCTL_H 1' \
+		'#define MAX_LEN 450' \
+		'#define LIB_MAJOR 7' \
+		'#define LIB_MINOR 0' \
+		'#define VERSION_MAJOR 2' \
+		'#define VERSION_MINOR 11' > $@
+
+MKTABLE_OBJ = mktable.o tablebuilder.o
+
+mktable: $(MKTABLE_OBJ)
+	$(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) -o $@ $^ -lm
+
+table.c table.h: mktable
+	./mktable
+
+algo_ea_util.o algo_pear.o: table.h

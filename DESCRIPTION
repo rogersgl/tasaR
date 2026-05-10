@@ -38,7 +38,8 @@ Imports:
     methods,
     msa,
     Biostrings,
-    pwalign
+    pwalign,
+    purrr
 Depends:
     data.table
 RoxygenNote: 7.3.3
@@ -48,16 +49,31 @@ Suggests:
 Config/testthat/edition: 3
 Roxygen: list(markdown = TRUE)
 Collate: 
+    'helper-fns.R'
+    'class-tas.dna.repair.R'
+    'class-tas.mutations.R'
+    'class-tas.sequences.R'
+    'class-tas.object.settings.R'
+    'class-AmpliconSequencing.R'
     'analyzeAmplicon.R'
-    'batch-plots.R'
     'batchAnalyzeAmplicon.R'
     'buildSequenceTable.R'
-    'helper-fns.R'
-    'classes.R'
-    'generics.R'
-    'imports.R'
+    'class-PairedAmpliconSequencing.R'
+    'utils-color-palettes.R'
+    'utils-alignments.R'
+    'utils-plots-batch.R'
+    'utils-plots.R'
+    'generics-results.R'
+    'generics-tas.dna.repair.R'
+    'generics-tas.mutations.R'
+    'generics-tas.object.settings.R'
+    'generics-tas.sequences.R'
     'measureDNArepair.R'
     'measureMutations.R'
-    'methods.R'
-    'plots.R'
+    'methods-coercion.R'
+    'methods-isEmpty.R'
+    'methods-show.R'
+    'pairedAnalyzeAmplicon.R'
     'readSettings.R'
+    'utils-imports.R'
+    'utils-pandaseq.R'
