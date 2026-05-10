@@ -16,7 +16,7 @@
 #'
 #' @examples
 #' buildSequenceTable(settings)
-buildSequenceTable <- function(settings) {
+buildSequenceTable <- function(settings, paired.analysis.ctrl = FALSE, diploid = TRUE) {
   filter.counts <- numeric()
   if (!file.exists(settings@MergedFASTQPath)) {stop("FASTQ file not found.")}
   cat("Reading .fastq file...\n")
@@ -28,7 +28,7 @@ buildSequenceTable <- function(settings) {
   filter.counts <- c(filter.counts, Filtered = length(reads.filtered))
   reads <- NULL
   #cat("Building sequence table...\n")
-  sequenceTable(reads.filtered, settings, filter.counts, min.read.frequency = 0.1)
+  sequenceTable(reads.filtered, settings, filter.counts, min.read.frequency = 0.1, paired.analysis.ctrl, diploid)
 }
 
 
@@ -46,7 +46,7 @@ filterSequences <- function(reads, settings) {
   rev <- Biostrings::DNAString(stringr::str_c(settings@ReverseExtension, settings@ReversePrimer))
   temp <- ShortRead::sread(reads)
   temp_rc <- Biostrings::reverseComplement(temp)
-  fwd_IR <- Biostrings::vmatchPattern(fwd,temp)
+  fwd_IR <- Biostrings::vmatchPattern(fwd, temp)
   fwd_idx <- which((S4Vectors::elementNROWS(fwd_IR)==1))
   dff <- as.data.frame(fwd_IR)
   fwd_idx <- fwd_idx[dff$start[dff$group %in% fwd_idx]==1]
@@ -61,7 +61,7 @@ filterSequences <- function(reads, settings) {
 
 ### make sequence table ###
 
-sequenceTable <- function(reads.filtered, settings, filter.counts = NA, min.read.frequency = 0.1) {
+sequenceTable <- function(reads.filtered, settings, filter.counts = NA, min.read.frequency = 0.1, paired.analysis.ctrl = FALSE, diploid = TRUE) {
 
 
   if (tolower(settings@ForwardExtensionType) == "umi" && tolower(settings@ReverseExtensionType) == "umi") {
@@ -105,7 +105,7 @@ sequenceTable <- function(reads.filtered, settings, filter.counts = NA, min.read
     dt_id_merge <- merge.data.table(dt_id_umi_match, dt_id_seq_match, by.x="umi.id", by.y="seq.id")
 
     #re-group merged data.tables by umi
-    dt_merge_group <- dt_id_merge[, .(seq = umi_pileup(seq), count = length(seq.group), id = list(umi.id)), by="umi"]
+    dt_merge_group <- dt_id_merge[, .(seq = .umi_pileup(seq), count = length(seq.group), id = list(umi.id)), by="umi"]
     setorder(dt_merge_group,-count)
     dt_merge_group <- dt_merge_group[seq != "Rejected"]
     dt <- dt_merge_group[, .(N = .N, umis = list(umi), ids = list(id)), by = seq]
@@ -134,157 +134,218 @@ sequenceTable <- function(reads.filtered, settings, filter.counts = NA, min.read
 
   ##########
 
-  cat("Labeling DNA mutations...\n")
-  Reference.Sequence.DNA <- Biostrings::DNAString(settings@ReferenceSequence)
-  Reads.Unique.DNA <- Biostrings::DNAStringSet(dt$seq)
-  Pairwise.Aligned.DNA <- pwalign::pairwiseAlignment(Reads.Unique.DNA, Reference.Sequence.DNA)
 
-  # write sequences to table with deletions marked by -
-  dt$seq <- as.character(pwalign::pattern(Pairwise.Aligned.DNA))
-
-  # table of indel counts and sizes
-  dt.indel <- data.table(iNum = pwalign::insertion(pwalign::nindel(Pairwise.Aligned.DNA))[,"Length"],
-                         iSize = stringr::str_c("+", pwalign::insertion(pwalign::nindel(Pairwise.Aligned.DNA))[,"WidthSum"]),
-                         dNum = pwalign::deletion(pwalign::nindel(Pairwise.Aligned.DNA))[,"Length"],
-                         dSize = stringr::str_c("-", pwalign::deletion(pwalign::nindel(Pairwise.Aligned.DNA))[,"WidthSum"]))
-
-  # find sequences with terminal deletions missed by indel()
-  len.check <- data.table(pWidth = BiocGenerics::width(pwalign::pattern(Pairwise.Aligned.DNA)) - pwalign::nchar(Reference.Sequence.DNA),
-                          idSize = pwalign::insertion(pwalign::nindel(Pairwise.Aligned.DNA))[,"WidthSum"] - pwalign::deletion(pwalign::nindel(Pairwise.Aligned.DNA))[,"WidthSum"])
-  idx.end.del <- which(len.check$pWidth != len.check$idSize)
-  end.del.size <- stringr::str_c("-", stringr::str_count(as.character(pwalign::alignedPattern(Pairwise.Aligned.DNA[idx.end.del])), "-") - as.numeric(dt.indel$dSize[idx.end.del]))
-  end.del.start <- stringr::str_locate(as.character(pwalign::alignedPattern(Pairwise.Aligned.DNA[idx.end.del])), "-")[,"start"]
-  dt.indel$dNum[idx.end.del] <- as.numeric(dt.indel$dNum[idx.end.del]) + 1
-
-  # concatenate multiple insertions
-  ins.temp <- pwalign::insertion(Pairwise.Aligned.DNA)
-  ins.midx <- which(dt.indel$iNum>1)
-  dt.indel$iSize[ins.midx] <- S4Vectors::lapply(ins.midx, function(x){
-    stringr::str_flatten(stringr::str_c("+", ins.temp[[x]]@width), collapse = ", ")
-  })
-
-  # concatenate multilple deletions, including from ends
-  del.temp <- pwalign::deletion(Pairwise.Aligned.DNA)
-  del.midx <- c(which(dt.indel$dNum>1), idx.end.del)
-  dt.indel$dSize[del.midx] <- S4Vectors::lapply(del.midx, function(x){
-    s <- stringr::str_flatten(stringr::str_c("-", del.temp[[x]]@width), collapse = ", ")
-    if (x %in% idx.end.del) {
-      s <- stringr::str_c(s, end.del.size[x == idx.end.del], collapse = ", ")
+  if (paired.analysis.ctrl) {
+    t <- dt[(dt$N > 0.3*dt$N[1]),] # get reads with at least 30% variant allele frequency
+    if (diploid && nrow(t)>2) {
+      warning("Detected more than 2 potential reference sequences (allele frequency > 30%).")
     }
-    return(s)
-  })
-
-  # empty strings w/o indels
-  dt.indel$iSize[dt.indel$iNum == 0] <- ""
-  dt.indel$dSize[dt.indel$dNum == 0] <- ""
-
-  # concatenate insertions & deletions together into a single output string
-  str.indel <- BiocGenerics::unlist(sapply(1:(nrow(dt.indel)), function(x){
-    if (dt.indel$iNum[x] == 0 && dt.indel$dNum[x] == 0){
-      return("")
-    } else if (dt.indel$iNum[x] == 0 && dt.indel$dNum[x] != 0){
-      return(dt.indel$dSize[x])
-    } else if (dt.indel$iNum[x] != 0 && dt.indel$dNum[x] == 0) {
-      return(dt.indel$iSize[x])
-    } else {
-      stringr::str_c(dt.indel$iSize[x], dt.indel$dSize[x], sep = ", ")
+    if (length(unique(Biostrings::nchar(t$seq))) > 1) {
+      stop("Potential wild-type sequences are of different lengths. Analysis is not currently supported by tasaR.")
     }
-  }))
-
-  # table of mismatches
-  dt.mm <- data.table(pwalign::mismatchTable(Pairwise.Aligned.DNA))[, .N, by = PatternId]
-  vec.mm <- BiocGenerics::unlist(sapply(1:length(Pairwise.Aligned.DNA), function(x){
-    if (x %in% dt.mm$PatternId){
-      return(dt.mm$N[dt.mm$PatternId == x])
-    } else {
-      return(0)
-    }
-  }))
-
-  idx.wt <- which(str.indel == "" & vec.mm == 0)
-  if (length(idx.wt) > 1){
-    stop("More than 1 WT sequence detected.")
+    Reference.Sequence.DNA <- as.list(Biostrings::DNAStringSet(t$seq))
+  } else {
+    Reference.Sequence.DNA <- lapply(settings@ReferenceSequence, Biostrings::DNAString)
   }
-  str.indel[idx.wt] <- "WT"
-  dt <- cbind(dt, data.table(Indels = str.indel, BasesChanged = vec.mm))
 
+  cat("Labeling mutations...\n")
 
+  if (length(Reference.Sequence.DNA) > 1) {
+    seqs <- Biostrings::DNAStringSet(dt$seq)
+    aln <- lapply(Reference.Sequence.DNA, function(x) {
+      pwalign::pairwiseAlignment(seqs, x)
+      })
+    aln.idx <- apply(as.data.table(lapply(aln, BiocGenerics::score)), 1, which.max)
+    Reads.Unique.DNA <- lapply(seq_along(Reference.Sequence.DNA), function(x) {
+      Biostrings::DNAStringSet(dt$seq[aln.idx==x])
+    })
+    Pairwise.Aligned.DNA <- sapply(seq_along(Reference.Sequence.DNA), function(x) {
+      aln[[x]][aln.idx==x]
+    })
+  } else {
+    aln.idx <- rep(1, nrow(dt))
+    Reads.Unique.DNA <- list(Biostrings::DNAStringSet(dt$seq))
+    Pairwise.Aligned.DNA <- lapply(Reference.Sequence.DNA, function(x) {
+      pwalign::pairwiseAlignment(Reads.Unique.DNA[[1]], x)
+    })
+  }
 
+  Reference.Sequence.Protein <- suppressWarnings(lapply(Reference.Sequence.DNA, Biostrings::translate))
+  Reads.Unique.Protein <- suppressWarnings(lapply(Reads.Unique.DNA, Biostrings::translate))
 
-  ############################################################################################
-  # Notes about annotating protein mutations:
-  #
-  # Insertions and deletions (indels) pose a significant challenge for quantifying the frequency
-  # of mutations in the protein sequence at each position. Because they can cause frameshifts,
-  # their effects can be propogated through the rest of the downstream sequence. To avoid this
-  # overestimation of downstream mutations, protein sequences are truncated at the site of the
-  # first indel within the Reference Sequence, and marked with a "-" for deletion and "+" for
-  # insertion.
-  #
-  # This allows pairwise alignments to ignore confounding downstream mutations and focus on
-  # where the mutation actually occurred. This also ensures that detection of protein mismatches
-  # depends on specific mutations rather than frameshifts.
-  ############################################################################################
+  #############
 
-  cat("Labeling protien mutations...\n")
+  label.list <- lapply(seq_along(Pairwise.Aligned.DNA), function(x) {
 
-  Reference.Sequence.Protein <- Biostrings::AAStringSet(suppressWarnings(Biostrings::translate(Reference.Sequence.DNA)))
+    dna.align <- Pairwise.Aligned.DNA[[x]]
+    dt <- dt[aln.idx == x,]
 
-  indel.start.dt <- rbindlist(list(cbind(as.data.table(pwalign::deletion(Pairwise.Aligned.DNA))[,c("group", "start")], data.table(type = "deletion")),
-                                   cbind(as.data.table(pwalign::insertion(Pairwise.Aligned.DNA))[,c("group", "start")], data.table(type = "insertion")),
-                                   cbind(data.table(group = idx.end.del, start = end.del.start), data.table(type = "deletion")),
-                                   data.table(group = 1:length(Pairwise.Aligned.DNA))
-  ), fill = TRUE)[, .(minStart = if (all(is.na(start))) {NA_integer_} else {min(start, na.rm = TRUE)}, type = type[which.min(start)]), by = group]
-  indel.start.dt <- indel.start.dt[!is.na(indel.start.dt$group),]
-  setorder(indel.start.dt, group)
+    # write sequences to table with deletions marked by -
+    dt$seq <- as.character(pwalign::pattern(dna.align))
 
-  prot.reads <- as.character(suppressWarnings(Biostrings::translate(Reads.Unique.DNA)))
+    # table of indel counts and sizes
+    dt.indel <- data.table(iNum = pwalign::insertion(pwalign::nindel(dna.align))[,"Length"],
+                           iSize = stringr::str_c("+", pwalign::insertion(pwalign::nindel(dna.align))[,"WidthSum"]),
+                           dNum = pwalign::deletion(pwalign::nindel(dna.align))[,"Length"],
+                           dSize = stringr::str_c("-", pwalign::deletion(pwalign::nindel(dna.align))[,"WidthSum"]))
 
-  # truncate at first indel
-  prot.trunc <- sapply(1:nrow(indel.start.dt), function(x) {
-    if (is.na(indel.start.dt$minStart[x])) {
-      return(prot.reads[x])
-    } else {
-      trunc <- ceiling(indel.start.dt$minStart[x]/3) - 1
-      st <- stringr::str_trunc(prot.reads[x], trunc, ellipsis = "")
-      if (indel.start.dt$type[x] == "deletion") {
-        return(stringr::str_c(st, "-"))
-      } else if (indel.start.dt$type[x] == "insertion") {
-        return(stringr::str_c(st, "+"))
+    # find sequences with terminal deletions missed by indel()
+    len.check <- data.table(pWidth = BiocGenerics::width(pwalign::pattern(dna.align)) - pwalign::nchar(Reference.Sequence.DNA[[x]]),
+                            idSize = pwalign::insertion(pwalign::nindel(dna.align))[,"WidthSum"] - pwalign::deletion(pwalign::nindel(dna.align))[,"WidthSum"])
+    idx.end.del <- which(len.check$pWidth != len.check$idSize)
+    end.del.size <- stringr::str_c("-", stringr::str_count(as.character(pwalign::alignedPattern(dna.align[idx.end.del])), "-") - as.numeric(dt.indel$dSize[idx.end.del]))
+    end.del.start <- stringr::str_locate(as.character(pwalign::alignedPattern(dna.align[idx.end.del])), "-")[,"start"]
+    dt.indel$dNum[idx.end.del] <- as.numeric(dt.indel$dNum[idx.end.del]) + 1
+
+    # concatenate multiple insertions
+    ins.temp <- pwalign::insertion(dna.align)
+    ins.midx <- which(dt.indel$iNum>1)
+    dt.indel$iSize[ins.midx] <- S4Vectors::lapply(ins.midx, function(x){
+      stringr::str_flatten(stringr::str_c("+", ins.temp[[x]]@width), collapse = ", ")
+    })
+
+    # concatenate multilple deletions, including from ends
+    del.temp <- pwalign::deletion(dna.align)
+    del.midx <- c(which(dt.indel$dNum>1), idx.end.del)
+    dt.indel$dSize[del.midx] <- S4Vectors::lapply(del.midx, function(x){
+      s <- stringr::str_flatten(stringr::str_c("-", del.temp[[x]]@width), collapse = ", ")
+      if (x %in% idx.end.del) {
+        s <- stringr::str_c(s, end.del.size[x == idx.end.del], collapse = ", ")
       }
+      return(s)
+    })
+
+    # empty strings w/o indels
+    dt.indel$iSize[dt.indel$iNum == 0] <- ""
+    dt.indel$dSize[dt.indel$dNum == 0] <- ""
+
+    # concatenate insertions & deletions together into a single output string
+    str.indel <- BiocGenerics::unlist(sapply(1:(nrow(dt.indel)), function(x){
+      if (dt.indel$iNum[x] == 0 && dt.indel$dNum[x] == 0){
+        return("")
+      } else if (dt.indel$iNum[x] == 0 && dt.indel$dNum[x] != 0){
+        return(dt.indel$dSize[x])
+      } else if (dt.indel$iNum[x] != 0 && dt.indel$dNum[x] == 0) {
+        return(dt.indel$iSize[x])
+      } else {
+        stringr::str_c(dt.indel$iSize[x], dt.indel$dSize[x], sep = ", ")
+      }
+    }))
+
+    # table of mismatches
+    dt.mm <- data.table(pwalign::mismatchTable(dna.align))[, .N, by = PatternId]
+    vec.mm <- BiocGenerics::unlist(sapply(1:length(dna.align), function(x){
+      if (x %in% dt.mm$PatternId){
+        return(dt.mm$N[dt.mm$PatternId == x])
+      } else {
+        return(0)
+      }
+    }))
+
+    idx.wt <- which(str.indel == "" & vec.mm == 0)
+    if (length(idx.wt) > 1){
+      stop("More than 1 WT sequence detected.")
     }
+    str.indel[idx.wt] <- "WT"
+    dt <- cbind(dt, data.table(Indels = str.indel, BasesChanged = vec.mm))
+
+
+
+
+    ############################################################################################
+    # Notes about annotating protein mutations:
+    #
+    # Insertions and deletions (indels) pose a significant challenge for quantifying the frequency
+    # of mutations in the protein sequence at each position. Because they can cause frameshifts,
+    # their effects can be propogated through the rest of the downstream sequence. To avoid this
+    # overestimation of downstream mutations, protein sequences are truncated at the site of the
+    # first indel within the Reference Sequence, and marked with a "-" for deletion and "+" for
+    # insertion.
+    #
+    # This allows pairwise alignments to ignore confounding downstream mutations and focus on
+    # where the mutation actually occurred. This also ensures that detection of protein mismatches
+    # depends on specific mutations rather than frameshifts.
+    ############################################################################################
+
+    prot.wt <- Reference.Sequence.Protein[[x]]
+
+    indel.start.dt <- rbindlist(list(cbind(as.data.table(pwalign::deletion(dna.align))[,c("group", "start")], data.table(type = "deletion")),
+                                     cbind(as.data.table(pwalign::insertion(dna.align))[,c("group", "start")], data.table(type = "insertion")),
+                                     cbind(data.table(group = idx.end.del, start = end.del.start), data.table(type = "deletion")),
+                                     data.table(group = 1:length(dna.align))
+    ), fill = TRUE)[, .(minStart = if (all(is.na(start))) {NA_integer_} else {min(start, na.rm = TRUE)}, type = type[which.min(start)]), by = group]
+    indel.start.dt <- indel.start.dt[!is.na(indel.start.dt$group),]
+    setorder(indel.start.dt, group)
+
+    prot.reads <- as.character(Reads.Unique.Protein[[x]])
+
+    # truncate at first indel
+    prot.trunc <- sapply(1:nrow(indel.start.dt), function(x) {
+      if (is.na(indel.start.dt$minStart[x])) {
+        return(prot.reads[x])
+      } else {
+        trunc <- ceiling(indel.start.dt$minStart[x]/3) - 1
+        st <- stringr::str_trunc(prot.reads[x], trunc, ellipsis = "")
+        if (indel.start.dt$type[x] == "deletion") {
+          return(stringr::str_c(st, "-"))
+        } else if (indel.start.dt$type[x] == "insertion") {
+          return(stringr::str_c(st, "+"))
+        }
+      }
+    })
+
+    # detect any non-indel nonsense mutations
+    idx_ns <- which(stringr::str_detect(prot.trunc, "[*]"))
+    ns.pos <- stats::na.omit(stringr::str_locate(prot.trunc, "[*]")[,"start"])
+    prot.trunc[idx_ns] <- BiocGenerics::unlist(sapply(seq_along(idx_ns), function(x) {
+      stringr::str_trunc(prot.trunc[idx_ns[x]], (ns.pos[x]), ellipsis = "")
+    }))
+
+    prot.align <- pwalign::pairwiseAlignment(Biostrings::AAStringSet(prot.trunc), prot.wt)
+
+    #Label each sequence with protein mutations
+    aa.mut <- data.frame(rep("",length(prot.align)))
+    colnames(aa.mut) <- "ProteinMutation"
+
+    mmT <- pwalign::mismatchTable(prot.align)
+    idx_indel <- !Biostrings::nchar(prot.trunc)==Biostrings::nchar(prot.wt)
+    idx_WT <- !seq_along(prot.align) %in% mmT$PatternId # indel multiples of 3 identified incorrectly
+    idx_WT[which((idx_indel+idx_WT)==2)] <- FALSE # remove false +ve from idx_WT
+    idx_mm <- which((idx_indel+idx_WT)==0)
+    mmT <- mmT[which(mmT$PatternId %in% idx_mm),]
+    mmChar <- cbind(data.frame(PatternId=mmT$PatternId),data.frame(Mutation=stringr::str_c(mmT[,"SubjectSubstring"],mmT[,"SubjectStart"],mmT[,"PatternSubstring"])))
+
+    # error protection, aggregate throws error if mmChar is empty
+    if (!isEmpty(mmChar)){
+      aa.mut$ProteinMutation[idx_mm] <- stats::aggregate(Mutation ~ PatternId, data = mmChar, FUN = stringr::str_flatten_comma)[,"Mutation"]
+    }
+    aa.mut$ProteinMutation[idx_indel] <- "Indel"
+    aa.mut$ProteinMutation[idx_WT] <- "WT"
+    aa.mut$ProteinMutation[stringr::str_detect(prot.trunc,"\\*")] <- "Nonsense"
+
+    dt.out <- cbind(dt, data.table(AA = prot.trunc, aa.mut), indel.start.dt, data.table(RefIdx = aln.idx[aln.idx == x]))
+    list(DT = dt.out, pAln = prot.align)
   })
 
-  # detect any non-indel nonsense mutations
-  idx_ns <- which(stringr::str_detect(prot.trunc, "[*]"))
-  ns.pos <- stats::na.omit(stringr::str_locate(prot.trunc, "[*]")[,"start"])
-  prot.trunc[idx_ns] <- BiocGenerics::unlist(sapply(seq_along(idx_ns), function(x) {
-    stringr::str_trunc(prot.trunc[idx_ns[x]], (ns.pos[x]), ellipsis = "")
-  }))
+  # re-integrate separate data tables and order
+  dt.list <- purrr::map(label.list, "DT")
+  pAln.list <- purrr::map(label.list, "pAln")
+  names(pAln.list) <- NULL
+  dt.dt <- rbindlist(dt.list)
+  setorder(dt.dt, -N)
 
-  prot.align <- pwalign::pairwiseAlignment(Biostrings::AAStringSet(prot.trunc), Reference.Sequence.Protein)
+  ##############################################################################
+  # TODO: figure out what to do about the pairwise alignments
+  # pairwiseAlignment does not work with multiple reference sequences.
+  # Keep the alignments as a list with separate reference sequences?
+  # Then will need to add list batch processing wrapper and unwrapping/
+  # reordering function to everywhere that uses the pairwiseAlignments:
+  # After greping, I think measureMutations is the only function that
+  # uses the alignments, so this is likely the best approach. Even the
+  # graphing functions don't use the alignments, since they show an msa.
+  ##############################################################################
 
-  #Label each sequence with protein mutations
-  aa.mut <- data.frame(rep("",length(prot.align)))
-  colnames(aa.mut) <- "ProteinMutation"
 
-  mmT <- pwalign::mismatchTable(prot.align)
-  idx_indel <- !Biostrings::nchar(prot.trunc)==Biostrings::nchar(Reference.Sequence.Protein)
-  idx_WT <- !seq_along(prot.align) %in% mmT$PatternId # indel multiples of 3 identified incorrectly
-  idx_WT[which((idx_indel+idx_WT)==2)] <- FALSE # remove false +ve from idx_WT
-  idx_mm <- which((idx_indel+idx_WT)==0)
-  mmT <- mmT[which(mmT$PatternId %in% idx_mm),]
-  mmChar <- cbind(data.frame(PatternId=mmT$PatternId),data.frame(Mutation=stringr::str_c(mmT[,"SubjectSubstring"],mmT[,"SubjectStart"],mmT[,"PatternSubstring"])))
-
-  # error protection, aggregate throws error if mmChar is empty
-  if (!isEmpty(mmChar)){
-    aa.mut$ProteinMutation[idx_mm] <- stats::aggregate(Mutation ~ PatternId, data = mmChar, FUN = stringr::str_flatten_comma)[,"Mutation"]
-  }
-  aa.mut$ProteinMutation[idx_indel] <- "Indel"
-  aa.mut$ProteinMutation[idx_WT] <- "WT"
-  aa.mut$ProteinMutation[stringr::str_detect(prot.trunc,"\\*")] <- "Nonsense"
-
-  dt <- cbind(dt, data.table(AA = prot.trunc, aa.mut))
 
   if (exists("filter.counts")) {
     if (all(is.na(filter.counts))) {
@@ -296,20 +357,21 @@ sequenceTable <- function(reads.filtered, settings, filter.counts = NA, min.read
 
   ##########
 
-  new("tas.sequences", Table = data.frame(Sequences = dt$seq,
-                                          Count = dt$N,
-                                          Percent = (dt$N / sum(dt$N) * 100),
-                                          Indels = dt$Indels,
-                                          BasesChanged = dt$BasesChanged,
-                                          AA = dt$AA,
-                                          ProteinMutation = dt$ProteinMutation),
-      Supplemental = data.table(data.table(Index = 1:nrow(dt),
-                                           UMIs = dt$umis,
-                                           IDs = dt$ids,
-                                           IndelStart = indel.start.dt$minStart,
-                                           IndelType = indel.start.dt$type)),
-      Alignments = list(DNA = Pairwise.Aligned.DNA,
-                        AA = prot.align),
+  new("tas.sequences", Table = data.frame(Sequences = dt.dt$seq,
+                                          Count = dt.dt$N,
+                                          Percent = (dt.dt$N / sum(dt.dt$N) * 100),
+                                          Indels = dt.dt$Indels,
+                                          BasesChanged = dt.dt$BasesChanged,
+                                          AA = dt.dt$AA,
+                                          ProteinMutation = dt.dt$ProteinMutation),
+      Supplemental = data.table(data.table(Index = 1:nrow(dt.dt),
+                                           UMIs = dt.dt$umis,
+                                           IDs = dt.dt$ids,
+                                           IndelStart = dt.dt$minStart,
+                                           IndelType = dt.dt$type,
+                                           RefIdx = dt.dt$RefIdx)),
+      Alignments = list(DNA = Pairwise.Aligned.DNA, # now a list of pairwiseAlignments
+                        AA = pAln.list),# now a list of pairwiseAlignments
       ReadCounts = ReadCounts)
 }
 

@@ -4,7 +4,7 @@
 \alias{buildSequenceTable}
 \title{Make a labeled table of sequences}
 \usage{
-buildSequenceTable(settings)
+buildSequenceTable(settings, paired.analysis.ctrl = FALSE, diploid = TRUE)
 }
 \arguments{
 \item{settings}{An object of S4 class tas.settings}

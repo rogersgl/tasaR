@@ -1,4 +1,5 @@
-
+#' @include class-AmpliconSequencing.R
+NULL
 
 #' Analyze NGS amplicons
 #'

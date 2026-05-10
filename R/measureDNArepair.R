@@ -47,6 +47,10 @@ measureDNArepair <- function(sequence.table, settings) {
   ibc <- sum(t$Percent[idx.ibc])
   other <- sum(t$Percent[idx.other])
 
+  # TODO: add heterozygous SNP handling
+  # TODO: additional support for Cas9/nuclease stuff
+
+
   new("tas.dna.repair", WT = wt,
                         NHEJ = nhej,
                         MMEJ = mmej,

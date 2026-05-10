@@ -22,5 +22,7 @@
 #' @importFrom methods
 #'   as
 #'   show
-#'
+NULL
+
+#' @rawNamespace useDynLib(tasaR)
 NULL

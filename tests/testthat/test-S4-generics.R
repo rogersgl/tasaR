@@ -27,9 +27,10 @@ makeTestSeqTable <- function() {
                           list(list(fakeIlluminaId(), fakeIlluminaId(), fakeIlluminaId()))
                   ),
                   IndelStart = NA_real_,
-                  IndelType = NA_character_)
-  da <- pwalign::pairwiseAlignment(Biostrings::DNAStringSet(c("ATGCAG", "ATGGAG")), Biostrings::DNAString("ATGCAG"))
-  pa <- pwalign::pairwiseAlignment(Biostrings::AAStringSet(c("MQ", "ME")), Biostrings::AAString("MQ"))
+                  IndelType = NA_character_,
+                  RefIdx = c(1, 1, 1))
+  da <- list(pwalign::pairwiseAlignment(Biostrings::DNAStringSet(c("ATGCAG", "ATGGAG")), Biostrings::DNAString("ATGCAG")))
+  pa <- list(pwalign::pairwiseAlignment(Biostrings::AAStringSet(c("MQ", "ME")), Biostrings::AAString("MQ")))
   ReadCounts <- c(Merged = 53L, Filtered = 44L, UMIs = 8L, UniqueSequences = 3L)
 
   methods::new("tas.sequences", Table = t, Supplemental = s, Alignments = list(DNA = da, AA = pa), ReadCounts = ReadCounts)
@@ -69,7 +70,7 @@ makeTestSettings <- function() {
   methods::new("tas.object.settings", Name = "test",
                       IsAntibody = TRUE,
                       MergedFASTQPath = file.path(tempdir(), "test-merged.fastq.gz"),
-                      ReferenceSequence = "GTTCAACTGGTGGAAAGCGGCGGTGCTCTGGTACAACCGGGCGGTAGTCTGCGCCTGAGCTGTGCCGCAAGCGGTTTCCCAGTCAACCGCTACTCTATGCGTTGGTATCGCCAGGCGCCTGGTAAAGAACGTGAATGGGTTGCCGGCATGAGCAGTGCGGGCGATCGTTCTAGTTACGAGGACTCTGTTAAAGGTCGTTTTACAATTAGCCGTGATGATGCGCGCAATACCGTGTATCTGCAAATGAACAGTCTGAAGCCGGAGGACACCGCAGTATATTATTGCAATGTCAACGTGGGGTTTGAATATTGGGGCCAGGGGACTCAGGTGACGGTGAGCTCT",
+                      ReferenceSequence = list("GTTCAACTGGTGGAAAGCGGCGGTGCTCTGGTACAACCGGGCGGTAGTCTGCGCCTGAGCTGTGCCGCAAGCGGTTTCCCAGTCAACCGCTACTCTATGCGTTGGTATCGCCAGGCGCCTGGTAAAGAACGTGAATGGGTTGCCGGCATGAGCAGTGCGGGCGATCGTTCTAGTTACGAGGACTCTGTTAAAGGTCGTTTTACAATTAGCCGTGATGATGCGCGCAATACCGTGTATCTGCAAATGAACAGTCTGAAGCCGGAGGACACCGCAGTATATTATTGCAATGTCAACGTGGGGTTTGAATATTGGGGCCAGGGGACTCAGGTGACGGTGAGCTCT"),
                       ForwardExtensionType = "Barcode",
                       ForwardExtension = "GCTAGCC",
                       ForwardPrimer = "GTAAAACGACGGCCAGT",
@@ -104,14 +105,14 @@ test_that("getAlignments, getDNAalign, and getAAalign return the expected output
   expect_true(class(aln) == "list")
   expect_all_true(names(aln) == c("DNA", "AA"))
 
-  expect_true(class(aln$DNA) == "PairwiseAlignmentsSingleSubject")
-  expect_true(class(aln$AA) == "PairwiseAlignmentsSingleSubject")
+  expect_true(class(aln$DNA[[1]]) == "PairwiseAlignmentsSingleSubject")
+  expect_true(class(aln$AA[[1]]) == "PairwiseAlignmentsSingleSubject")
 
-  expect_all_true(pwalign::pattern(aln$DNA) == Biostrings::DNAStringSet(c("ATGCAG", "ATGGAG")))
-  expect_all_true(pwalign::subject(aln$DNA) == Biostrings::DNAStringSet(c("ATGCAG", "ATGCAG")))
+  expect_all_true(pwalign::pattern(aln$DNA[[1]]) == Biostrings::DNAStringSet(c("ATGCAG", "ATGGAG")))
+  expect_all_true(pwalign::subject(aln$DNA[[1]]) == Biostrings::DNAStringSet(c("ATGCAG", "ATGCAG")))
 
-  expect_all_true(pwalign::pattern(aln$AA) == Biostrings::AAStringSet(c("MQ", "ME")))
-  expect_all_true(pwalign::subject(aln$AA) == Biostrings::AAStringSet(c("MQ", "MQ")))
+  expect_all_true(pwalign::pattern(aln$AA[[1]]) == Biostrings::AAStringSet(c("MQ", "ME")))
+  expect_all_true(pwalign::subject(aln$AA[[1]]) == Biostrings::AAStringSet(c("MQ", "MQ")))
 
   # class AmpliconSequencing
   obj.as <- methods::new("AmpliconSequencing", Sequences = obj)
@@ -164,12 +165,36 @@ test_that("Sequence Table getter methods return the expected outputs.", {
 
 })
 
+test_that("getSequenceTableSimplified returns the expected outputs.", {
+  path.ctrl <- file.path(tempdir(), "pair-homo-ctrl-merged.fastq.gz")
+  path.expt <- file.path(tempdir(), "pair-homo-expt-merged.fastq.gz")
+  expect_output(pas <- pairedAnalyzeAmplicon(path.ctrl, path.expt, full.settings.ctrl))
+
+  as.ctrl <- pas@Control
+  as.expt <- pas@Experimental
+  seq.ctrl <- as.ctrl@Sequences
+  seq.expt <- as.expt@Sequences
+
+  stls.as.ctrl <- getSequenceTableSimplified(as.ctrl)
+  expect_equal(stls.as.ctrl, data.frame(Count = 2, Percent = 100, Indels = "WT", BasesChanged = 0))
+  stls.as.expt <- getSequenceTableSimplified(as.expt)
+  expect_equal(stls.as.expt, data.frame(Count = c(1, 1, 1, 1), Percent = c(25, 25, 25, 25), Indels = c("WT", "-1", "+1", "-5"), BasesChanged = c(0, 0, 0, 0)))
+  expect_equal(getSequenceTableSimplified(seq.ctrl), stls.as.ctrl)
+  expect_equal(getSequenceTableSimplified(seq.expt), stls.as.expt)
+
+  stls.pas <- getSequenceTableSimplified(pas)
+  expect_equal(class(stls.pas), "list")
+  expect_equal(stls.pas$Control, stls.as.ctrl)
+  expect_equal(stls.pas$Experimental, stls.as.expt)
+})
+
+
 test_that("getSequenceSupplemental returns the expected outputs.", {
   obj <- makeTestSeqTable()
   sup <- getSequenceSupplemental(obj)
 
   expect_all_true(class(sup) == c("data.table", "data.frame"))
-  expect_all_true(colnames(sup) == c("Sequence", "UMIs", "IDs", "IndelStart", "IndelType"))
+  expect_all_true(colnames(sup) == c("Sequence", "UMIs", "IDs", "IndelStart", "IndelType", "RefIdx"))
   expect_all_true(sup$Sequence == c("ATGCAG", "ATGGAG", "ATGCG"))
   expect_true(identical(sup$UMIs, list(list("TGACG", "ACATA", "CGGTA", "GAACA", "TGGCA"), list("GGGCC", "ACCTC"), list("TCGTA"))))
   expect_true(length(sup$IDs) == 3)
@@ -311,7 +336,7 @@ test_that("getSettings returns the expected output.", {
   expect_true(class(s) == "list")
   l <- as.list(make.set.df())
   l <- c(head(l, -8), list(AntibodyRegions = unlist(tail(l,8))))
-  expect_true(identical(s, l))
+  expect_equal(s,l)
 
   ### class AmpliconSequencing ###
   obj.as <- methods::new("AmpliconSequencing", Settings = obj)
@@ -342,20 +367,18 @@ test_that("graphResults rejects input without a specified output type", {
 test_that("graphResults works for class AmpliconSequencing", {
   expect_output(test.results <- analyzeAmplicon(test.settings))
   asg <- list()
-  for (i in c("dna.positions", "dna.positions.labeled",
+  for (i in c("all", "dna.positions", "dna.positions.labeled",
               "aa.positions", "aa.positions.labeled",
               "aid.boxplot", "aa.mutations",
-              "mutation.types", "histogram",
-              "dna.align", "aa.align"
+              "mutation.types", "histogram"
   )) {
-    suppressWarnings(expect_no_error(asg[[i]] <- graphResults(test.results, output = i)))
-    # suppress potential warning for package ggmsa using outdated ggplot2 nomenclature
+    expect_no_error(asg[[i]] <- graphResults(test.results, output = i))
   }
-  expect_all_true(suppressWarnings(stringr::str_detect(S4Vectors::lapply(asg, class), "ggplot")))
+  expect_all_true(suppressWarnings(stringr::str_detect(S4Vectors::lapply(asg, function(x){lapply(x, class)}), "ggplot")))
   suppressWarnings(expect_no_error(mtp <- graphResults(test.results, output = "mutation.types", mutationTypes = "pie")))
-  expect_true(is(mtp, "ggplot"))
+  expect_equal(sapply(mtp, is), "ggplot2::ggplot")
   suppressWarnings(expect_no_error(mtd <- graphResults(test.results, output = "mutation.types", mutationTypes = "donut")))
-  expect_true(is(mtd, "ggplot"))
+  expect_equal(sapply(mtd, is), "ggplot2::ggplot")
 })
 
 test_that("graphResults works for class tas.sequences", {
@@ -426,20 +449,20 @@ test_that("exportTables writes tables to the correct path.", {
                  "WRCH Table.csv",
                  "WRCY Table.csv",
                  "DNA Repair Types.csv")
-  expect_all_true(file.exists(file.path(path, "export", file.list)))
-  file.remove(file.path(path, "export", file.list))
+  expect_all_true(file.exists(file.path(path, file.list)))
+  file.remove(file.path(path, file.list))
 
   exportTables(test.results@Sequences, path)
-  expect_all_true(file.exists(file.path(path, "export", file.list[1:2])))
-  file.remove(file.path(path, "export", file.list[1:2]))
+  expect_all_true(file.exists(file.path(path, file.list[1:2])))
+  file.remove(file.path(path, file.list[1:2]))
 
   exportTables(test.results@Mutations, path)
-  expect_all_true(file.exists(file.path(path, "export", file.list[3:10])))
-  file.remove(file.path(path, "export", file.list[3:10]))
+  expect_all_true(file.exists(file.path(path, file.list[3:10])))
+  file.remove(file.path(path, file.list[3:10]))
 
   exportTables(test.results@MutationTypes, path)
-  expect_true(file.exists(file.path(path, "export", file.list[11])))
-  file.remove(file.path(path, "export", file.list[11]))
+  expect_true(file.exists(file.path(path, file.list[11])))
+  file.remove(file.path(path, file.list[11]))
 
 })
 
@@ -512,6 +535,6 @@ test_that("getter functions return empty with uninitialized objects", {
   expect_equal(getMutationTypes(methods::new("tas.dna.repair")), "Empty")
   expect_equal(getMutationTypes(methods::new("AmpliconSequencing")), "Empty")
 
-
-
 })
+
+

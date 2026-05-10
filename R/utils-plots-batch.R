@@ -1,4 +1,4 @@
-
+#' @include utils-color-palettes.R
 
 
 gg.summary.all.ms <- function(sample.names, dt.ms) {

@@ -8,7 +8,7 @@ test_that("Validate tasAnalyzer extensions for function isEmpty.", {
   obj.set <- new("tas.object.settings", Name = "unknown",
                  IsAntibody = FALSE,
                  MergedFASTQPath = "",
-                 ReferenceSequence = "",
+                 ReferenceSequence = list(""),
                  ForwardExtensionType = "",
                  ForwardExtension = "",
                  ForwardPrimer = "",
@@ -65,9 +65,10 @@ test_that("Validate tasAnalyzer extensions for function isEmpty.", {
                                                        UMIs = list(),
                                                        IDs = list(),
                                                        IndelStart = NA_real_,
-                                                       IndelType = NA_character_),
-                 Alignments = list(DNA = empty.pass(),
-                                   AA = empty.pass()),
+                                                       IndelType = NA_character_,
+                                                       RefIdx = NA_real_),
+                 Alignments = list(DNA = list(.empty.pass()),
+                                   AA = list(.empty.pass())),
                  ReadCounts = NA_integer_)
   expect_true(validObject(obj.seq))
   expect_true(isEmpty(obj.seq))
@@ -110,6 +111,15 @@ test_that("Validate tasAnalyzer extensions for function isEmpty.", {
   obj.as@Mutations@DNA$AllMutations <- data.frame(Position = 1, MutationFrequency = 15)
   expect_true(validObject(obj.as))
   expect_false(isEmpty(obj.as))
+
+  # PairedAmpliconSequencing
+  obj.pas <- new("PairedAmpliconSequencing", Control = new("AmpliconSequencing"),
+                 Experimental = new("AmpliconSequencing"))
+  expect_true(validObject(obj.pas))
+  expect_true(isEmpty(obj.pas))
+  obj.pas@Control@Mutations@DNA$AllMutations <- data.frame(Position = 1, MutationFrequency = 15)
+  expect_true(validObject(obj.pas))
+  expect_false(isEmpty(obj.pas))
 })
 
 
@@ -119,6 +129,10 @@ test_that("Extended show() functions print to console", {
   expect_output(show(methods::new("tas.mutations")))
   expect_output(show(methods::new("tas.dna.repair")))
   expect_output(show(methods::new("AmpliconSequencing")))
-  test.results <- analyzeAmplicon(test.settings)
+  expect_output(test.results <- analyzeAmplicon(test.settings))
   expect_output(show(test.results))
+  expect_output(test.paired.results <- pairedAnalyzeAmplicon(file.path(tempdir(), "pair-homo-ctrl-merged.fastq.gz"),
+                                                             file.path(tempdir(), "pair-homo-expt-merged.fastq.gz"),
+                                                             full.settings.ctrl))
+  expect_output(show(test.paired.results))
 })

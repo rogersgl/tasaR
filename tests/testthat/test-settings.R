@@ -28,6 +28,7 @@ test_that("Template .csv file can be created.", {
 
 test_that("Settings can be read from a .csv file.", {
   dfset <- make.set.df()
+  dfset$ReferenceSequence <- dfset$ReferenceSequence[[1]]
   write.csv(dfset, file = file.path(tempdir(), "settings.csv"), row.names = FALSE)
   expect_message(o <- readSettings(file.path(tempdir(), "settings.csv"), row = 2), regexp = ".csv file")
   # o <- suppressMessages(readSettings(file.path(tempdir(), "settings.csv"), row = 2))

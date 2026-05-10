@@ -1,3 +1,5 @@
+#' @include class-AmpliconSequencing.R
+NULL
 
 #' Multi-sample analysis
 #'
@@ -181,8 +183,10 @@ batchSummarize <- function(results.list, export = FALSE, path = NULL, suppressCo
     ggplot2::ggsave("DNA Repair Types.pdf", batsum$Graphs$MutTypes, path = file.path(tempdir(), "export"))
 
     if (!dir.exists(path)) {dir.create(path)}
-    file.copy(list.files(file.path(tempdir(), "export"), full.names = TRUE), path, recursive = TRUE)
-  } else if (export && is.null(path)) {
+    files <- list.files(file.path(tempdir(), "export"), full.names = TRUE)
+    file.copy(files, path, recursive = TRUE, overwrite = TRUE)
+    file.remove(files)
+    } else if (export && is.null(path)) {
     warning("Could not export results, path not provided.")
   }
 

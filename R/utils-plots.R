@@ -1,4 +1,5 @@
-
+#' @include utils-color-palettes.R
+#'
 # helpers
 
 gg.tasar.defaults <- list(
@@ -36,7 +37,6 @@ label.cdrs <- function(plot, abr) {
 
 
 # graph dna mut.pos
-
 
 gg.dna.pos <- function(input) {
 
@@ -106,7 +106,6 @@ gg.dna.pos.cyt <- function(input) {
 
 # graph box plot of %mutations at cytosine and non-cytosines
 
-
 gg.aid.box <- function(input) {
 
   cyt <- getMutationDistributionCytosine(input)
@@ -130,7 +129,6 @@ gg.aid.box <- function(input) {
 
 
 # graph aa mut.pos
-
 
 gg.aa.pos <- function(input) {
   sett <- getSettings(input)
@@ -195,59 +193,6 @@ gg.aa.pos.cyt <- function(input) {
 
 # graph aa stacked bar mutation graph
 
-AAvec <- c("E","D","R","K","H","Y","F","W","T","S","N","Q","C","M","G","P","A","V","I","L","*", "+", "-")
-AA_custom_colors <- c("red",
-                      "firebrick3",
-                      "dodgerblue",
-                      "royalblue",
-                      "navy",
-                      "gold",
-                      "khaki1",
-                      "moccasin",
-                      "seagreen2",
-                      "seagreen",
-                      "green3",
-                      "forestgreen",
-                      "aquamarine",
-                      "orange",
-                      "darkorange2",
-                      "orangered2",
-                      "sienna1",
-                      "darkgoldenrod",
-                      "darkorange4",
-                      "sandybrown",
-                      "black",
-                      "gray90",
-                      "gray50")
-
-AA_custom_colors2 <- c("#B40000",
-                       "#E60A0A",
-                       "#00007C",
-                       "#145AFF",
-                       "#8282D2",
-                       "#3232AA",
-                       "#9933CC",
-                       "#B45AB4",
-                       "#FF6600",
-                       "#FA9600",
-                       "#00DCDC",
-                       "#00A0A0",
-                       "#E6E600",
-                       "#B8A042",
-                       "#40E0D0",
-                       "#DC9682",
-                       "#8CFF8C",
-                       "#455E45",
-                       "#004C00",
-                       "#0F820F",
-                       "black",
-                       "#EBEBEB",
-                       "gray50")
-
-names(AA_custom_colors) <- AAvec
-names(AA_custom_colors2) <- AAvec
-
-
 gg.aa.muts.stacked <- function(input) {
   mm <- getMutationMatrixAA(input)[AAvec,]
   df <- data.frame(Position = c(sapply(1:ncol(mm), rep, nrow(mm))),
@@ -273,104 +218,11 @@ gg.aa.muts.stacked <- function(input) {
           legend.key.spacing.y = gg.tasar.defaults$theme$legend.key.spacing.y) +
     ggplot2::ylab("% Mutated Residues") +
     ggplot2::xlab("Position (AA)") +
-    ggplot2::scale_fill_manual(values = AA_custom_colors2) +
+    ggplot2::scale_fill_manual(values = aa_letter3) +
     ggh4x::force_panelsizes(rows = ggplot2::unit(2, "in"), cols = ggplot2::unit(5, "in"))
   return(p)
 }
 
-
-# graph sequence alignments
-# TODO: consider how to improve speed while retaining features. These graphs
-# each take about as long as the entire analysis process to generate.
-# Possible to write a LaTeX parser to turn the DNA sequence alignments into
-# something matching this style? The output from msa package msaPrettyPrint
-# cannot replicate this functionality as far as I can determine.
-
-
-gg.dna.align <- function(input, seq.number = 10) {
-
-  sett <- getSettings(input)
-  len <- length(getSequencesDNA(input))
-  if (len < seq.number) {seq.number <- len}
-  stl <- getSequenceTable(input)[(1:seq.number),]
-
-  indel.label <- stl$Indels
-  indel.idx <- which(nzchar(indel.label))
-
-  n <- stringr::str_c(ifelse(nzchar(stl$Indels), stl$Indels, ""),
-             ifelse(stl$BasesChanged != 0,
-                ifelse(nzchar(stl$Indels), ", ", "") |>
-                    stringr::str_c(stl$BasesChanged, " SNV"), ""),
-             stringr::str_c(" - ", round(stl$Percent, 2), "%")
-            )
-  n <- c("Reference", n)
-  seqs <- Biostrings::DNAStringSet(c(sett$ReferenceSequence,
-    stringr::str_remove_all(stl$Sequences, "[+\\-]")))
-
-  names(seqs) <- n
-  sink(tempfile())
-  align <- msa::msaClustalW(seqs, order = "input")
-  sink()
-
-  p <- suppressMessages(
-    ggmsa::ggmsa(Biostrings::DNAMultipleAlignment(as(align,"BStringSet")),
-          consensus_views = TRUE,
-          ref = "Reference",
-          color = "Taylor_NT",
-          char_width = 0.7,
-          border = NA,
-          seq_name = TRUE)+
-      ggplot2::coord_cartesian()+
-      ggmsa::facet_msa(field = 100)+
-      ggplot2::theme(plot.margin = ggplot2::margin(0.5,0.5,0.5,0.5,unit = "in"))+
-      ggplot2::theme(axis.text = ggplot2::element_text(size = 6))
-  )
-
-  return(p)
-}
-
-
-# aa alignment
-
-gg.aa.align <- function(input, seq.number = 10) {
-
-  sett <- getSettings(input)
-  len <- length(getSequencesAA(input))
-  if (len < seq.number) {seq.number <- len}
-  stl <- getSequenceTable(input)[(1:seq.number),]
-
-  n <- stringr::str_c(1:seq.number, ". ", stl$ProteinMutation,
-             stringr::str_c("- ", round(stl$Percent, 2), "%")
-  )
-  n <- c("Reference", n)
-  ref <- as.character(suppressWarnings(Biostrings::translate(Biostrings::DNAString(sett$ReferenceSequence))))
-  seqs <- Biostrings::AAStringSet(stringr::str_remove_all(c(ref, stl$AA), "[+\\-]"))
-
-  # names(seqs) <- as.character(seq_along(seqs))
-  names(seqs) <- n
-
-  sink(tempfile())
-  align <- msa::msaClustalW(seqs, order = "input", type = "protein")
-  sink()
-
-  p <- suppressMessages(
-    ggmsa::ggmsa(Biostrings::AAMultipleAlignment(as(align,"BStringSet")),
-          consensus_views = TRUE,
-          ref = "Reference",
-          color = "Taylor_NT",
-          char_width = 0.7,
-          border = NA,
-          seq_name = TRUE)+
-      ggplot2::coord_cartesian()+
-      ggmsa::facet_msa(field = 100)+
-      ggplot2::theme(plot.margin = ggplot2::margin(0.5,0.5,0.5,0.5,unit = "in"))+
-      ggplot2::theme(axis.text = ggplot2::element_text(size = 6))
-  )
-
-  return(p)
-}
-
-# graph histogram of # of mutations/seq
 
 gg.dna.mut.count.hist <- function(input) {
 
@@ -475,3 +327,91 @@ gg.dna.mut.types <- function(input, type = "bar") {
   }
   return(p)
 }
+
+
+# ggmsa alignments - depreciated, replaced by TeX-based workflow
+
+# gg.dna.align <- function(input, seq.number = 10) {
+#
+#   sett <- getSettings(input)
+#   len <- length(getSequencesDNA(input))
+#   if (len < seq.number) {seq.number <- len}
+#   stl <- getSequenceTable(input)[(1:seq.number),]
+#
+#   indel.label <- stl$Indels
+#   indel.idx <- which(nzchar(indel.label))
+#
+#   n <- stringr::str_c(ifelse(nzchar(stl$Indels), stl$Indels, ""),
+#              ifelse(stl$BasesChanged != 0,
+#                 ifelse(nzchar(stl$Indels), ", ", "") |>
+#                     stringr::str_c(stl$BasesChanged, " SNV"), ""),
+#              stringr::str_c(" - ", round(stl$Percent, 2), "%")
+#             )
+#   n <- c("Reference", n)
+#   seqs <- Biostrings::DNAStringSet(c(sett$ReferenceSequence[[1]], # a bit of a crude bypass, just take the 1st ref seq. If >1 will still have WT marking on other alleles. However, choice of ref #1 is not guaranteed consistent.
+#     stringr::str_remove_all(stl$Sequences, "[+\\-]")))
+#
+#   names(seqs) <- n
+#   sink(tempfile())
+#   align <- msa::msaClustalW(seqs, order = "input")
+#   sink()
+#
+#   p <- suppressMessages(
+#     ggmsa::ggmsa(Biostrings::DNAMultipleAlignment(as(align,"BStringSet")),
+#           consensus_views = TRUE,
+#           ref = "Reference",
+#           color = "Taylor_NT",
+#           char_width = 0.7,
+#           border = NA,
+#           seq_name = TRUE)+
+#       ggplot2::coord_cartesian()+
+#       ggmsa::facet_msa(field = 100)+
+#       ggplot2::theme(plot.margin = ggplot2::margin(0.5,0.5,0.5,0.5,unit = "in"))+
+#       ggplot2::theme(axis.text = ggplot2::element_text(size = 6))
+#   )
+#
+#   return(p)
+# }
+#
+#
+# # aa alignment
+#
+# gg.aa.align <- function(input, seq.number = 10) {
+#
+#   sett <- getSettings(input)
+#   len <- length(getSequencesAA(input))
+#   if (len < seq.number) {seq.number <- len}
+#   stl <- getSequenceTable(input)[(1:seq.number),]
+#
+#   n <- stringr::str_c(1:seq.number, ". ", stl$ProteinMutation,
+#              stringr::str_c("- ", round(stl$Percent, 2), "%")
+#   )
+#   n <- c("Reference", n)
+#   ref <- as.character(suppressWarnings(Biostrings::translate(Biostrings::DNAString(sett$ReferenceSequence[[1]])))) # a bit of a crude bypass, just take the 1st ref seq. If >1 will still have WT marking on other alleles. However, choice of ref #1 is not guaranteed consistent.
+#   seqs <- Biostrings::AAStringSet(stringr::str_remove_all(c(ref, stl$AA), "[+\\-]"))
+#
+#   # names(seqs) <- as.character(seq_along(seqs))
+#   names(seqs) <- n
+#
+#   sink(tempfile())
+#   align <- msa::msaClustalW(seqs, order = "input", type = "protein")
+#   sink()
+#
+#   p <- suppressMessages(
+#     ggmsa::ggmsa(Biostrings::AAMultipleAlignment(as(align,"BStringSet")),
+#           consensus_views = TRUE,
+#           ref = "Reference",
+#           color = "Taylor_NT",
+#           char_width = 0.7,
+#           border = NA,
+#           seq_name = TRUE)+
+#       ggplot2::coord_cartesian()+
+#       ggmsa::facet_msa(field = 100)+
+#       ggplot2::theme(plot.margin = ggplot2::margin(0.5,0.5,0.5,0.5,unit = "in"))+
+#       ggplot2::theme(axis.text = ggplot2::element_text(size = 6))
+#   )
+#
+#   return(p)
+# }
+
+# graph histogram of # of mutations/seq

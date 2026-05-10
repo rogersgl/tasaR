@@ -4,7 +4,7 @@
 # --------------
 
 test_that("findAIDtargets locates AID hotspot motifs and returns correctly formatted outputs.", {
-  test.aid <- findAIDtargets(test.settings)
+  test.aid <- unlist(findAIDtargets(test.settings), recursive = FALSE)
 
   expect_true(class(test.aid) == "list")
   expect_all_true(names(test.aid) == c("WRCH", "WRCY"))
