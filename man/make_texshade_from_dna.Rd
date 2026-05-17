@@ -5,7 +5,7 @@
 \title{Align DNA sequences and write a TeXshade file}
 \usage{
 make_texshade_from_dna(
-  seqs,
+  aln,
   outfile,
   reference = 1L,
   color_scheme = "auto",
@@ -14,9 +14,6 @@ make_texshade_from_dna(
 )
 }
 \arguments{
-\item{seqs}{A DNA sequence object accepted by \code{msa::msaClustalW()}
-(for example, a \code{DNAStringSet}).}
-
 \item{outfile}{Character. Path to the output \code{.tex} file.}
 
 \item{reference}{Reference sequence, either a numeric index or a sequence name.
@@ -28,6 +25,9 @@ Passed through to \code{write_texshade_msa()} after alignment.}
 
 \item{order}{Character. Ordering mode passed to \code{msa::msaClustalW()}.
 Defaults to \code{"input"}.}
+
+\item{seqs}{A DNA sequence object accepted by \code{msa::msaClustalW()}
+(for example, a \code{DNAStringSet}).}
 }
 \value{
 Invisibly returns the normalized path to \code{outfile}.

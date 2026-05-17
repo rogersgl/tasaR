@@ -107,6 +107,7 @@ write_texshade_msa <- function(aln,
                                color_map = NULL,
                                match_text_color = "A6A6A6",
                                residues_per_line = 100L,
+                               cut.sites = NULL,
                                include_indels = TRUE,
                                sanitize_names = TRUE,
                                font_family = "inconsolata") {
@@ -116,6 +117,26 @@ write_texshade_msa <- function(aln,
 
   seq_type <- match.arg(seq_type)
   color_scheme <- match.arg(color_scheme)
+
+  # Manually set sequence names
+  aln_names <- BiocGenerics::rownames(aln)
+  # BiocGenerics::rownames(aln) <- 1:nrow(aln)
+  aln_names <- stringr::str_replace_all(aln_names, "%", "\\\\%")
+  tex_aln_names <- sapply(seq_along(aln_names), function(x) {
+    stringr::str_c("  \\nameseq{",x,"}{", aln_names[x], "}")
+  })
+
+  # cut site
+  if (!is.null(cut.sites)){
+    tex_cut_sites <- sapply(cut.sites, function(x) {
+      stringr::str_c("  \\feature{top}{1}{", x, "..", x, "}{restriction[Black]}{Cut Site}")
+    })
+    tex_cut_sites <- c("\\featuresfootnotesize", "\\featurestt", tex_cut_sites)
+  } else {
+    tex_cut_sites <- ""
+  }
+
+  aln <- .nucleaseAlignmentCorrection(aln, cut.sites, reference)
 
   # Extract aligned rows (gaps preserved)
   seq_class <- switch(
@@ -410,7 +431,10 @@ write_texshade_msa <- function(aln,
     color_defs,
     sprintf("\\begin{texshade}{%s}", fasta_name),
     sprintf("  \\seqtype{%s}", seq_type),
+    sprintf("  \\shownames{left}"),
+    tex_aln_names,
     paste0("  ", cmd_lines),
+    tex_cut_sites,
     "\\end{texshade}",
     "\\end{document}",
     ""
@@ -452,15 +476,15 @@ write_texshade_msa <- function(aln,
 #' @seealso \code{\link{write_texshade_msa}}, \code{\link[msa]{msaClustalW}}
 #'
 #' @export
-make_texshade_from_dna <- function(seqs,
+make_texshade_from_dna <- function(aln,
                                    outfile,
                                    reference = 1L,
                                    color_scheme = "auto",
                                    ...,
                                    order = "input") {
-  aln <- msa::msaClustalW(seqs, order = order)
   tex_file <- write_texshade_msa(aln, outfile = outfile, reference = reference, seq_type = "N", ...)
   tinytex::pdflatex(tex_file)
+  return(tex_file)
 }
 
 
@@ -500,6 +524,7 @@ make_texshade_from_aa <- function(seqs,
   aln <- msa::msaClustalW(seqs, order = order)
   tex_file <- write_texshade_msa(aln, outfile = outfile, reference = reference, seq_type = "P", color_scheme = color_scheme, ...)
   tinytex::pdflatex(tex_file)
+  return(tex_file)
 }
 
 

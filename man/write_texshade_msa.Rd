@@ -14,6 +14,7 @@ write_texshade_msa(
   color_map = NULL,
   match_text_color = "A6A6A6",
   residues_per_line = 100L,
+  cut.sites = NULL,
   include_indels = TRUE,
   sanitize_names = TRUE,
   font_family = "inconsolata"

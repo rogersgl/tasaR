@@ -10,6 +10,9 @@
 \alias{getAAalign}
 \alias{getAAalign,tas.sequences-method}
 \alias{getAAalign,AmpliconSequencing-method}
+\alias{getDNAmsa}
+\alias{getDNAmsa,tas.sequences-method}
+\alias{getDNAmsa,AmpliconSequencing-method}
 \title{Retrieve pairwise alignments}
 \usage{
 \S4method{getAlignments}{tas.sequences}(object)
@@ -23,6 +26,10 @@
 \S4method{getAAalign}{tas.sequences}(object)
 
 \S4method{getAAalign}{AmpliconSequencing}(object)
+
+\S4method{getDNAmsa}{tas.sequences}(object)
+
+\S4method{getDNAmsa}{AmpliconSequencing}(object)
 }
 \arguments{
 \item{object}{An S4 object of class tas.sequences or AmpliconSequencing}
@@ -44,6 +51,10 @@ Extracts DNA and/or protein (AA) pairwise alignments from an S4 object of class 
 
 \item \code{getAAalign(AmpliconSequencing)}: Method for class AmpliconSequencing
 
+\item \code{getDNAmsa(tas.sequences)}: Method for class tas.sequences
+
+\item \code{getDNAmsa(AmpliconSequencing)}: Method for class AmpliconSequencing
+
 }}
 \section{Functions}{
 \itemize{
@@ -53,9 +64,12 @@ Extracts DNA and/or protein (AA) pairwise alignments from an S4 object of class 
 
 \item \code{getAAalign()}: Extracts a pairwise alignment of protein sequences
 
+\item \code{getDNAmsa()}: Extracts a pairwise alignment of protein sequences
+
 }}
 \examples{
 getAlignments(object)
 getDNAalign(object)
 getAAalign(object)
+getDNAmsa(object)
 }

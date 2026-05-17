@@ -35,18 +35,26 @@ test_that(".validate_pandaseq_paths creates output directory when requested", {
   expect_true(dir.exists(dirname(out$output_fastq)))
 })
 
-# need a builder for unpaired reads to make this test work
-# Need to implement, important test for the package
-# test_that("pandaseq_merge_files runs without crashing", {
-#   skip("Add small test FASTQ files to inst/extdata first")
-#
-#   forward <- system.file("extdata", "test_R1.fastq.gz", package = "tasaR")
-#   reverse <- system.file("extdata", "test_R2.fastq.gz", package = "tasaR")
-#   output  <- tempfile(fileext = ".fastq")
-#
-#   expect_true(
-#     pandaseq_merge_files(forward, reverse, output)
-#   )
-#
-#   expect_true(file.exists(output))
-# })
+
+test_that("pandaseq_merge_files runs and merges simple test files", {
+
+  p <- pandaseq_merge_files(forward_fastq = file.path(tempdir(), "R1-test.fastq.gz"),
+                         reverse_fastq = file.path(tempdir(), "R2-test.fastq.gz"),
+                         output_fastq = file.path(tempdir(), "merged-test.fastq.gz"),
+                         log_file = file.path(tempdir(), "log/test-log.txt"),
+                         min_length = 370,
+                         max_length = 420,
+                         extra_args = c("-F", "-d", "bFSrk"),
+                         verbose = FALSE)
+  expect_true(p$ok)
+
+  expect_true(file.exists(file.path(tempdir(), "merged-test.fastq.gz")))
+
+  expect_equal(as.character(ShortRead::sread(ShortRead::readFastq(file.path(tempdir(), "merged-test.fastq.gz")))),
+               rep("GCTAGCCGTAAAACGACGGCCAGTGTTCAACTGGTGGAAAGCGGCGGTGCTCTGGTACAACCGGGCGGTAGTCTGCGCCTGAGCTGTGCCGCAAGCGGTTTCCCAGTCAACCGCTACTCTATGCGTTGGTATCGCCAGGCGCCTGGTAAAGAACGTGAATGGGTTGCCGGCATGAGCAGTGCGGGCGATCGTTCTAGTTACGAGGACTCTGTTAAAGGTCGTTTTACAATTAGCCGTGATGATGCGCGCAATACCGTGTATCTGCAAATGAACAGTCTGAAGCCGGAGGACACCGCAGTATATTATTGCAATGTCAACGTGGGGTTTGAATATTGGGGCCAGGGGACTCAGGTGACGGTGAGCTCTGTCATAGCTGTTTCCTGAGCGAATTAGAG", 3
+                   )
+               )
+
+  # TODO: add failure tests
+
+})

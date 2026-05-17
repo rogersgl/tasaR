@@ -1,7 +1,7 @@
 #' @include class-AmpliconSequencing.R
 NULL
 
-#' Multi-sample analysis
+#' Batch amplicon analysis
 #'
 #' @description
 #' Function providing for batch analysis of samples. Sample settings must be

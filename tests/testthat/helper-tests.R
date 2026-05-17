@@ -46,6 +46,15 @@ makeFakeSRQ <- function(seqs) {
   ShortRead::ShortReadQ(sread = seqs, quality = qs, id = ids)
 }
 
+makeUnpairedSRQ <- function(seqs, read) {
+  qs <- Biostrings::BStringSet(vapply(Biostrings::width(seqs), function(len) paste(rep("I", len), collapse = ""), character(1)))
+  if (read == "R1"){
+    ids <- Biostrings::BStringSet(fakeIlluminaId.R1(length(seqs)))
+  } else if(read == "R2") {
+    ids <- Biostrings::BStringSet(fakeIlluminaId.R2(length(seqs)))
+  }
+  ShortRead::ShortReadQ(sread = seqs, quality = qs, id = ids)
+}
 
 # -------------
 # tas.sequences
@@ -56,6 +65,21 @@ fakeIlluminaId <- function() {
   stringr::str_c("A90033:281:WB24762987th.Miseq:1:", sample(100:50000, 1), ":", sample(100:50000, 1), ":AAGAGGCA+CGGAGAGA")
 }
 
+fakeIlluminaId.R1 <- function(len) {
+  o <- character(len)
+  for (i in 1:len){
+    o[i] <- stringr::str_c("A01940:313:GW2310153605th.Miseq:1:2101:",24451+i,":1125 1:N:0:AAGAGGCA+CGGAGAGA")
+  }
+  return(o)
+}
+
+fakeIlluminaId.R2 <- function(len) {
+  o <- character(len)
+  for (i in 1:len){
+    o[i] <- stringr::str_c("A01940:313:GW2310153605th.Miseq:1:2101:",24451+i,":1125 2:N:0:AAGAGGCA+CGGAGAGA")
+  }
+  return(o)
+}
 
 makeTestSequences <- function(test.settings) {
   seqs <-  c("GTTCAACTGGTGGAAAGCGGCGGTGCTCTGGTACAACCGGGCGGTAGTCTGCGCCTGAGCTGTGCCGCAAGCGGTTTCCCAGTCAACCGCTACTCTATGCGTTGGTATCGCCAGGCGCCTGGTAAAGAACGTGAATGGGTTGCCGGCATGAGCAGTGCGGGCGATCGTTCTAGTTACGAGGACTCTGTTAAAGGTCGTTTTACAATTAGCCGTGATGATGCGCGCAATACCGTGTATCTGCAAATGAACAGTCTGAAGCCGGAGGACACCGCAGTATATTATTGCAATGTCAACGTGGGGTTTGAATATTGGGGCCAGGGGACTCAGGTGACGGTGAGCTCT",
@@ -108,7 +132,7 @@ makeTestSequences <- function(test.settings) {
   pa <- list(pwalign::pairwiseAlignment(Biostrings::AAStringSet(aa), Biostrings::AAStringSet(suppressWarnings(Biostrings::translate(Biostrings::DNAString(unlist(test.settings@ReferenceSequence)))))))
   ReadCounts <- c(Merged = 118L, Filtered = 98L, UMIs = 8L, UniqueSequences = 7L)
 
-  new("tas.sequences", Table = t, Supplemental = s, Alignments = list(DNA = da, AA = pa), ReadCounts = ReadCounts)
+  new("tas.sequences", Table = t, Supplemental = s, Alignments = list(DNA = da, AA = pa, msaDNA = list(Biostrings::DNAMultipleAlignment())), ReadCounts = ReadCounts)
 }
 
 # -------------
@@ -287,7 +311,7 @@ make.pair.set.df <- function(ref.seq) {
 }
 
 # generate paired settings variable
-full.settings.ctrl <- readSettings(make.pair.set.df("ATGGTGAGCAAGGGCGAGGAGCTGTTCACCGGGGTGGTGCCCATCCTGGTCGAGCTGGACGGCGACGTAAACGGCCACAAGTTCAGCGTGTCCGGCGAGGGCGAGGGCGATGCCACCTACGGCAAGCTGACCCTGAAGTTCATCTGCACCACCGGCAAGCTGCCCGTGCCCTGGCCCACCCTCGTGACCACCCTGACCTACGGCGTGCAGTGCTTCAGCCGCTACCCCGACCACATGAAGCAGCACGACTTCTTCAAGTCCGCCATGCCCGAAGGCTACGTCCAGGAGCGCACCATCTTCTTCAAGGACGACGGCAACTACAAGACCCGCGCCGAGGTGAAGTTCGAGGGCGACACCCTG"))
+full.settings.ctrl <- suppressMessages(readSettings(make.pair.set.df("ATGGTGAGCAAGGGCGAGGAGCTGTTCACCGGGGTGGTGCCCATCCTGGTCGAGCTGGACGGCGACGTAAACGGCCACAAGTTCAGCGTGTCCGGCGAGGGCGAGGGCGATGCCACCTACGGCAAGCTGACCCTGAAGTTCATCTGCACCACCGGCAAGCTGCCCGTGCCCTGGCCCACCCTCGTGACCACCCTGACCTACGGCGTGCAGTGCTTCAGCCGCTACCCCGACCACATGAAGCAGCACGACTTCTTCAAGTCCGCCATGCCCGAAGGCTACGTCCAGGAGCGCACCATCTTCTTCAAGGACGACGGCAACTACAAGACCCGCGCCGAGGTGAAGTTCGAGGGCGACACCCTG")))
 # eGFP 1-360
 
 # simulated contol homozygous sequences
@@ -325,3 +349,33 @@ srq.het.expt <- makeFakeSRQ(Biostrings::DNAStringSet(c(rep("GCTAGCCGTAAAACGACGGC
 )))
 if (file.exists(file.path(tempdir(), "pair-het-expt-merged.fastq.gz"))) {file.remove(file.path(tempdir(), "pair-het-expt-merged.fastq.gz"))}
 ShortRead::writeFastq(srq.het.expt, file = file.path(tempdir(), "pair-het-expt-merged.fastq.gz"))
+
+
+# --------------------------
+# Helpers for utils-pandaseq
+# --------------------------
+
+srq.R1 <- makeUnpairedSRQ(Biostrings::DNAStringSet(c("GCTAGCCGTAAAACGACGGCCAGTGTTCAACTGGTGGAAAGCGGCGGTGCTCTGGTACAACCGGGCGGTAGTCTGCGCCTGAGCTGTGCCGCAAGCGGTTTCCCAGTCAACCGCTACTCTATGCGTTGGTATCGCCAGGCGCCTGGTAAAGAACGTGAATGGGTTGCCGGCATGAGCAGTGCGGGCGATCGTTCTAGTTACGAGGACTCTGTTAAAGGTCGTTTTACAATTAGCCGTGATGATGCGCGCA",
+                                                 "GCTAGCCGTAAAACGACGGCCAGTGTTCAACTGGTGGAAAGCGGCGGTGCTCTGGTACAACCGGGCGGTAGTCTGCGCCTGAGCTGTGCCGCAAGCGGTTTCCCAGTCAACCGCTACTCTATGCGTTGGTATCGCCAGGCGCCTGGTAAAGAACGTGAATGGGTTGCCGGCATGAGCAGTGCGGGCGATCGTTCTAGTTACGAGGACTCTGTTAAAGGTCGTTTTACAATTAGCCGTGATGATGCGCGCA",
+                                                 "GCTAGCCGTAAAACGACGGCCAGTGTTCAACTGGTGGAAAGCGGCGGTGCTCTGGTACAACCGGGCGGTAGTCTGCGCCTGAGCTGTGCCGCAAGCGGTTTCCCAGTCAACCGCTACTCTATGCGTTGGTATCGCCAGGCGCCTGGTAAAGAACGTGAATGGGTTGCCGGCATGAGCAGTGCGGGCGATCGTTCTAGTTACGAGGACTCTGTTAAAGGTCGTTTTACAATTAGCCGTGATGATGCGCGCA")),
+                          read = "R1")
+if (file.exists(file.path(tempdir(), "R1-test.fastq.gz"))) {file.remove(file.path(tempdir(), "R1-test.fastq.gz"))}
+ShortRead::writeFastq(srq.R1, file = file.path(tempdir(), "R1-test.fastq.gz"))
+
+srq.R2 <- makeUnpairedSRQ(Biostrings::DNAStringSet(c("CTCTAATTCGCTCAGGAAACAGCTATGACAGAGCTCACCGTCACCTGAGTCCCCTGGCCCCAATATTCAAACCCCACGTTGACATTGCAATAATATACTGCGGTGTCCTCCGGCTTCAGACTGTTCATTTGCAGATACACGGTATTGCGCGCATCATCACGGCTAATTGTAAAACGACCTTTAACAGAGTCCTCGTAACTAGAACGATCGCCCGCACTGCTCATGCCGGCAACCCATTCACGTTCTTTAC",
+                                                 "CTCTAATTCGCTCAGGAAACAGCTATGACAGAGCTCACCGTCACCTGAGTCCCCTGGCCCCAATATTCAAACCCCACGTTGACATTGCAATAATATACTGCGGTGTCCTCCGGCTTCAGACTGTTCATTTGCAGATACACGGTATTGCGCGCATCATCACGGCTAATTGTAAAACGACCTTTAACAGAGTCCTCGTAACTAGAACGATCGCCCGCACTGCTCATGCCGGCAACCCATTCACGTTCTTTAC",
+                                                 "CTCTAATTCGCTCAGGAAACAGCTATGACAGAGCTCACCGTCACCTGAGTCCCCTGGCCCCAATATTCAAACCCCACGTTGACATTGCAATAATATACTGCGGTGTCCTCCGGCTTCAGACTGTTCATTTGCAGATACACGGTATTGCGCGCATCATCACGGCTAATTGTAAAACGACCTTTAACAGAGTCCTCGTAACTAGAACGATCGCCCGCACTGCTCATGCCGGCAACCCATTCACGTTCTTTAC")),
+                      read = "R2")
+if (file.exists(file.path(tempdir(), "R2-test.fastq.gz"))) {file.remove(file.path(tempdir(), "R2-test.fastq.gz"))}
+ShortRead::writeFastq(srq.R2, file = file.path(tempdir(), "R2-test.fastq.gz"))
+
+test.pandaseq <- c(forward_fastq = file.path(tempdir(), "R1-test.fastq.gz"),
+                   reverse_fastq = file.path(tempdir(), "R2-test.fastq.gz"),
+                   output_fastq = file.path(tempdir(), "merged-test.fastq.gz"),
+                   log_file = file.path(tempdir(), "log/test-log.txt"),
+                   min_length = 370,
+                   max_length = 420,
+                   extra_args = c("-F", "-d", "bFSrk"),
+                   verbose = FALSE)
+
+

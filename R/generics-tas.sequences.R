@@ -251,7 +251,29 @@ setMethod("getAAalign", signature(object = "AmpliconSequencing"), function(objec
 })
 
 
+### MSA DNA (for Nuclease analysis) ###
 
+#' @describeIn getAlignments Extracts a pairwise alignment of protein sequences
+#'
+#' @usage NULL
+#'
+#' @param object An S4 object of class tas.sequences or AmpliconSequencing
+#' @returns NULL
+#' @examples
+#' getDNAmsa(object)
+setGeneric("getDNAmsa", function(object) standardGeneric("getDNAmsa"))
+
+#' @describeIn getAlignments Method for class tas.sequences
+#' @export
+setMethod("getDNAmsa", signature(object = "tas.sequences"), function(object) {
+  if (!isEmpty(object@Alignments$msaDNA)) {return(object@Alignments$msaDNA)} else {return("Empty")}
+})
+
+#' @describeIn getAlignments Method for class AmpliconSequencing
+#' @export
+setMethod("getDNAmsa", signature(object = "AmpliconSequencing"), function(object) {
+  if (!isEmpty(object@Sequences@Alignments$msaDNA)) {return(object@Sequences@Alignments$msaDNA)} else {return("Empty")}
+})
 
 ### Read Counts ###
 

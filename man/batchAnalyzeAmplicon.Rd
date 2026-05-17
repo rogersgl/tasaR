@@ -2,7 +2,7 @@
 % Please edit documentation in R/batchAnalyzeAmplicon.R
 \name{batchAnalyzeAmplicon}
 \alias{batchAnalyzeAmplicon}
-\title{Multi-sample analysis}
+\title{Batch amplicon analysis}
 \usage{
 batchAnalyzeAmplicon(input.settings.list)
 }

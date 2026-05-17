@@ -15,13 +15,16 @@ pairedAnalyzeAmplicon(
   rev.exten.type = "",
   rev.exten.seq = "",
   diploid = TRUE,
+  with.nuclease = TRUE,
+  gRNA.seq = NULL,
+  manual.cut.site = NULL,
   ...
 )
 }
 \arguments{
 \item{file.control}{A character vector specifying the file path to the control merged fastq file}
 
-\item{file.experimental}{A character vector specifying the file path to the experimental merged fastq file}
+\item{file.experimental}{A character vector specifying the file path to the experimental merged fastq file(s)}
 
 \item{settings}{(Optional) A tas.object.settings object specifying settings for the sequences. File path will be overridden by the function variables above.}
 
@@ -42,7 +45,8 @@ pairedAnalyzeAmplicon(
 \item{...}{(Optional) Any additional parameters to pass to child functions}
 }
 \value{
-An S4 object of class PairedAmpliconSequencing
+An S4 object of class PairedAmpliconSequencing (if length(file.experimental) == 1).
+A list of AmpliconSequencing objects if length(file.experimental) > 1.
 }
 \description{
 Analyzes a matched pair of control and experimental samples for mutations in the latter.

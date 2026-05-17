@@ -9,17 +9,11 @@ Authors@R: c(
       role = c("aut", "cre")
     )
   )
-Description: Starts with unpaired R1 and R2 reads from Illumina NGS. 
-    Settings are provided by an Excel spreadsheet for accessibility. 
-    Automatically merges paired ends using PANDAseq.
-    Filters merged reads by primer sequence. Supports 5' and 3' additions for either indexing barcodes or unique molecular identifiers.
-    Generates tables of each unique sequence counted by shared read sequence or pileup by UMI if included.
-    Identifies the type of mutation for each sequence as wild-type, insertion, deletion, or base change.
-    Measures mutations across the bulk population.
-    Optionally identifies AID hotspots and analyzes somatic hypermutation of antibody or non-antibody sequences.
-    Optionally measures mutations of the translated amino acid sequence.
-    Performs multiple sequence alignments of top DNA sequences. Protein msa is optional. Can also make phylogenetic trees.
-    Exports graphs, images, and spreadsheets of the analyzed results for interpretation or analyses using other softwares.
+Description: This software was developed to facilitate analysis of mutations within targeted amplicon sequences by Illumina deep sequencing. Most existing NGS analysis packages are more focused on aligning and mapping large populations of diverse sequences over an in-depth analysis of a single reference sequence. tasaR was built to close that gap -- facilitating close analysis of single amplicon sequences.
+
+The initial use case for tasaR was to analyze somatic hypermutation of engineered antibody sequences. Mutations within a reference starting sequence are mapped, AID hotspot motifs are parsed, and the distribution of mutations across an antibody sequence are presented in a variety of outputs to facilitate downstream analyses. As a side effect, tasaR is also an effective software to analyze the activity of a targeted nuclease like Cas9. Specific modules build for paired amplicon analysis establish the reference sequence in a matched control sample and measure and classify rates and types of DNA mutations produced by the nuclease. Unlike other software such as CRISPResso2, tasaR identifies non-indel mutations such as base changes that can be introduced by gene conversion copying from closely-related homeologous sequences in the genome.
+
+To facilitate paired amplicon analysis, tasaR also includes a wrapper for the paired sequence alignment software PANDAseq. This facilitates local sequence analysis in a cross-platform manner, and allows tasaR to serve as an all-in-one amplicon sequencing analysis platform.
 License: GPL (>= 3)
 Encoding: UTF-8
 LazyData: true
@@ -77,3 +71,4 @@ Collate:
     'readSettings.R'
     'utils-imports.R'
     'utils-pandaseq.R'
+    'utils-plots-paired.R'

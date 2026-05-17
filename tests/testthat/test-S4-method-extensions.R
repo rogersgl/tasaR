@@ -68,7 +68,9 @@ test_that("Validate tasAnalyzer extensions for function isEmpty.", {
                                                        IndelType = NA_character_,
                                                        RefIdx = NA_real_),
                  Alignments = list(DNA = list(.empty.pass()),
-                                   AA = list(.empty.pass())),
+                                   AA = list(.empty.pass()),
+                                   msaDNA = list(Biostrings::DNAMultipleAlignment())
+                                   ),
                  ReadCounts = NA_integer_)
   expect_true(validObject(obj.seq))
   expect_true(isEmpty(obj.seq))
@@ -133,6 +135,9 @@ test_that("Extended show() functions print to console", {
   expect_output(show(test.results))
   expect_output(test.paired.results <- pairedAnalyzeAmplicon(file.path(tempdir(), "pair-homo-ctrl-merged.fastq.gz"),
                                                              file.path(tempdir(), "pair-homo-expt-merged.fastq.gz"),
-                                                             full.settings.ctrl))
+                                                             full.settings.ctrl,
+                                                             with.nuclease = TRUE,
+                                                             gRNA.seq = "TACAAGACCCGCGCCGAGGT",
+                                                             manual.cut.site = NULL))
   expect_output(show(test.paired.results))
 })

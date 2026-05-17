@@ -33,7 +33,7 @@ makeTestSeqTable <- function() {
   pa <- list(pwalign::pairwiseAlignment(Biostrings::AAStringSet(c("MQ", "ME")), Biostrings::AAString("MQ")))
   ReadCounts <- c(Merged = 53L, Filtered = 44L, UMIs = 8L, UniqueSequences = 3L)
 
-  methods::new("tas.sequences", Table = t, Supplemental = s, Alignments = list(DNA = da, AA = pa), ReadCounts = ReadCounts)
+  methods::new("tas.sequences", Table = t, Supplemental = s, Alignments = list(DNA = da, AA = pa, msaDNA = list(Biostrings::DNAMultipleAlignment())), ReadCounts = ReadCounts)
 }
 
 
@@ -168,7 +168,12 @@ test_that("Sequence Table getter methods return the expected outputs.", {
 test_that("getSequenceTableSimplified returns the expected outputs.", {
   path.ctrl <- file.path(tempdir(), "pair-homo-ctrl-merged.fastq.gz")
   path.expt <- file.path(tempdir(), "pair-homo-expt-merged.fastq.gz")
-  expect_output(pas <- pairedAnalyzeAmplicon(path.ctrl, path.expt, full.settings.ctrl))
+  expect_output(pas <- pairedAnalyzeAmplicon(path.ctrl,
+                                             path.expt,
+                                             full.settings.ctrl,
+                                             with.nuclease = TRUE,
+                                             gRNA.seq = "TACAAGACCCGCGCCGAGGT",
+                                             manual.cut.site = NULL))
 
   as.ctrl <- pas@Control
   as.expt <- pas@Experimental

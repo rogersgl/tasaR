@@ -11,6 +11,7 @@
 \alias{isEmpty,AmpliconSequencing-method}
 \alias{isEmpty,PairedAmpliconSequencing-method}
 \alias{isEmpty,PairwiseAlignmentsSingleSubject-method}
+\alias{isEmpty,DNAMultipleAlignment-method}
 \title{isEmpty methods for package tasaR}
 \usage{
 \S4method{isEmpty}{tas.object.settings}(x)
@@ -26,6 +27,8 @@
 \S4method{isEmpty}{PairedAmpliconSequencing}(x)
 
 \S4method{isEmpty}{PairwiseAlignmentsSingleSubject}(x)
+
+\S4method{isEmpty}{DNAMultipleAlignment}(x)
 }
 \arguments{
 \item{x}{object to check for uninitialized values}

@@ -144,3 +144,15 @@ setMethod("isEmpty", "PairwiseAlignmentsSingleSubject", function(x) {
     return(FALSE)
   }
 })
+
+
+### class DNAMultipleAlignment ###
+#' @rdname isEmpty-tasaR
+#' @export
+setMethod("isEmpty", "DNAMultipleAlignment", function(x) {
+  if (nrow(x) == 0) {
+    return(TRUE)
+  } else {
+    return(FALSE)
+  }
+})

@@ -51,7 +51,7 @@ NULL
 #'
 #'
 #' @usage NULL
-#' @returns A ggplot2 graph as specified in the arguments
+#' @returns A list ggplot2 graph(s) as specified in the arguments
 #' @export
 setGeneric("graphResults", function(results, output, ...) standardGeneric("graphResults"))
 
@@ -261,8 +261,6 @@ setMethod("exportTables", signature = c("tas.dna.repair", "character"), function
 
 
 
-
-
 # --------------
 # Summary Report
 # --------------
@@ -272,5 +270,170 @@ setMethod("exportTables", signature = c("tas.dna.repair", "character"), function
 
 
 
+
+
+
+# ---------------------
+# PairedAnalyzeAmplicon
+# ---------------------
+
+setGeneric("exportNucleaseAnalysis", function(paired.seq.results, ...) standardGeneric("exportNucleaseAnalysis"))
+
+
+
+
+setMethod("exportNucleaseAnalysis", signature("PairedAmpliconSequencing"), function(paired.seq.results,
+                                                                                    export.dir,
+                                                                                    gRNA.seq = NULL,
+                                                                                    manual.cut.site = NULL,
+                                                                                    window.size = 60,
+                                                                                    seq.count = 10){
+  if (is.null(gRNA.seq) && is.null(manual.cut.site)){stop("Cut site(s) must be specified either by providing the gRNA sequence or manually as a numeric vector. See help at ?exportNucleaseAnalysis.")}
+  if (!is.null(gRNA.seq) && !is.null(manual.cut.site)){warning("Manual cut sites and gRNA sequecne detected. Manual settings will override gRNA sequence matching.")}
+
+  ref.seq <- lapply(getSettings(paired.seq.results@Control)$ReferenceSequence, Biostrings::DNAStringSet)
+
+  # determine expected cut site depending on input type
+  if (!is.null(gRNA.seq) && is.null(manual.cut.site)){
+    manual.cut.site <- .findCutSitesFromSequence(gRNA.seq, ref.seq)
+  }
+
+  # get coordinates for window around cut site
+  if (is.null(manual.cut.site) || !is.na(manual.cut.site)){
+    gRNA.window <- (min(manual.cut.site) - window.size/2):(max(manual.cut.site) + window.size/2)
+    if(min(gRNA.window) < 1) {
+      gRNA.window <- gRNA.window[gRNA.window >= 1]
+    }
+    if (max(gRNA.window) > Biostrings::nchar(ref.seq[[1]])) {
+      gRNA.window <- gRNA.window[gRNA.window <= Biostrings::nchar(ref.seq[[1]])]
+    }
+  } else {
+    gRNA.window <- 1:nchar(ref.seq[[1]])
+  }
+
+  if (!dir.exists(file.path(tempdir(), "paired/"))) {
+    dir.create(file.path(tempdir(), "paired/"))
+  }
+
+  # build and export control alignment
+  residues_per_line <- ifelse(length(gRNA.window) < 100, length(gRNA.window), 100)
+
+  ctrl.seq <- .alignment.seqs.ampseq(paired.seq.results@Control, gRNA.window, seq.count)
+  ctrl.aln <- .nucleaseAlignmentCorrection(msa::msaClustalW(ctrl.seq, order = "input"), cut.site = which(gRNA.window == manual.cut.site), reference = reference)
+  ctrl.files <- list.files(path = file.path(tempdir(), "paired/"),
+                           pattern = "^ctrl-aln\\..*$",
+                           full.names = TRUE)
+  invisible(file.remove(ctrl.files[file.exists(ctrl.files)]))
+  ctrl.tex <- make_texshade_from_dna(ctrl.aln,
+                                     file.path(tempdir(),"paired/ctrl-aln.tex"),
+                                     reference = 1L,
+                                     residues_per_line = residues_per_line,
+                                     cut.sites = which(gRNA.window == manual.cut.site))
+  invisible(file.remove("ctrl-aln.fasta"))
+
+  # build and export experimental alignment
+  expt.seq <- ..alignment.seqs.ampseq(paired.seq.results@Experimental, gRNA.window, seq.count)
+  expt.aln <- nucleaseAlignmentCorrection(msa::msaClustalW(expt.seq, order = "input"), cut.site = which(gRNA.window == manual.cut.site), reference = reference)
+  expt.files <- list.files(path = file.path(tempdir(), "paired/"),
+                           pattern = "^expt-aln\\..*$",
+                           full.names = TRUE)
+  invisible(file.remove(expt.files[file.exists(expt.files)]))
+  expt.tex <- make_texshade_from_dna(expt.aln,
+                                     file.path(tempdir(),"paired/expt-aln.tex"),
+                                     reference = 1L,
+                                     residues_per_line = residues_per_line,
+                                     cut.sites = which(gRNA.window == manual.cut.site))
+  invisible(file.remove("expt-aln.fasta"))
+
+  # overlay graph of mutation frequency at each base in the window
+
+  p.pair <- gg.dna.pos.paired(paired.seq.results, gRNA.window)
+  ggplot2::ggsave("Paired Mutations at Cut Site.pdf", p.pair, path = file.path(tempdir(), "paired"))
+
+})
+
+
+
+setMethod("exportNucleaseAnalysis", signature("list"), function(paired.seq.results,
+                                                                export.dir,
+                                                                gRNA.seq = NULL,
+                                                                manual.cut.site = NULL,
+                                                                window.size = 60,
+                                                                seq.count = 10){
+  if (!any(sapply(paired.seq.results, is, "AmpliconSequencing"))) {stop("All elements in the input list should be of class AmpliconSequencing.")}
+  if (!"Control" %in% names(paired.seq.results)){stop("Control AmpliconSequencing object should be in a list element named 'Control'.")}
+  if (is.null(gRNA.seq) && is.null(manual.cut.site)){stop("Cut site(s) must be specified either by providing the gRNA sequence or manually as a numeric vector. See help at ?exportNucleaseAnalysis.")}
+
+  sample.number <- length(paired.seq.results) - 1
+  if (!is.null(gRNA.seq) && sample.number != length(gRNA.seq)){stop("Must provide a gRNA sequence for each experimental element as a character vector.")}
+  if (!is.null(manual.cut.site) && sample.number != length(manual.cut.site)){stop("Must provide a vector with a cut site coordinate for each experimental element.")}
+
+  # get refence sequence list from shared control element
+  ref.seq <- lapply(getSettings(paired.seq.results$Control)$ReferenceSequence, Biostrings::DNAStringSet)
+
+  if (!dir.exists(file.path(tempdir(), "paired/"))) {
+    dir.create(file.path(tempdir(), "paired/"))
+  }
+
+  for (n in names(paired.seq.results)[names(paired.seq.results) != "Control"]) {
+
+    # determine expected cut site depending on input type
+    if (!is.null(gRNA.seq) && is.null(manual.cut.site)){
+      manual.cut.site <- .findCutSitesFromSequence(gRNA.seq[which(names(paired.seq.results) == n)], ref.seq)
+    }
+
+    # get coordinates for window around cut site
+    if (is.null(manual.cut.site) || !is.na(manual.cut.site)){
+      gRNA.window <- (min(manual.cut.site) - window.size/2):(max(manual.cut.site) + window.size/2)
+      if(min(gRNA.window) < 1) {
+        gRNA.window <- gRNA.window[gRNA.window >= 1]
+      }
+      if (max(gRNA.window) > Biostrings::nchar(ref.seq[[1]])) {
+        gRNA.window <- gRNA.window[gRNA.window <= Biostrings::nchar(ref.seq[[1]])]
+      }
+    } else {
+      gRNA.window <- 1:nchar(ref.seq[[1]])
+    }
+
+    # build and export control alignment
+    residues_per_line <- ifelse(length(gRNA.window) < 100, length(gRNA.window), 100)
+
+    ctrl.seq <- ..alignment.seqs.ampseq(paired.seq.results$Control, gRNA.window, seq.count)
+    ctrl.aln <- .nucleaseAlignmentCorrection(msa::msaClustalW(ctrl.seq, order = "input"), cut.site = which(gRNA.window == manual.cut.site), reference = reference)
+    ctrl.files <- list.files(path = file.path(tempdir(), "paired/"),
+                             pattern = stringr::str_c("^ctrl-aln-", n, "\\..*$"),
+                             full.names = TRUE)
+    invisible(file.remove(ctrl.files[file.exists(ctrl.files)]))
+    ctrl.tex <- make_texshade_from_dna(ctrl.aln,
+                                       file.path(tempdir(), stringr::str_c("paired/ctrl-aln-", n, ".tex")),
+                                       reference = 1L,
+                                       residues_per_line = residues_per_line,
+                                       cut.sites = which(gRNA.window == manual.cut.site))
+    invisible(file.remove(stringr::str_c("ctrl-aln-", n, ".fasta")))
+
+
+    # build and export experimental alignment
+    expt.seq <- ..alignment.seqs.ampseq(paired.seq.results[[n]], gRNA.window, seq.count)
+    expt.aln <- .nucleaseAlignmentCorrection(msa::msaClustalW(expt.seq, order = "input"), cut.site = which(gRNA.window == manual.cut.site), reference = reference)
+    expt.files <- list.files(path = file.path(tempdir(), "paired/"),
+                             pattern = stringr::str_c("^expt-aln-", n, "\\..*$"),
+                             full.names = TRUE)
+    invisible(file.remove(expt.files[file.exists(expt.files)]))
+    expt.tex <- make_texshade_from_dna(expt.aln,
+                                       file.path(tempdir(), stringr::str_c("paired/expt-aln-", n, ".tex")),
+                                       reference = 1L,
+                                       residues_per_line = residues_per_line,
+                                       cut.sites = which(gRNA.window == manual.cut.site))
+    invisible(file.remove(stringr::str_c("expt-aln-", n, ".fasta")))
+
+    p.pair <- gg.dna.pos.paired(methods::new("PairedAmpliconSequencing",
+                                             Control = paired.seq.results$Control,
+                                             Experimental = paired.seq.results[[n]]),
+                                gRNA.window)
+    ggplot2::ggsave(stringr::str_c("Paired Mutations at Cut Site - ", n, ".pdf"), p.pair, path = file.path(tempdir(), "paired"))
+
+  }
+
+})
 
 

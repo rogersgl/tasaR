@@ -42,7 +42,9 @@ setClass("tas.sequences", slots = list(Table = "data.frame",
                                                                 IndelType = NA_character_,
                                                                 RefIdx = NA_real_),
                           Alignments = list(DNA = list(.empty.pass()),
-                                            AA = list(.empty.pass())),
+                                            AA = list(.empty.pass()),
+                                            msaDNA = list(Biostrings::DNAMultipleAlignment())
+                                            ),
                           ReadCounts = NA_integer_))
 
 
@@ -53,8 +55,9 @@ setValidity("tas.sequences", function(object) {
   if (any(S4Vectors::grepl("[^ARNDCQEGHILKMFPSTWYVUOBJZX*+-]", object@Table$AA, ignore.case = TRUE))) {return("AA must be valid protein sequences.")}
   if (any(colnames(object@Supplemental) != c("Index", "UMIs", "IDs", "IndelStart", "IndelType", "RefIdx"))) {return("Column names in @Supplemental are incorrect.")}
 
-  if (all(names(object@Alignments) != c("DNA", "AA"))) {return("Invalid list names in @Alignments.")}
-  if (unique(sapply(object@Alignments$DNA, class)) != "PairwiseAlignmentsSingleSubject" || unique(sapply(object@Alignments$AA, class)) != "PairwiseAlignmentsSingleSubject") {return("Class of elements in @Alignments should be 'PairwiseAlignmentsSingleSubject'")}
+  if (all(names(object@Alignments) != c("DNA", "AA", "msaDNA"))) {return("Invalid list names in @Alignments.")}
+  if (unique(sapply(object@Alignments$DNA, class)) != "PairwiseAlignmentsSingleSubject" || unique(sapply(object@Alignments$AA, class)) != "PairwiseAlignmentsSingleSubject") {return("Class of elements DNA and AA in @Alignments should be 'PairwiseAlignmentsSingleSubject'")}
+  if (!any(sapply(object@Alignments$msaDNA, is, "DNAMultipleAlignment"))) {return("Class of @Alignments$msaDNA should be 'DNAMultipleAlignment'.")}
   if (any(sapply(object@Alignments$DNA, length) != sapply(object@Alignments$AA, length))) {return("DNA and AA alignments are of unequal lengths.")}
   return(TRUE)
 })

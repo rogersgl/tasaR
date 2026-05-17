@@ -67,13 +67,12 @@ test_that("sequenceTable returns the expected objects and results.", {
   expect_true(class(test.seq@Table) == "data.frame")
   expect_all_true(class(test.seq@Supplemental) == c("data.table", "data.frame"))
   expect_true(class(test.seq@Alignments) == "list")
-  expect_all_true(sapply(test.seq@Alignments, function(x){
-    cl <- logical(length(x))
-    for (i in 1:length(x)) {
-      cl[i] <- class(x[[i]])
-    }
-    return(cl)
-  }) == "PairwiseAlignmentsSingleSubject")
+  expect_all_true(sapply(test.seq@Alignments, class) == "list")
+  expect_true(sapply(test.seq@Alignments$DNA, class) == "PairwiseAlignmentsSingleSubject")
+  expect_true(sapply(test.seq@Alignments$AA, class) == "PairwiseAlignmentsSingleSubject")
+  expect_true(sapply(test.seq@Alignments$msaDNA, class) == "DNAMultipleAlignment")
+
+
   expect_true(class(test.seq@ReadCounts) == "integer")
 
   expect_true(nrow(test.seq@Table) == 7)
@@ -106,14 +105,9 @@ test_that("sequenceTable returns the expected objects and results.", {
   expect_true(test.seq@Supplemental$UMIs[[7]] == "CTTAGGGCATGT")
   expect_all_true(grepl("A90033:281:WB24762987th.Miseq:1:", test.seq@Supplemental$IDs))
 
-  expect_true(length(test.seq@Alignments) == 2)
-  expect_all_true(sapply(test.seq@Alignments, function(x){
-    l <- logical(length(x))
-    for (i in 1:length(x)) {
-      l[i] <- length(x[[i]]) == 7
-    }
-    return(l)
-  }))
+  expect_true(length(test.seq@Alignments) == 3)
+  expect_true(length(test.seq@Alignments$DNA[[1]]) == 7)
+  expect_true(length(test.seq@Alignments$AA[[1]]) == 7)
 
   expect_all_true(test.seq@ReadCounts == c(118L, 98L, 8L, 7L))
 })
@@ -129,14 +123,10 @@ test_that("buildSequenceTable wrapper reads a fastq file and returns correct out
   expect_true(class(test.seq@Table) == "data.frame")
   expect_all_true(class(test.seq@Supplemental) == c("data.table", "data.frame"))
   expect_true(class(test.seq@Alignments) == "list")
-
-  expect_all_true(sapply(test.seq@Alignments, function(x){
-    cl <- logical(length(x))
-    for (i in 1:length(x)) {
-      cl[i] <- class(x[[i]])
-    }
-    return(cl)
-    }) == "PairwiseAlignmentsSingleSubject")
+  expect_all_true(sapply(test.seq@Alignments, class) == "list")
+  expect_true(sapply(test.seq@Alignments$DNA, class) == "PairwiseAlignmentsSingleSubject")
+  expect_true(sapply(test.seq@Alignments$AA, class) == "PairwiseAlignmentsSingleSubject")
+  expect_true(sapply(test.seq@Alignments$msaDNA, class) == "DNAMultipleAlignment")
   expect_true(class(test.seq@ReadCounts) == "integer")
 
   expect_true(nrow(test.seq@Table) == 7)
@@ -169,14 +159,9 @@ test_that("buildSequenceTable wrapper reads a fastq file and returns correct out
   expect_true(test.seq@Supplemental$UMIs[[7]] == "CTTAGGGCATGT")
   expect_all_true(grepl("A90033:281:WB24762987th.Miseq:1:", test.seq@Supplemental$IDs))
 
-  expect_true(length(test.seq@Alignments) == 2)
-  expect_all_true(sapply(test.seq@Alignments, function(x){
-    l <- logical(length(x))
-    for (i in 1:length(x)) {
-      l[i] <- length(x[[i]]) == 7
-    }
-    return(l)
-  }))
+  expect_true(length(test.seq@Alignments) == 3)
+  expect_true(length(test.seq@Alignments$DNA[[1]]) == 7)
+  expect_true(length(test.seq@Alignments$AA[[1]]) == 7)
 
   expect_all_true(test.seq@ReadCounts == c(118L, 98L, 8L, 7L))
 })

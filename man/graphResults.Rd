@@ -13,7 +13,7 @@
 \item{mutationTypes}{(Optional) Character vector specifying the type of DNA mutation summary graph to make}
 }
 \value{
-A ggplot2 graph as specified in the arguments
+A list ggplot2 graph(s) as specified in the arguments
 }
 \description{
 Graphs a variety of data outputs from tasaR analysis. Graph type is set based on

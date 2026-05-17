@@ -16,7 +16,15 @@
 #'
 #' @examples
 #' buildSequenceTable(settings)
-buildSequenceTable <- function(settings, paired.analysis.ctrl = FALSE, diploid = TRUE) {
+buildSequenceTable <- function(settings,
+                               # min.read.frequency = 0.1,
+                               # paired.analysis.ctrl = FALSE,
+                               # diploid = TRUE,
+                               ...
+                               # with.nuclease = FALSE,
+                               # gRNA.seq = NULL,
+                               # manual.cut.site = NULL
+                               ) {
   filter.counts <- numeric()
   if (!file.exists(settings@MergedFASTQPath)) {stop("FASTQ file not found.")}
   cat("Reading .fastq file...\n")
@@ -28,7 +36,17 @@ buildSequenceTable <- function(settings, paired.analysis.ctrl = FALSE, diploid =
   filter.counts <- c(filter.counts, Filtered = length(reads.filtered))
   reads <- NULL
   #cat("Building sequence table...\n")
-  sequenceTable(reads.filtered, settings, filter.counts, min.read.frequency = 0.1, paired.analysis.ctrl, diploid)
+  sequenceTable(reads.filtered,
+                settings,
+                filter.counts,
+                # min.read.frequency = 0.1,
+                ...
+                # paired.analysis.ctrl,
+                # diploid,
+                # with.nuclease = FALSE,
+                # gRNA.seq = NULL,
+                # manual.cut.site = NULL
+                )
 }
 
 
@@ -61,7 +79,16 @@ filterSequences <- function(reads, settings) {
 
 ### make sequence table ###
 
-sequenceTable <- function(reads.filtered, settings, filter.counts = NA, min.read.frequency = 0.1, paired.analysis.ctrl = FALSE, diploid = TRUE) {
+sequenceTable <- function(reads.filtered,
+                          settings,
+                          filter.counts = NA,
+                          min.read.frequency = 0.1,
+                          paired.analysis.ctrl = FALSE,
+                          diploid = TRUE,
+                          with.nuclease = FALSE,
+                          gRNA.seq = NULL,
+                          manual.cut.site = NULL,
+                          ...) {
 
 
   if (tolower(settings@ForwardExtensionType) == "umi" && tolower(settings@ReverseExtensionType) == "umi") {
@@ -173,6 +200,30 @@ sequenceTable <- function(reads.filtered, settings, filter.counts = NA, min.read
   Reference.Sequence.Protein <- suppressWarnings(lapply(Reference.Sequence.DNA, Biostrings::translate))
   Reads.Unique.Protein <- suppressWarnings(lapply(Reads.Unique.DNA, Biostrings::translate))
 
+  # TODO: thinking about putting the .nucleaseAlignmentCorrection here for pairedAnalyzeAmplicon
+  # add type = c("single", "paired") to arguments and flag upstream
+  #
+  # Pros: would fix issues with misaligned sequences around the cut site, which lead to incorrect results
+  # in the measureMutations by position function.
+  #
+  # Cons: would break the entire workflow since the object becomes a DNAMultipleAlignment instead of a
+  # PairwiseAlignmentsSingleSubject object. So everything downstream in measureMutations that uses
+  # the PairwiseAlignment would need to be adjusted.
+  #
+  # Seems like roughtly a wash - could insert it here and fix everything else downstream with
+  # multiple pathways, or could do it afterwards and redo/replace the analyses. That's wasted CPU cycles,
+  # but it might be easier.
+  #
+  # Alternatively, instead of diverging paths, could make an entirely new measureMutations function for the
+  # nuclease Paired alignments.
+
+  # if (type == "paired") {
+  #   Pairwise.Aligned.DNA <- lapply(Pairwise.Aligned.DNA, function(x) {
+  #
+  #   })
+  # }
+
+
   #############
 
   label.list <- lapply(seq_along(Pairwise.Aligned.DNA), function(x) {
@@ -251,21 +302,20 @@ sequenceTable <- function(reads.filtered, settings, filter.counts = NA, min.read
 
 
 
-
-    ############################################################################################
-    # Notes about annotating protein mutations:
-    #
-    # Insertions and deletions (indels) pose a significant challenge for quantifying the frequency
-    # of mutations in the protein sequence at each position. Because they can cause frameshifts,
-    # their effects can be propogated through the rest of the downstream sequence. To avoid this
-    # overestimation of downstream mutations, protein sequences are truncated at the site of the
-    # first indel within the Reference Sequence, and marked with a "-" for deletion and "+" for
-    # insertion.
-    #
-    # This allows pairwise alignments to ignore confounding downstream mutations and focus on
-    # where the mutation actually occurred. This also ensures that detection of protein mismatches
-    # depends on specific mutations rather than frameshifts.
-    ############################################################################################
+  ################################################################################################
+  # Notes about annotating protein mutations:                                                    #
+  #                                                                                              #
+  # Insertions and deletions (indels) pose a significant challenge for quantifying the frequency #
+  # of mutations in the protein sequence at each position. Because they can cause frameshifts,   #
+  # their effects can be propogated through the rest of the downstream sequence. To avoid this   #
+  # overestimation of downstream mutations, protein sequences are truncated at the site of the   #
+  # first indel within the Reference Sequence, and marked with a "-" for deletion and "+" for    #
+  # insertion.                                                                                   #
+  #                                                                                              #
+  # This allows pairwise alignments to ignore confounding downstream mutations and focus on      #
+  # where the mutation actually occurred. This also ensures that detection of protein mismatches #
+  # depends on specific mutations rather than frameshifts.                                       #
+  ################################################################################################
 
     prot.wt <- Reference.Sequence.Protein[[x]]
 
@@ -334,17 +384,28 @@ sequenceTable <- function(reads.filtered, settings, filter.counts = NA, min.read
   dt.dt <- rbindlist(dt.list)
   setorder(dt.dt, -N)
 
-  ##############################################################################
-  # TODO: figure out what to do about the pairwise alignments
-  # pairwiseAlignment does not work with multiple reference sequences.
-  # Keep the alignments as a list with separate reference sequences?
-  # Then will need to add list batch processing wrapper and unwrapping/
-  # reordering function to everywhere that uses the pairwiseAlignments:
-  # After greping, I think measureMutations is the only function that
-  # uses the alignments, so this is likely the best approach. Even the
-  # graphing functions don't use the alignments, since they show an msa.
-  ##############################################################################
-
+  if (with.nuclease) {
+    msa.dna <- lapply(seq_along(Pairwise.Aligned.DNA), function(x) {
+      ref <- unique(as.character(pwalign::unaligned(pwalign::subject(Pairwise.Aligned.DNA[[x]]))))
+      seqs <- as.character(pwalign::pattern(Pairwise.Aligned.DNA[[x]]))
+      seqs <- .alignment.seqs(seqs,
+                              ref,
+                              seq.indels = dt.list[[x]]$Indels,
+                              seq.basesChanged = dt.list[[x]]$BasesChanged,
+                              seq.percent = as.numeric(dt.list[[x]]$N/sum(dt.dt$N)*100),
+                              gRNA.window = 1:nchar(ref),
+                              seq.count = 10)
+      msa.aln <- msa::msaClustalW(seqs, order = "input")
+      if (!is.null(gRNA.seq)){
+        cut.site <- .findCutSitesFromSequence(gRNA.seq, ref)
+      } else if (!is.null(manual.cut.site)){
+        cut.site <- manual.cut.site
+      } else {stop("Could not find nuclease cut site. Too confused to continue.")}
+      .nucleaseAlignmentCorrection(msa.aln, cut.site, reference = 1L)
+    })
+  } else {
+    msa.dna <- list(Biostrings::DNAMultipleAlignment())
+  }
 
 
   if (exists("filter.counts")) {
@@ -371,7 +432,8 @@ sequenceTable <- function(reads.filtered, settings, filter.counts = NA, min.read
                                            IndelType = dt.dt$type,
                                            RefIdx = dt.dt$RefIdx)),
       Alignments = list(DNA = Pairwise.Aligned.DNA, # now a list of pairwiseAlignments
-                        AA = pAln.list),# now a list of pairwiseAlignments
+                        AA = pAln.list, # now a list of pairwiseAlignments
+                        msaDNA = msa.dna),
       ReadCounts = ReadCounts)
 }
 
