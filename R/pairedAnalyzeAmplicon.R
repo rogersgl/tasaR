@@ -1,8 +1,3 @@
-# TODO: add support for analyzing multiple experimental files vs. 1 control
-# (for screening multiple gRNAs)
-
-
-
 #' Analyze a pair of sequences
 #'
 #' @description
@@ -14,16 +9,19 @@
 #' Parameters can be specified by either a tas.object.settings object as the settings parameter,
 #' or the required settings can be inputted into the parameters of the function.
 #'
-#' @param file.control A character vector specifying the file path to the control merged fastq file
-#' @param file.experimental A character vector specifying the file path to the experimental merged fastq file(s)
+#' @param file.control A character vector specifying the file path to the control merged fastq file.
+#' @param file.experimental A character vector specifying the file path to the experimental merged fastq file(s).
 #' @param settings (Optional) A tas.object.settings object specifying settings for the sequences. File path will be overridden by the function variables above.
-#' @param fwd.primer (Optional) A character vector of the DNA sequence of the forward primer
-#' @param rev.primer (Optional) A character vector of the DNA sequence of the reverse primer
-#' @param fwd.exten.type (Optional) A character vector of the type of forward extension. Can be "Barcode", "UMI", or ""
-#' @param fwd.exten.seq (Optional) A character vector of the DNA sequence of the forward extension
-#' @param rev.exten.type (Optional) A character vector of the type of reverse extension. Can be "Barcode", "UMI", or ""
-#' @param rev.exten.seq (Optional) A character vector of the DNA sequence of the reverse extension
+#' @param fwd.primer (Optional) A character vector of the DNA sequence of the forward primer.
+#' @param rev.primer (Optional) A character vector of the DNA sequence of the reverse primer.
+#' @param fwd.exten.type (Optional) A character vector of the type of forward extension. Can be "Barcode", "UMI", or "".
+#' @param fwd.exten.seq (Optional) A character vector of the DNA sequence of the forward extension.
+#' @param rev.exten.type (Optional) A character vector of the type of reverse extension. Can be "Barcode", "UMI", or "".
+#' @param rev.exten.seq (Optional) A character vector of the DNA sequence of the reverse extension.
 #' @param diploid (Optional) A logical vector specifying whether the sequence is diploid or not. Default is TRUE, affects whether a warning message is displayed if more than 2 potential reference sequences are detected in the control sample.
+#' @param with.nuclease A logical vector specifying whether this is a nuclease experiment to analyze DNA scarring. Modifies workflow of basic analysis pipeline to perform gap correction around nuclease cut site.
+#' @param gRNA.seq DNA sequence of Cas9 gRNA 20 bp protospacer. Aligned to reference sequence to determine nuclease cut site.
+#' @param manual.cut.site A numeric vector to specify the nuclease cut site manually in the reference sequence. Currently only supports a single cut site.
 #' @param ... (Optional) Any additional parameters to pass to child functions
 #'
 #' @returns An S4 object of class PairedAmpliconSequencing (if length(file.experimental) == 1).
@@ -110,8 +108,6 @@ pairedAnalyzeAmplicon <- function(file.control,
     pas.list <- c(list(Control = as.ctrl), as.expt.list)
     return(pas.list)
   }
-
-  #as.expt <- analyzeAmplicon(config.expt)
 }
 
 
