@@ -24,7 +24,8 @@ NULL
 #' @param output Character vector specifying the type of graph to make
 #' @param labelCDRs (Optional) Logical vector specifying whether the CDR regions (if an antibody) should be labeled on the resulting graphs
 #' @param mutationTypes (Optional) Character vector specifying the type of DNA mutation summary graph to make
-#'
+#' @param settings (Optional) tasaR settings as a tas.object.settings object, list, or data.frame. Only used for input object signatures that are not AmpliconSequencing.
+#' @param ... Additional parameters
 #'
 #' @section Output Types:
 #' \describe{
@@ -48,13 +49,12 @@ NULL
 #'  \item{\code{tas.dna.repair}}{Contains the data to generate mutation type graphs.}
 #' }
 #'
-#'
-#'
 #' @usage NULL
-#' @returns A list ggplot2 graph(s) as specified in the arguments
+#' @returns A list of ggplot2 graph(s) as specified in the arguments
 #' @export
 setGeneric("graphResults", function(results, output, ...) standardGeneric("graphResults"))
 
+#' @rdname graphResults
 #' @export
 setMethod("graphResults", signature = "AmpliconSequencing", function(results, output = "all", labelCDRs = TRUE, mutationTypes = "bar", ...) {
   if (is.null(output)) {stop("Graph output type must be provided.")}
@@ -90,6 +90,7 @@ setMethod("graphResults", signature = "AmpliconSequencing", function(results, ou
   return(o)
 })
 
+#' @rdname graphResults
 #' @export
 setMethod("graphResults", signature = "tas.mutations", function(results, output = NULL, settings = NULL, labelCDRs = TRUE, mutationTypes = "bar", ...) {
   if (is.null(output)) {stop("Graph output type must be provided.")}
@@ -116,7 +117,7 @@ setMethod("graphResults", signature = "tas.mutations", function(results, output 
     stop("For output ", output, ", settings must be a tas.object.settings object, or an appropriately formatted list or data.frame")
   }
 
-  if (class(settings) != "tas.object.settings") {
+  if (!is(settings, "tas.object.settings")) {
     ns <- readSettings(settings)
   } else {
     ns <- settings
@@ -133,6 +134,7 @@ setMethod("graphResults", signature = "tas.mutations", function(results, output 
   return(o)
 })
 
+#' @rdname graphResults
 #' @export
 setMethod("graphResults", signature = "tas.sequences", function(results, output = NULL, settings = NULL, labelCDRs = TRUE, mutationTypes = "bar", ...) {
   if (is.null(output)) {stop("Graph output type must be provided.")}
@@ -142,6 +144,7 @@ setMethod("graphResults", signature = "tas.sequences", function(results, output 
   return(o)
 })
 
+#' @rdname graphResults
 #' @export
 setMethod("graphResults", signature = "tas.dna.repair", function(results, output = NULL, settings = NULL, labelCDRs = TRUE, mutationTypes = "bar", ...) {
   if (is.null(output)) {stop("Graph output type must be provided.")}
@@ -169,7 +172,7 @@ setMethod("graphResults", signature = "tas.dna.repair", function(results, output
 #'
 #' @param results S4 object of class AmpliconSequencing, tas.mutation, tas.sequences, or tas.dna.repair
 #' @param path Character vector specifying the file path to write the .csv files to.
-#'
+#' @param ... Additional parameters
 #'
 #' @section Output Tables:
 #' \describe{
@@ -191,7 +194,7 @@ setMethod("graphResults", signature = "tas.dna.repair", function(results, output
 #' @export
 setGeneric("exportTables", function(results, path, ...) standardGeneric("exportTables"))
 
-
+#' @rdname exportTables
 #' @export
 setMethod("exportTables", signature = c("AmpliconSequencing", "character"), function(results, path, ...) {
 
@@ -221,6 +224,7 @@ setMethod("exportTables", signature = c("AmpliconSequencing", "character"), func
 
 })
 
+#' @rdname exportTables
 #' @export
 setMethod("exportTables", signature = c("tas.sequences", "character"), function(results, path, ...) {
   if (!dir.exists(file.path(tempdir(), "export"))) {dir.create(file.path(tempdir(), "export"))}
@@ -232,6 +236,7 @@ setMethod("exportTables", signature = c("tas.sequences", "character"), function(
   file.remove(files)
 })
 
+#' @rdname exportTables
 #' @export
 setMethod("exportTables", signature = c("tas.mutations", "character"), function(results, path, ...) {
   if (!dir.exists(file.path(tempdir(), "export"))) {dir.create(file.path(tempdir(), "export"))}
@@ -249,6 +254,7 @@ setMethod("exportTables", signature = c("tas.mutations", "character"), function(
   file.remove(files)
 })
 
+#' @rdname exportTables
 #' @export
 setMethod("exportTables", signature = c("tas.dna.repair", "character"), function(results, path, ...) {
   if (!dir.exists(file.path(tempdir(), "export"))) {dir.create(file.path(tempdir(), "export"))}
@@ -276,6 +282,8 @@ setMethod("exportTables", signature = c("tas.dna.repair", "character"), function
 # ---------------------
 # PairedAnalyzeAmplicon
 # ---------------------
+
+# TODO: refactor these functions after moving the nuclease gap correction into buildSequenceTable
 
 setGeneric("exportNucleaseAnalysis", function(paired.seq.results, ...) standardGeneric("exportNucleaseAnalysis"))
 
@@ -332,8 +340,8 @@ setMethod("exportNucleaseAnalysis", signature("PairedAmpliconSequencing"), funct
   invisible(file.remove("ctrl-aln.fasta"))
 
   # build and export experimental alignment
-  expt.seq <- ..alignment.seqs.ampseq(paired.seq.results@Experimental, gRNA.window, seq.count)
-  expt.aln <- nucleaseAlignmentCorrection(msa::msaClustalW(expt.seq, order = "input"), cut.site = which(gRNA.window == manual.cut.site), reference = reference)
+  expt.seq <- .alignment.seqs.ampseq(paired.seq.results@Experimental, gRNA.window, seq.count)
+  expt.aln <- .nucleaseAlignmentCorrection(msa::msaClustalW(expt.seq, order = "input"), cut.site = which(gRNA.window == manual.cut.site), reference = reference)
   expt.files <- list.files(path = file.path(tempdir(), "paired/"),
                            pattern = "^expt-aln\\..*$",
                            full.names = TRUE)
@@ -398,7 +406,7 @@ setMethod("exportNucleaseAnalysis", signature("list"), function(paired.seq.resul
     # build and export control alignment
     residues_per_line <- ifelse(length(gRNA.window) < 100, length(gRNA.window), 100)
 
-    ctrl.seq <- ..alignment.seqs.ampseq(paired.seq.results$Control, gRNA.window, seq.count)
+    ctrl.seq <- .alignment.seqs.ampseq(paired.seq.results$Control, gRNA.window, seq.count)
     ctrl.aln <- .nucleaseAlignmentCorrection(msa::msaClustalW(ctrl.seq, order = "input"), cut.site = which(gRNA.window == manual.cut.site), reference = reference)
     ctrl.files <- list.files(path = file.path(tempdir(), "paired/"),
                              pattern = stringr::str_c("^ctrl-aln-", n, "\\..*$"),
@@ -413,7 +421,7 @@ setMethod("exportNucleaseAnalysis", signature("list"), function(paired.seq.resul
 
 
     # build and export experimental alignment
-    expt.seq <- ..alignment.seqs.ampseq(paired.seq.results[[n]], gRNA.window, seq.count)
+    expt.seq <- .alignment.seqs.ampseq(paired.seq.results[[n]], gRNA.window, seq.count)
     expt.aln <- .nucleaseAlignmentCorrection(msa::msaClustalW(expt.seq, order = "input"), cut.site = which(gRNA.window == manual.cut.site), reference = reference)
     expt.files <- list.files(path = file.path(tempdir(), "paired/"),
                              pattern = stringr::str_c("^expt-aln-", n, "\\..*$"),

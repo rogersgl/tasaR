@@ -73,18 +73,18 @@ setClass("tas.mutations", slots = list(DNA = "list",
 
 setValidity("tas.mutations", function(object) {
   if (any(slotNames(object) != c("DNA", "AA", "AIDTables", "Antibody"))) {return("Invalid slot names.")}
-  if (class(object@DNA) != "list" ||
+  if (!is(object@DNA, "list") ||
       any(names(object@DNA) != c("AllMutations", "CytosineMutations", "NonCytosineMutations", "MotifSums")) ||
-      any(sapply(object@DNA, class) != c("data.frame", "data.frame", "data.frame", "numeric"))) {return("Invalid @DNA.")}
-  if (class(object@AA) != "list" ||
+      any(!sapply(object@DNA, inherits, c("data.frame", "data.frame", "data.frame", "numeric")))) {return("Invalid @DNA.")}
+  if (!is(object@AA, "list") ||
       any(names(object@AA) != c("AllMutations", "MutationMatrix")) ||
-      any(BiocGenerics::unlist(sapply(object@AA, class)) != c("data.frame", "matrix", "array"))) {return("Invalid @AA.")}
-  if (class(object@AIDTables) != "list" ||
+      any(!BiocGenerics::unlist(sapply(object@AA, inherits, c("data.frame", "matrix", "array"))))) {return("Invalid @AA.")}
+  if (!is(object@AIDTables, "list") ||
       any(names(object@AIDTables) != c("WRCH", "WRCY")) ||
-      any(sapply(object@AIDTables, class) != c("data.frame", "data.frame"))) {return("Invalid @AIDTables.")}
-  if (class(object@Antibody) != "list" ||
+      any(!sapply(object@AIDTables, inherits, c("data.frame", "data.frame")))) {return("Invalid @AIDTables.")}
+  if (!is(object@Antibody, "list") ||
       any(sapply(object@Antibody, names) != c("FR1", "CDR1", "FR2", "CDR2", "FR3", "CDR3", "FR4")) ||
-      any(sapply(object@Antibody, class) != c("numeric"))) {return("Invalid @Antibody")}
+      any(!sapply(object@Antibody, inherits, "numeric"))) {return("Invalid @Antibody")}
   dfs <- list(object@DNA$AllMutations, object@DNA$CytosineMutations, object@DNA$NonCytosineMutations, object@AA$AllMutations)
   for (i in dfs) {
     if (ncol(i) != 2) {return(stringr::str_c("@",i," must have exactly 2 columns."))}
@@ -92,14 +92,12 @@ setValidity("tas.mutations", function(object) {
     if (any(colnames(i) != c("Position", "MutationFrequency"))) {return(stringr::str_c("Columns in @",i," must be named 'Position' and 'MutationFrequency'."))}
     if (length(i$Position) != length(i$MutationFrequency)) {return(stringr::str_c("Columns in @",i," must be of equal length."))}
   }
-  if (!all(sapply(object@DNA$MotifSums, class)=="numeric")) {return("MotifSums must a numeric vector.")}
+  if (!all(sapply(object@DNA$MotifSums, inherits, "numeric"))) {return("MotifSums must a numeric vector.")}
   if (!all(is.na(object@DNA$MotifSums)) && any(object@DNA$MotifSums < 0)) {return("MotifSums values must be >= 0.")}
 
   for (i in object@AIDTables) {
     if (any(colnames(i) != c("Motif", "Start", "End", "Cytosine", "CytosineMutationFrequency"))) {return("Invalid column names in @AIDTables")}
-    if (class(i$Motif) != "character" || any(!sapply(i[,-1], is.numeric))) {return("Invalid column types in @AIDTables")}
+    if (!is(i$Motif, "character") || any(!sapply(i[,-1], is.numeric))) {return("Invalid column types in @AIDTables")}
   }
-
-
   return(TRUE)
 })

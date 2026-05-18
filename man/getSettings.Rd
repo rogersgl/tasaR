@@ -24,5 +24,7 @@ Extracts a list of tasaR settings from an S4 object of class tas.object.settings
 
 }}
 \examples{
-getSettings(object)
+\dontrun{
+  getSettings(object)
+}
 }

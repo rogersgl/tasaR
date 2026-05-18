@@ -22,6 +22,20 @@
 #' @importFrom methods
 #'   as
 #'   show
+#'   is
+#'   new
+#'   slot
+#'   slot<-
+#'   slotNames
+#'   validObject
+#'
+#' @importFrom stats
+#'   end
+#'   median
+#'   setNames
+#'   start
+#'
+#' @importFrom utils write.csv
 NULL
 
 #' @rawNamespace useDynLib(tasaR)

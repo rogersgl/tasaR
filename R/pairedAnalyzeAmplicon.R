@@ -29,7 +29,9 @@
 #' @export
 #'
 #' @examples
-#' pairedAnalyzeAmplicon(file.control, file.experimental, settings = tas.object.settings)
+#' \dontrun{
+#'   pairedAnalyzeAmplicon(file.control, file.experimental, settings = tas.object.settings)
+#' }
 pairedAnalyzeAmplicon <- function(file.control,
                                   file.experimental,
                                   settings = NULL,

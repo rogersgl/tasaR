@@ -26,10 +26,10 @@ setMethod("show", "tas.object.settings", function(object) {
       "IsAntibody : ", object@IsAntibody, "\n")
   for (i in methods::slotNames(object)[3:10]) {
     s <- methods::slot(object, i)
-    if (any(s != "") && class(s) != "list"){
+    if (any(s != "") && !is(s, "list")){
       s <- .charDisplayTrim(s)
       cat("",i,": ", s, "\n", sep = "")
-    } else if (class(s) == "list") {
+    } else if (is(s, "list")) {
       for (j in 1:length(s)) {
         cat("",i," [", j, "]: ", s[[j]], "\n", sep = "")
       }
@@ -125,7 +125,7 @@ setMethod("show", "tas.sequences", function(object) {
   df <- object@Table
   if (nrow(df) <= 6){
     for (i in colnames(df)) {
-      if (class(df[,i]) == "character"){
+      if (is(df[,i], "character")){
         df[,i] <- sapply(df[,i], .charDisplayTrim, USE.NAMES = FALSE)
       }
     }
@@ -133,7 +133,7 @@ setMethod("show", "tas.sequences", function(object) {
   } else {
     df <- rbind(df[1:3,], df[(nrow(df)-2):nrow(df),])
     for (i in colnames(df)) {
-      if (class(df[,i]) == "character"){
+      if (is(df[,i], "character")){
         df[,i] <- sapply(df[,i], .charDisplayTrim, USE.NAMES = FALSE)
       }
     }

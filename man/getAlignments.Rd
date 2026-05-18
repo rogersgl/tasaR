@@ -68,8 +68,16 @@ Extracts DNA and/or protein (AA) pairwise alignments from an S4 object of class 
 
 }}
 \examples{
-getAlignments(object)
-getDNAalign(object)
-getAAalign(object)
-getDNAmsa(object)
+\dontrun{
+  getAlignments(object)
+}
+\dontrun{
+  getDNAalign(object)
+}
+\dontrun{
+  getAAalign(object)
+}
+\dontrun{
+  getDNAmsa(object)
+}
 }

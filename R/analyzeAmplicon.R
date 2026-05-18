@@ -20,11 +20,13 @@ NULL
 #' @export
 #'
 #' @examples
-#' analyzeAmplicon('/.../folder/settings.csv', row = 2)
-#' analyzeAmplicon(data.frame)
-#' analyzeAmplicon(list)
+#' \dontrun{
+#'   analyzeAmplicon('/.../folder/settings.csv', row = 2)
+#'   analyzeAmplicon(data.frame)
+#'   analyzeAmplicon(list)
+#' }
 analyzeAmplicon <- function(input.settings, ...) {
-  if (class(input.settings) != "tas.object.settings") {
+  if (!is(input.settings, "tas.object.settings")) {
     settings <- readSettings(input.settings, ...)
   } else {
     settings <- input.settings

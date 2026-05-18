@@ -2,11 +2,26 @@
 % Please edit documentation in R/generics-results.R
 \name{exportTables}
 \alias{exportTables}
+\alias{exportTables,AmpliconSequencing,character-method}
+\alias{exportTables,tas.sequences,character-method}
+\alias{exportTables,tas.mutations,character-method}
+\alias{exportTables,tas.dna.repair,character-method}
 \title{Export tables of tasaR analysis}
+\usage{
+\S4method{exportTables}{AmpliconSequencing,character}(results, path, ...)
+
+\S4method{exportTables}{tas.sequences,character}(results, path, ...)
+
+\S4method{exportTables}{tas.mutations,character}(results, path, ...)
+
+\S4method{exportTables}{tas.dna.repair,character}(results, path, ...)
+}
 \arguments{
 \item{results}{S4 object of class AmpliconSequencing, tas.mutation, tas.sequences, or tas.dna.repair}
 
 \item{path}{Character vector specifying the file path to write the .csv files to.}
+
+\item{...}{Additional parameters}
 }
 \description{
 Exports tables of the results of tasaR analyses to a series of .csv files, and copies them to a path specified by the user.

@@ -9,6 +9,8 @@
 }
 \arguments{
 \item{x}{A tas.object.settings object}
+
+\item{...}{Additional parameters}
 }
 \description{
 Coerce tas.object.settings to list

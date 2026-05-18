@@ -29,6 +29,7 @@ setMethod("as.numeric", signature = "tas.dna.repair", function(x) {
 #' Coerce tas.object.settings to list
 #'
 #' @param x A tas.object.settings object
+#' @param ... Additional parameters
 #' @aliases as.list,tasaR-method
 #' @export
 #' @method as.list tas.object.settings

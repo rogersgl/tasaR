@@ -12,7 +12,9 @@
 #' @export
 #'
 #' @examples
-#' measureMutations(sequence.table, settings)
+#' \dontrun{
+#'   measureMutations(sequence.table, settings)
+#' }
 measureMutations <- function(sequence.table, settings) {
     config <- getSettings(settings)
     t <- getSequenceTable(sequence.table)
@@ -305,12 +307,12 @@ measureMutationsNuclease <- function(sequence.table, settings) {
 # ------
 
 findAIDtargets <- function(settings) {
-  if (class(settings) == "tas.object.settings") {
+  if (is(settings, "tas.object.settings")) {
     config <- getSettings(settings)
   } else {
     config <- settings
   }
-  if (class(config) != "list") {
+  if (!is(config, "list")) {
     stop("settings must be a tas.object.settings object or a list")
   }
 

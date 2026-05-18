@@ -4,3 +4,6 @@
 ^\.Rproj\.user$
 ^\.positai$
 ^\.claude$
+^ignore$
+^LICENSE.md$
+^src/mktable$

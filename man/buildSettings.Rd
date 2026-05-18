@@ -78,9 +78,27 @@ An S4 object of class tas.object.settings
 Make a settings object for tasaR
 }
 \examples{
-buildSettings(Name = "test", IsAntibody = TRUE, MergedFASTQPath = file.path(tempdir(), "test-merged.fastq"), ReferenceSequence = "GTTCAACTGGTGGAAAGCGG...",
-              ForwardPrimer = "GTAAAACGACGGCCAGT", ReversePrimer = "CAGGAAACAGCTATGAC", AmpliconLength = 395L, InsertStart = 25L, InsertEnd = -30L,
-              ForwardExtensionType = "Barcode", ForwardExtension = "GCTAGCC",  ReverseExtensionType = "UMI", ReverseExtension = "NNNYRNNNYRNN",
-              FR1Start = 1L, CDR1Start = 73L, FR2Start = 97L, CDR2Start = 148L, FR3Start = 172L, CDR3Start = 286L, FR4Start = 310L, FR4End = 342L)
-
+\dontrun{
+  buildSettings(Name = "test",
+    IsAntibody = TRUE,
+    MergedFASTQPath = file.path(tempdir(), "test-merged.fastq"),
+    ReferenceSequence = "GTTCAACTGGTGGAAAGCGG...",
+    ForwardPrimer = "GTAAAACGACGGCCAGT",
+    ReversePrimer = "CAGGAAACAGCTATGAC",
+    AmpliconLength = 395L,
+    InsertStart = 25L,
+    InsertEnd = -30L,
+    ForwardExtensionType = "Barcode",
+    ForwardExtension = "GCTAGCC",
+    ReverseExtensionType = "UMI",
+    ReverseExtension = "NNNYRNNNYRNN",
+    FR1Start = 1L,
+    CDR1Start = 73L,
+    FR2Start = 97L,
+    CDR2Start = 148L,
+    FR3Start = 172L,
+    CDR3Start = 286L,
+    FR4Start = 310L,
+    FR4End = 342L)
+}
 }

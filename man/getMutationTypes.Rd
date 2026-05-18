@@ -24,5 +24,7 @@ Extracts a table (data.frame) of DNA repair pathway frequencies from an S4 objec
 
 }}
 \examples{
-getMutationTypes(object)
+\dontrun{
+  getMutationTypes(object)
+}
 }

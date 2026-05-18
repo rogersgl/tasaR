@@ -18,7 +18,9 @@ An S4 object of class tas.object.settings
 The tasaR package has a relatively complex set of settings that must be defined for each sample. This function reads those settings from either a .csv file on disk or an R object (list/data.frame) and generates an appropriate S4 object of class tas.object.settings.
 }
 \examples{
-readSettings('/.../folder/settings.csv', row = 2)
-readSettings(data.frame)
-readSettings(list)
+\dontrun{
+  readSettings('/.../folder/settings.csv', row = 2)
+  readSettings(data.frame)
+  readSettings(list)
+}
 }

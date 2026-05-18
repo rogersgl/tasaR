@@ -27,11 +27,11 @@ setMethod("isEmpty", "tas.object.settings", function(x) {
   n <- setdiff(n, c("Name", "AntibodyRegions"))
   empty <- logical()
   for (i in n) {
-    if (class(methods::slot(x,i)) == "numeric" || class(methods::slot(x,i)) == "integer"){
+    if (is(methods::slot(x,i), "numeric") || is(methods::slot(x,i), "integer")){
       empty <- c(empty, is.na(methods::slot(x,i)))
-    } else if (class(methods::slot(x,i)) == "character") {
+    } else if (is(methods::slot(x,i), "character")) {
       empty <- c(empty, (methods::slot(x,i) == ""))
-    } else if (class(methods::slot(x, i)) == "list") {
+    } else if (is(methods::slot(x, i), "list")) {
       empty <- c(empty, unlist((methods::slot(x,i)) == ""))
     }
   }

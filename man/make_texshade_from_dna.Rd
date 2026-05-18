@@ -9,41 +9,39 @@ make_texshade_from_dna(
   outfile,
   reference = 1L,
   color_scheme = "auto",
-  ...,
-  order = "input"
+  ...
 )
 }
 \arguments{
+\item{aln}{A DNA sequence alignment of class \code{DNAMultipleAlignment}.}
+
 \item{outfile}{Character. Path to the output \code{.tex} file.}
 
 \item{reference}{Reference sequence, either a numeric index or a sequence name.
-Passed through to \code{write_texshade_msa()} after alignment.}
+Passed through to \code{\link{write_texshade_msa}} after alignment.}
 
-\item{...}{Additional arguments passed to \code{write_texshade_msa()}, such as
-\code{color_scheme}, \code{match_text_color}, \code{residues_per_line},
+\item{color_scheme}{A character vector. Specifies the color scheme to be used by
+\code{\link{write_texshade_msa}}. Default is 'auto'.}
+
+\item{...}{Additional arguments passed to \code{\link{write_texshade_msa}}, such as
+\code{match_text_color}, \code{residues_per_line},
 \code{include_indels}, \code{sanitize_names}, and \code{font_family}.}
-
-\item{order}{Character. Ordering mode passed to \code{msa::msaClustalW()}.
-Defaults to \code{"input"}.}
-
-\item{seqs}{A DNA sequence object accepted by \code{msa::msaClustalW()}
-(for example, a \code{DNAStringSet}).}
 }
 \value{
 Invisibly returns the normalized path to \code{outfile}.
 }
 \description{
-Convenience wrapper that first computes a multiple sequence alignment with
-\code{msa::msaClustalW()} and then passes the result to
-\code{write_texshade_msa()} to generate a standalone TeXshade document.
+Convenience wrapper that passes a sequence alignment to \code{write_texshade_msa()}
+to generate a standalone TeXshade document. Then calls the tinytex package
+to output a formatted pdf of the generated .tex file.
 }
 \details{
-This wrapper is intended for unaligned DNA sequences. The resulting TeX file
+This wrapper is intended for aligned DNA sequences. The resulting TeX file
 highlights the reference sequence by nucleotide, shades mismatches in other
 sequences, renders matching residues with a configurable text color on a white
 background, and styles gap characters consistently.
 
-The wrapper performs alignment only; all TeXshade formatting and color logic
+The wrapper performs export only; all TeXshade formatting and color logic
 are handled by \code{write_texshade_msa()}. See that manual page for the full
 set of output customization options.
 }

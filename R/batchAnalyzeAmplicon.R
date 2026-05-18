@@ -17,17 +17,19 @@ NULL
 #' @export
 #'
 #' @examples
-#' batchAnalyseAmplicon('/.../folder/settings.csv')
-#' batchAnalyzeAmplicon(data.frame)
-#' batchAnalyzeAmplicon(list)
+#' \dontrun{
+#'   batchAnalyseAmplicon('/.../folder/settings.csv')
+#'   batchAnalyzeAmplicon(data.frame)
+#'   batchAnalyzeAmplicon(list)
+#' }
 #'
 #' @section See also:
-#' \code{\link{tasar::batchSummarize()}}
+#' \code{\link{batchSummarize}}
 batchAnalyzeAmplicon <- function(input.settings.list) {
   settings.list <- list()
 
   # file path to .csv
-  if (class(input.settings.list) == "character") {
+  if (is(input.settings.list, "character")) {
 
     if (!stringr::str_ends(input.settings.list, ".csv")) {stop("A character vector input.settings.list must specify the file path to a .csv file.")}
     if (!file.exists(input.settings.list)) {stop("File not found: ", input.settings.list)}
@@ -43,9 +45,9 @@ batchAnalyzeAmplicon <- function(input.settings.list) {
   }
 
   # R list of settings
-  if (class(input.settings.list) == "list") {
+  if (is(input.settings.list, "list")) {
     settings.list <- S4Vectors::lapply(1:length(input.settings.list), function(x) {
-      if (class(x) == "tas.object.settings"){
+      if (is(x, "tas.object.settings")) {
         validObject(x)
         return(x)
       } else {
@@ -59,7 +61,7 @@ batchAnalyzeAmplicon <- function(input.settings.list) {
     })
   }
 
-  if (class(input.settings.list) == "data.frame") {
+  if (is(input.settings.list, "data.frame")) {
     settings.list <- S4Vectors::lapply(1:nrow(input.settings.list), function(x) {
       temp <- suppressMessages(readSettings(input.settings.list[x,]))
       validObject(temp)
@@ -84,13 +86,13 @@ batchAnalyzeAmplicon <- function(input.settings.list) {
 #' Summary analyses for batch processing
 #'
 #' @description
-#' Performs comparison analyses of the results from \code{\link{tasaR::batchAnalyzeAmlicon()}}. Results are returned
+#' Performs comparison analyses of the results from \code{\link{batchAnalyzeAmplicon}}. Results are returned
 #' as an R list, and can be saved as a variable. Also includes the option to directly export the results
 #' to a folder specified by the user. Treats all samples equally, so is unaware of pairings of control/
 #' experimental samples to direct analysis.
 #'
 #'
-#' @param results.list A list of AmpliconSequencing objects from \code{\link{tasaR::batchAnalyzeAmplicon()}}
+#' @param results.list A list of AmpliconSequencing objects from \code{\link{batchAnalyzeAmplicon}}
 #' @param export A logical specifying whether the resulting tables and graphs should also be written to disk
 #' @param path (Optional) If \code{export = TRUE}, the file path to save the exported information to
 #' @param suppressConsoleOutput Logical vector specifying whether to print results to console or not, if applicable
@@ -99,8 +101,10 @@ batchAnalyzeAmplicon <- function(input.settings.list) {
 #' @export
 #'
 #' @examples
-#' batchSummarize(results.list)
-#' batchSummarize(results.list, export = TRUE, path = './save_in_folder/')
+#' \dontrun{
+#'   batchSummarize(results.list)
+#'   batchSummarize(results.list, export = TRUE, path = './save_in_folder/')
+#' }
 batchSummarize <- function(results.list, export = FALSE, path = NULL, suppressConsoleOutput = FALSE) {
 
   # extract and collate data from list of S4 objects

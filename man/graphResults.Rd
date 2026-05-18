@@ -2,18 +2,62 @@
 % Please edit documentation in R/generics-results.R
 \name{graphResults}
 \alias{graphResults}
+\alias{graphResults,AmpliconSequencing-method}
+\alias{graphResults,tas.mutations-method}
+\alias{graphResults,tas.sequences-method}
+\alias{graphResults,tas.dna.repair-method}
 \title{Graph results of tasaR analysis}
+\usage{
+\S4method{graphResults}{AmpliconSequencing}(
+  results,
+  output = "all",
+  labelCDRs = TRUE,
+  mutationTypes = "bar",
+  ...
+)
+
+\S4method{graphResults}{tas.mutations}(
+  results,
+  output = NULL,
+  settings = NULL,
+  labelCDRs = TRUE,
+  mutationTypes = "bar",
+  ...
+)
+
+\S4method{graphResults}{tas.sequences}(
+  results,
+  output = NULL,
+  settings = NULL,
+  labelCDRs = TRUE,
+  mutationTypes = "bar",
+  ...
+)
+
+\S4method{graphResults}{tas.dna.repair}(
+  results,
+  output = NULL,
+  settings = NULL,
+  labelCDRs = TRUE,
+  mutationTypes = "bar",
+  ...
+)
+}
 \arguments{
 \item{results}{S4 object of class AmpliconSequencing, tas.mutation, tas.sequences, or tas.dna.repair}
 
 \item{output}{Character vector specifying the type of graph to make}
 
+\item{...}{Additional parameters}
+
 \item{labelCDRs}{(Optional) Logical vector specifying whether the CDR regions (if an antibody) should be labeled on the resulting graphs}
 
 \item{mutationTypes}{(Optional) Character vector specifying the type of DNA mutation summary graph to make}
+
+\item{settings}{(Optional) tasaR settings as a tas.object.settings object, list, or data.frame. Only used for input object signatures that are not AmpliconSequencing.}
 }
 \value{
-A list ggplot2 graph(s) as specified in the arguments
+A list of ggplot2 graph(s) as specified in the arguments
 }
 \description{
 Graphs a variety of data outputs from tasaR analysis. Graph type is set based on

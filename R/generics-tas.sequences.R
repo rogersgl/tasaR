@@ -10,9 +10,9 @@ NULL
 #' Retrieve sequence information
 #'
 #' @description
-#' Extracts a table (data.frame) of sequences, including sequence quantification and annotations of DNA and protein mutations detected from an S4 object of class tas.sequences or its parent class AmpliconSequencing.
-#'
-#'
+#' Extracts a table (data.frame) of sequences, including sequence quantification
+#' and annotations of DNA and protein mutations detected from an S4 object of
+#' class tas.sequences or its parent class AmpliconSequencing.
 #'
 #' @param object S4 object of class tas.sequences or AmpliconSequencing
 #' @usage NULL
@@ -20,7 +20,9 @@ NULL
 #' @export
 #'
 #' @examples
-#' getSequenceTable(object)
+#' \dontrun{
+#'   getSequenceTable(object)
+#' }
 setGeneric("getSequenceTable", function(object) standardGeneric("getSequenceTable"))
 
 #' @describeIn getSequenceTable Method for class tas.sequences
@@ -51,7 +53,9 @@ setMethod("getSequenceTable", signature(object = "AmpliconSequencing"), function
 #' @export
 #'
 #' @examples
-#' getSequenceTableSimplified(object)
+#' \dontrun{
+#'   getSequenceTableSimplified(object)
+#' }
 setGeneric("getSequenceTableSimplified", function(object) standardGeneric("getSequenceTableSimplified"))
 
 #' @describeIn getSequenceTableSimplified Method for class tas.sequences
@@ -94,7 +98,9 @@ setMethod("getSequenceTableSimplified", signature (object = "PairedAmpliconSeque
 #' @export
 #'
 #' @examples
-#' getSequencesDNA(object)
+#' \dontrun{
+#'   getSequencesDNA(object)
+#' }
 setGeneric("getSequencesDNA", function(object) standardGeneric("getSequencesDNA"))
 
 #' @describeIn getSequenceTable Method for class tas.sequences
@@ -119,7 +125,9 @@ setMethod("getSequencesDNA", signature(object = "AmpliconSequencing"), function(
 #' @export
 #'
 #' @examples
-#' getSequencesAA(object)
+#' \dontrun{
+#'   getSequencesAA(object)
+#' }
 setGeneric("getSequencesAA", function(object) standardGeneric("getSequencesAA"))
 
 #' @describeIn getSequenceTable Method for class tas.sequences
@@ -144,7 +152,9 @@ setMethod("getSequencesAA", signature(object = "AmpliconSequencing"), function(o
 #' @export
 #'
 #' @examples
-#' getSequenceSupplemental(object)
+#' \dontrun{
+#'   getSequenceSupplemental(object)
+#' }
 setGeneric("getSequenceSupplemental", function(object) standardGeneric("getSequenceSupplemental"))
 
 
@@ -179,7 +189,9 @@ setMethod("getSequenceSupplemental", signature(object = "AmpliconSequencing"), f
 #' @export
 #'
 #' @examples
-#' getAlignments(object)
+#' \dontrun{
+#'   getAlignments(object)
+#' }
 setGeneric("getAlignments", function(object) standardGeneric("getAlignments"))
 
 #' @describeIn getAlignments Method for class tas.sequences
@@ -208,7 +220,9 @@ setMethod("getAlignments", signature(object = "AmpliconSequencing"), function(ob
 #' @export
 #'
 #' @examples
-#' getDNAalign(object)
+#' \dontrun{
+#'   getDNAalign(object)
+#' }
 setGeneric("getDNAalign", function(object) standardGeneric("getDNAalign"))
 
 #' @describeIn getAlignments Method for class tas.sequences
@@ -235,7 +249,9 @@ setMethod("getDNAalign", signature(object = "AmpliconSequencing"), function(obje
 #' @param object An S4 object of class tas.sequences or AmpliconSequencing
 #' @returns NULL
 #' @examples
-#' getAAalign(object)
+#' \dontrun{
+#'   getAAalign(object)
+#' }
 setGeneric("getAAalign", function(object) standardGeneric("getAAalign"))
 
 #' @describeIn getAlignments Method for class tas.sequences
@@ -260,7 +276,9 @@ setMethod("getAAalign", signature(object = "AmpliconSequencing"), function(objec
 #' @param object An S4 object of class tas.sequences or AmpliconSequencing
 #' @returns NULL
 #' @examples
-#' getDNAmsa(object)
+#' \dontrun{
+#'   getDNAmsa(object)
+#' }
 setGeneric("getDNAmsa", function(object) standardGeneric("getDNAmsa"))
 
 #' @describeIn getAlignments Method for class tas.sequences
@@ -277,12 +295,28 @@ setMethod("getDNAmsa", signature(object = "AmpliconSequencing"), function(object
 
 ### Read Counts ###
 
+
+#' Extrat read filter counts
+#'
+#' @param object An S4 object of class tas.sequences or AmpliconSequencing
+#'
+#' @returns A data.frame containing read filter counts after each step of the analysis
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#'   getFilterCounts(object)
+#' }
 setGeneric("getFilterCounts", function(object) standardGeneric("getFilterCounts"))
 
+#' @describeIn getFilterCounts Method for class tas.sequences
+#' @export
 setMethod("getFilterCounts", signature(object = "tas.sequences"), function(object) {
   if (!all(is.na(object@ReadCounts))) {return(object@ReadCounts)} else {return("Empty")}
 })
 
+#' @describeIn getFilterCounts Method for class AmpliconSequencing
+#' @export
 setMethod("getFilterCounts", signature(object = "AmpliconSequencing"), function(object) {
   if (!all(is.na(object@Sequences@ReadCounts))) {return(object@Sequences@ReadCounts)} else {return("Empty")}
 })

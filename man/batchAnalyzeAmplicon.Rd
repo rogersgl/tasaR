@@ -20,12 +20,14 @@ more information.
 }
 \section{See also}{
 
-\code{\link{tasar::batchSummarize()}}
+\code{\link{batchSummarize}}
 }
 
 \examples{
-batchAnalyseAmplicon('/.../folder/settings.csv')
-batchAnalyzeAmplicon(data.frame)
-batchAnalyzeAmplicon(list)
+\dontrun{
+  batchAnalyseAmplicon('/.../folder/settings.csv')
+  batchAnalyzeAmplicon(data.frame)
+  batchAnalyzeAmplicon(list)
+}
 
 }

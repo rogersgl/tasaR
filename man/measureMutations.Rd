@@ -18,5 +18,7 @@ An S4 object of class tas.mutations
 Measure mutations
 }
 \examples{
-measureMutations(sequence.table, settings)
+\dontrun{
+  measureMutations(sequence.table, settings)
+}
 }

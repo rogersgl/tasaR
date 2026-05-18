@@ -49,6 +49,8 @@ NULL
 #' @param residues_per_line Integer. Target number of residues per line in the
 #'   TeXshade output. The actual rendered number may be lower depending on page
 #'   width, font, and labels.
+#' @param cut.site Numeric. Points to the nt immediately to the left of the nuclease
+#'   cut site within the windowed sub-sequence used for alignment printing.
 #' @param include_indels Logical. If \code{TRUE}, residues aligned opposite gaps in
 #'   the reference are treated as mismatches and shaded accordingly.
 #' @param sanitize_names Logical. If \code{TRUE}, sequence names are converted to
@@ -107,7 +109,7 @@ write_texshade_msa <- function(aln,
                                color_map = NULL,
                                match_text_color = "A6A6A6",
                                residues_per_line = 100L,
-                               cut.sites = NULL,
+                               cut.site = NULL,
                                include_indels = TRUE,
                                sanitize_names = TRUE,
                                font_family = "inconsolata") {
@@ -127,8 +129,8 @@ write_texshade_msa <- function(aln,
   })
 
   # cut site
-  if (!is.null(cut.sites)){
-    tex_cut_sites <- sapply(cut.sites, function(x) {
+  if (!is.null(cut.site)){
+    tex_cut_sites <- sapply(cut.site, function(x) {
       stringr::str_c("  \\feature{top}{1}{", x, "..", x, "}{restriction[Black]}{Cut Site}")
     })
     tex_cut_sites <- c("\\featuresfootnotesize", "\\featurestt", tex_cut_sites)
@@ -136,7 +138,7 @@ write_texshade_msa <- function(aln,
     tex_cut_sites <- ""
   }
 
-  aln <- .nucleaseAlignmentCorrection(aln, cut.sites, reference)
+  aln <- .nucleaseAlignmentCorrection(aln, cut.site, reference)
 
   # Extract aligned rows (gaps preserved)
   seq_class <- switch(
@@ -446,30 +448,29 @@ write_texshade_msa <- function(aln,
 
 #' Align DNA sequences and write a TeXshade file
 #'
-#' Convenience wrapper that first computes a multiple sequence alignment with
-#' \code{msa::msaClustalW()} and then passes the result to
-#' \code{write_texshade_msa()} to generate a standalone TeXshade document.
+#' Convenience wrapper that passes a sequence alignment to \code{write_texshade_msa()}
+#' to generate a standalone TeXshade document. Then calls the tinytex package
+#' to output a formatted pdf of the generated .tex file.
 #'
-#' This wrapper is intended for unaligned DNA sequences. The resulting TeX file
+#' This wrapper is intended for aligned DNA sequences. The resulting TeX file
 #' highlights the reference sequence by nucleotide, shades mismatches in other
 #' sequences, renders matching residues with a configurable text color on a white
 #' background, and styles gap characters consistently.
 #'
-#' @param seqs A DNA sequence object accepted by \code{msa::msaClustalW()}
-#'   (for example, a \code{DNAStringSet}).
+#' @param aln A DNA sequence alignment of class \code{DNAMultipleAlignment}.
 #' @param outfile Character. Path to the output \code{.tex} file.
 #' @param reference Reference sequence, either a numeric index or a sequence name.
-#'   Passed through to \code{write_texshade_msa()} after alignment.
-#' @param ... Additional arguments passed to \code{write_texshade_msa()}, such as
-#'   \code{color_scheme}, \code{match_text_color}, \code{residues_per_line},
+#'   Passed through to \code{\link{write_texshade_msa}} after alignment.
+#' @param color_scheme A character vector. Specifies the color scheme to be used by
+#'   \code{\link{write_texshade_msa}}. Default is 'auto'.
+#' @param ... Additional arguments passed to \code{\link{write_texshade_msa}}, such as
+#'   \code{match_text_color}, \code{residues_per_line},
 #'   \code{include_indels}, \code{sanitize_names}, and \code{font_family}.
-#' @param order Character. Ordering mode passed to \code{msa::msaClustalW()}.
-#'   Defaults to \code{"input"}.
 #'
 #' @return Invisibly returns the normalized path to \code{outfile}.
 #'
 #' @details
-#' The wrapper performs alignment only; all TeXshade formatting and color logic
+#' The wrapper performs export only; all TeXshade formatting and color logic
 #' are handled by \code{write_texshade_msa()}. See that manual page for the full
 #' set of output customization options.
 #'
@@ -480,48 +481,49 @@ make_texshade_from_dna <- function(aln,
                                    outfile,
                                    reference = 1L,
                                    color_scheme = "auto",
-                                   ...,
-                                   order = "input") {
-  tex_file <- write_texshade_msa(aln, outfile = outfile, reference = reference, seq_type = "N", ...)
+                                   ...) {
+  tex_file <- write_texshade_msa(aln, outfile = outfile, reference = reference, seq_type = "N", color_scheme = color_scheme, ...)
   tinytex::pdflatex(tex_file)
   return(tex_file)
 }
 
 
-#' Align amino acid sequences and write a TeXshade file
+#' Align protein sequences and write a TeXshade file
 #'
-#' Convenience wrapper that first computes a multiple sequence alignment with
-#' \code{msa::msaClustalW()} and then passes the result to
+#' Convenience wrapper that passes a protein sequence alignment to
 #' \code{write_texshade_msa()} to generate a standalone TeXshade document.
+#' Then calls the tinytex package to output a formatted pdf of the generated .tex file.
 #'
-#' This wrapper is intended for unaligned amino acid sequences. The resulting
-#' TeX file highlights the reference sequence by residue color, shades
-#' mismatches in other sequences, renders matching residues with a configurable
-#' text color on a white background, and styles gap characters consistently.
+#' This wrapper is intended for aligned amino acid sequences. The resulting TeX file
+#' highlights the reference sequence by residue, shades mismatches in other
+#' sequences, renders matching residues with a configurable text color on a white
+#' background, and styles gap characters consistently.
 #'
-#' @param seqs An amino acid sequence object accepted by \code{msa::msaClustalW()}
-#'   (for example, an \code{AAStringSet}).
+#' @param aln A protein sequence alignment of class \code{AAMultipleAlignment}.
 #' @param outfile Character. Path to the output \code{.tex} file.
 #' @param reference Reference sequence, either a numeric index or a sequence name.
-#'   Passed through to \code{write_texshade_msa()} after alignment.
-#' @param ... Additional arguments passed to \code{write_texshade_msa()}, such as
-#'   \code{color_scheme}, \code{match_text_color}, \code{residues_per_line},
+#'   Passed through to \code{\link{write_texshade_msa}} after alignment.
+#' @param color_scheme A character vector. Specifies the color scheme to be used by
+#'   \code{\link{write_texshade_msa}}. Default is 'auto'.
+#' @param ... Additional arguments passed to \code{\link{write_texshade_msa}}, such as
+#'   \code{match_text_color}, \code{residues_per_line},
 #'   \code{include_indels}, \code{sanitize_names}, and \code{font_family}.
-#' @param order Character. Ordering mode passed to \code{msa::msaClustalW()}.
-#'   Defaults to \code{"input"}.
 #'
 #' @return Invisibly returns the normalized path to \code{outfile}.
+#'
+#' @details
+#' The wrapper performs export only; all TeXshade formatting and color logic
+#' are handled by \code{write_texshade_msa()}. See that manual page for the full
+#' set of output customization options.
 #'
 #' @seealso \code{\link{write_texshade_msa}}, \code{\link[msa]{msaClustalW}}
 #'
 #' @export
-make_texshade_from_aa <- function(seqs,
+make_texshade_from_aa <- function(aln,
                                   outfile,
                                   reference = 1L,
                                   color_scheme = "auto",
-                                  ...,
-                                  order = "input") {
-  aln <- msa::msaClustalW(seqs, order = order)
+                                  ...) {
   tex_file <- write_texshade_msa(aln, outfile = outfile, reference = reference, seq_type = "P", color_scheme = color_scheme, ...)
   tinytex::pdflatex(tex_file)
   return(tex_file)

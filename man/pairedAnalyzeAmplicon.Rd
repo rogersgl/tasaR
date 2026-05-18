@@ -22,25 +22,31 @@ pairedAnalyzeAmplicon(
 )
 }
 \arguments{
-\item{file.control}{A character vector specifying the file path to the control merged fastq file}
+\item{file.control}{A character vector specifying the file path to the control merged fastq file.}
 
-\item{file.experimental}{A character vector specifying the file path to the experimental merged fastq file(s)}
+\item{file.experimental}{A character vector specifying the file path to the experimental merged fastq file(s).}
 
 \item{settings}{(Optional) A tas.object.settings object specifying settings for the sequences. File path will be overridden by the function variables above.}
 
-\item{fwd.primer}{(Optional) A character vector of the DNA sequence of the forward primer}
+\item{fwd.primer}{(Optional) A character vector of the DNA sequence of the forward primer.}
 
-\item{rev.primer}{(Optional) A character vector of the DNA sequence of the reverse primer}
+\item{rev.primer}{(Optional) A character vector of the DNA sequence of the reverse primer.}
 
-\item{fwd.exten.type}{(Optional) A character vector of the type of forward extension. Can be "Barcode", "UMI", or ""}
+\item{fwd.exten.type}{(Optional) A character vector of the type of forward extension. Can be "Barcode", "UMI", or "".}
 
-\item{fwd.exten.seq}{(Optional) A character vector of the DNA sequence of the forward extension}
+\item{fwd.exten.seq}{(Optional) A character vector of the DNA sequence of the forward extension.}
 
-\item{rev.exten.type}{(Optional) A character vector of the type of reverse extension. Can be "Barcode", "UMI", or ""}
+\item{rev.exten.type}{(Optional) A character vector of the type of reverse extension. Can be "Barcode", "UMI", or "".}
 
-\item{rev.exten.seq}{(Optional) A character vector of the DNA sequence of the reverse extension}
+\item{rev.exten.seq}{(Optional) A character vector of the DNA sequence of the reverse extension.}
 
 \item{diploid}{(Optional) A logical vector specifying whether the sequence is diploid or not. Default is TRUE, affects whether a warning message is displayed if more than 2 potential reference sequences are detected in the control sample.}
+
+\item{with.nuclease}{A logical vector specifying whether this is a nuclease experiment to analyze DNA scarring. Modifies workflow of basic analysis pipeline to perform gap correction around nuclease cut site.}
+
+\item{gRNA.seq}{DNA sequence of Cas9 gRNA 20 bp protospacer. Aligned to reference sequence to determine nuclease cut site.}
+
+\item{manual.cut.site}{A numeric vector to specify the nuclease cut site manually in the reference sequence. Currently only supports a single cut site.}
 
 \item{...}{(Optional) Any additional parameters to pass to child functions}
 }
@@ -58,5 +64,7 @@ Parameters can be specified by either a tas.object.settings object as the settin
 or the required settings can be inputted into the parameters of the function.
 }
 \examples{
-pairedAnalyzeAmplicon(file.control, file.experimental, settings = tas.object.settings)
+\dontrun{
+  pairedAnalyzeAmplicon(file.control, file.experimental, settings = tas.object.settings)
+}
 }

@@ -30,5 +30,7 @@ Estimates the frequency of DNA repair pathway usage in a given sequence table of
 \emph{Other}: other sequences (containing multiple indels, etc.)
 }
 \examples{
-measureDNArepair(sequence.table, settings)
+\dontrun{
+  measureDNArepair(sequence.table, settings)
+}
 }

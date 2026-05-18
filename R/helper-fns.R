@@ -103,7 +103,7 @@
                       ifelse(seq.basesChanged != 0,
                              ifelse(nzchar(seq.indels), ", ", "") |>
                                stringr::str_c(seq.basesChanged, " SNV"), ""),
-                      stringr::str_c(" – ", round(seq.percent, 2), "%")
+                      stringr::str_c(" \u2013 ", round(seq.percent, 2), "%")
   )
   seqs <- setNames(seqs, n)
   return(Biostrings::DNAStringSet(c(ref.seq, seqs)))
@@ -127,7 +127,7 @@
                               ifelse(seq_tbl$BasesChanged != 0,
                                  ifelse(nzchar(seq_tbl$Indels), ", ", "") |>
                                      stringr::str_c(seq_tbl$BasesChanged, " SNV"), ""),
-                              stringr::str_c(" – ", round(seq_tbl$Percent, 2), "%")
+                              stringr::str_c(" \u2013 ", round(seq_tbl$Percent, 2), "%")
                              )
   seqs <- setNames(seqs, n)
   return(Biostrings::DNAStringSet(c(ref.seq, seqs)))
@@ -366,7 +366,7 @@
     if (!ok){
       stop(stringr::str_c("LaTeX installation detected in a directory without write permission,
                           and the follwing required packages are missing: ",
-                          str_flatten(required_pkgs, collapse = ", ", "\n")))
+                          stringr::str_flatten(required_pkgs, collapse = ", ", "\n")))
       }
   }
   TRUE

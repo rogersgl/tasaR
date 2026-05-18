@@ -35,10 +35,12 @@ NULL
 #' @aliases getDNAMutations
 #'
 #' @examples
-#' getDNAMutations(object)
+#' \dontrun{
+#'   getDNAMutations(object)
+#' }
 setGeneric("getDNAMutations", function(object) standardGeneric("getDNAMutations"))
 
-
+#' @rdname getMutations
 #' @export
 setMethod("getDNAMutations", signature(object = "tas.mutations"), function(object) {
   if (!isEmpty(object)) {return(list(AllMutations = object@DNA$AllMutations,
@@ -48,6 +50,7 @@ setMethod("getDNAMutations", signature(object = "tas.mutations"), function(objec
   } else {return("Empty")}
 })
 
+#' @rdname getMutations
 #' @export
 setMethod("getDNAMutations", signature(object = "AmpliconSequencing"), function(object) {
   if (!isEmpty(object@Mutations)) {return(list(AllMutations = object@Mutations@DNA$AllMutations,
@@ -68,16 +71,18 @@ setMethod("getDNAMutations", signature(object = "AmpliconSequencing"), function(
 #' @export
 #'
 #' @examples
-#' getMutationDistributionDNA(object)
+#' \dontrun{
+#'   getMutationDistributionDNA(object)
+#' }
 setGeneric("getMutationDistributionDNA", function(object) standardGeneric("getMutationDistributionDNA"))
 
-
+#' @rdname getMutations
 #' @export
 setMethod("getMutationDistributionDNA", signature(object = "tas.mutations"), function(object) {
   if (!isEmpty(object)) {return(object@DNA$AllMutations)} else {return("Empty")}
 })
 
-
+#' @rdname getMutations
 #' @export
 setMethod("getMutationDistributionDNA", signature(object = "AmpliconSequencing"), function(object) {
   if (!isEmpty(object@Mutations)) {return(object@Mutations@DNA$AllMutations)} else {return("Empty")}
@@ -95,16 +100,18 @@ setMethod("getMutationDistributionDNA", signature(object = "AmpliconSequencing")
 #' @export
 #'
 #' @examples
-#' getMutationDistributionCytosine(object)
+#' \dontrun{
+#'   getMutationDistributionCytosine(object)
+#' }
 setGeneric("getMutationDistributionCytosine", function(object) standardGeneric("getMutationDistributionCytosine"))
 
-
+#' @rdname getMutations
 #' @export
 setMethod("getMutationDistributionCytosine", signature(object = "tas.mutations"), function(object) {
   if (!isEmpty(object)) {return(object@DNA$CytosineMutations)} else {return("Empty")}
 })
 
-
+#' @rdname getMutations
 #' @export
 setMethod("getMutationDistributionCytosine", signature(object = "AmpliconSequencing"), function(object) {
   if (!isEmpty(object@Mutations)) {return(object@Mutations@DNA$CytosineMutations)} else {return("Empty")}
@@ -123,16 +130,18 @@ setMethod("getMutationDistributionCytosine", signature(object = "AmpliconSequenc
 #' @export
 #'
 #' @examples
-#' getMutationDistributionNonCytosine(object)
+#' \dontrun{
+#'   getMutationDistributionNonCytosine(object)
+#' }
 setGeneric("getMutationDistributionNonCytosine", function(object) standardGeneric("getMutationDistributionNonCytosine"))
 
-
+#' @rdname getMutations
 #' @export
 setMethod("getMutationDistributionNonCytosine", signature(object = "tas.mutations"), function(object) {
   if (!isEmpty(object)) {return(object@DNA$NonCytosineMutations)} else {return("Empty")}
 })
 
-
+#' @rdname getMutations
 #' @export
 setMethod("getMutationDistributionNonCytosine", signature(object = "AmpliconSequencing"), function(object) {
   if (!isEmpty(object@Mutations)) {return(object@Mutations@DNA$NonCytosineMutations)} else {return("Empty")}
@@ -150,16 +159,18 @@ setMethod("getMutationDistributionNonCytosine", signature(object = "AmpliconSequ
 #' @export
 #'
 #' @examples
-#' getMutationMotifSums(object)
+#' \dontrun{
+#'   getMutationMotifSums(object)
+#' }
 setGeneric("getMutationMotifSums", function(object) standardGeneric("getMutationMotifSums"))
 
-
+#' @rdname getMutations
 #' @export
 setMethod("getMutationMotifSums", signature(object = "tas.mutations"), function(object) {
   if (!isEmpty(object)) {return(object@DNA$MotifSums)} else {return("Empty")}
 })
 
-
+#' @rdname getMutations
 #' @export
 setMethod("getMutationMotifSums", signature(object = "AmpliconSequencing"), function(object) {
   if (!isEmpty(object@Mutations)) {return(object@Mutations@DNA$MotifSums)} else {return("Empty")}
@@ -180,16 +191,18 @@ setMethod("getMutationMotifSums", signature(object = "AmpliconSequencing"), func
 #' @export
 #'
 #' @examples
-#' getMutationDistributionAA(object)
+#' \dontrun{
+#'   getMutationDistributionAA(object)
+#' }
 setGeneric("getMutationDistributionAA", function(object) standardGeneric("getMutationDistributionAA"))
 
-
+#' @rdname getMutations
 #' @export
 setMethod("getMutationDistributionAA", signature(object = "tas.mutations"), function(object) {
   if (!isEmpty(object)) {return(object@AA$AllMutations)} else {return("Empty")}
 })
 
-
+#' @rdname getMutations
 #' @export
 setMethod("getMutationDistributionAA", signature(object = "AmpliconSequencing"), function(object) {
   if (!isEmpty(object@Mutations)) {return(object@Mutations@AA$AllMutations)} else {return("Empty")}
@@ -207,16 +220,18 @@ setMethod("getMutationDistributionAA", signature(object = "AmpliconSequencing"),
 #' @export
 #'
 #' @examples
-#' getMutationMatrixAA(object)
+#' \dontrun{
+#'   getMutationMatrixAA(object)
+#' }
 setGeneric("getMutationMatrixAA", function(object) standardGeneric("getMutationMatrixAA"))
 
-
+#' @rdname getMutations
 #' @export
 setMethod("getMutationMatrixAA", signature(object = "tas.mutations"), function(object) {
   if (!isEmpty(object)) {return(object@AA$MutationMatrix)} else {return("Empty")}
 })
 
-
+#' @rdname getMutations
 #' @export
 setMethod("getMutationMatrixAA", signature(object = "AmpliconSequencing"), function(object) {
   if (!isEmpty(object@Mutations)) {return(object@Mutations@AA$MutationMatrix)} else {return("Empty")}
@@ -239,16 +254,18 @@ setMethod("getMutationMatrixAA", signature(object = "AmpliconSequencing"), funct
 #' @export
 #'
 #' @examples
-#' getAIDTables(object)
+#' \dontrun{
+#'   getAIDTables(object)
+#' }
 setGeneric("getAIDTables", function(object) standardGeneric("getAIDTables"))
 
-
+#' @rdname getMutations
 #' @export
 setMethod("getAIDTables", signature(object = "tas.mutations"), function(object) {
   if (!isEmpty(object@AIDTables)) {return(list(WRCH = object@AIDTables$WRCH, WRCY = object@AIDTables$WRCY))} else {return("Empty")}
 })
 
-
+#' @rdname getMutations
 #' @export
 setMethod("getAIDTables", signature(object = "AmpliconSequencing"), function(object) {
   if (!isEmpty(object@Mutations@AIDTables)) {return(list(WRCH = object@Mutations@AIDTables$WRCH, WRCY = object@Mutations@AIDTables$WRCY))} else {return("Empty")}
@@ -266,16 +283,18 @@ setMethod("getAIDTables", signature(object = "AmpliconSequencing"), function(obj
 #' @export
 #'
 #' @examples
-#' getWRCHTable(object)
+#' \dontrun{
+#'   getWRCHTable(object)
+#' }
 setGeneric("getWRCHTable", function(object) standardGeneric("getWRCHTable"))
 
-
+#' @rdname getMutations
 #' @export
 setMethod("getWRCHTable", signature(object = "tas.mutations"), function(object) {
   if (!isEmpty(object@AIDTables)) {return(object@AIDTables$WRCH)} else {return("Empty")}
 })
 
-
+#' @rdname getMutations
 #' @export
 setMethod("getWRCHTable", signature(object = "AmpliconSequencing"), function(object) {
   if (!isEmpty(object@Mutations@AIDTables)) {return(object@Mutations@AIDTables$WRCH)} else {return("Empty")}
@@ -293,16 +312,18 @@ setMethod("getWRCHTable", signature(object = "AmpliconSequencing"), function(obj
 #' @export
 #'
 #' @examples
-#' getWRCYTable(object)
+#' \dontrun{
+#'   getWRCYTable(object)
+#' }
 setGeneric("getWRCYTable", function(object) standardGeneric("getWRCYTable"))
 
-
+#' @rdname getMutations
 #' @export
 setMethod("getWRCYTable", signature(object = "tas.mutations"), function(object) {
   if (!isEmpty(object@AIDTables)) {return(object@AIDTables$WRCY)} else {return("Empty")}
 })
 
-
+#' @rdname getMutations
 #' @export
 setMethod("getWRCYTable", signature(object = "AmpliconSequencing"), function(object) {
   if (!isEmpty(object@Mutations@AIDTables)) {return(object@Mutations@AIDTables$WRCY)} else {return("Empty")}
@@ -319,16 +340,18 @@ setMethod("getWRCYTable", signature(object = "AmpliconSequencing"), function(obj
 #' @export
 #'
 #' @examples
-#' getAbMutations(object)
+#' \dontrun{
+#'   getAbMutations(object)
+#' }
 setGeneric("getAbMutations", function(object) standardGeneric("getAbMutations"))
 
-
+#' @rdname getMutations
 #' @export
 setMethod("getAbMutations", signature(object = "tas.mutations"), function(object) {
   if (!isEmpty(object)) {return(object@Antibody)} else {return("Empty")}
 })
 
-
+#' @rdname getMutations
 #' @export
 setMethod("getAbMutations", signature(object = "AmpliconSequencing"), function(object) {
   if (!isEmpty(object@Mutations)) {return(object@Mutations@Antibody)} else {return("Empty")}

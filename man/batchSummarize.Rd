@@ -12,7 +12,7 @@ batchSummarize(
 )
 }
 \arguments{
-\item{results.list}{A list of AmpliconSequencing objects from \code{\link{tasaR::batchAnalyzeAmplicon()}}}
+\item{results.list}{A list of AmpliconSequencing objects from \code{\link{batchAnalyzeAmplicon}}}
 
 \item{export}{A logical specifying whether the resulting tables and graphs should also be written to disk}
 
@@ -24,12 +24,14 @@ batchSummarize(
 A list of results, with sub-lists for tables and graphs
 }
 \description{
-Performs comparison analyses of the results from \code{\link{tasaR::batchAnalyzeAmlicon()}}. Results are returned
+Performs comparison analyses of the results from \code{\link{batchAnalyzeAmplicon}}. Results are returned
 as an R list, and can be saved as a variable. Also includes the option to directly export the results
 to a folder specified by the user. Treats all samples equally, so is unaware of pairings of control/
 experimental samples to direct analysis.
 }
 \examples{
-batchSummarize(results.list)
-batchSummarize(results.list, export = TRUE, path = './save_in_folder/')
+\dontrun{
+  batchSummarize(results.list)
+  batchSummarize(results.list, export = TRUE, path = './save_in_folder/')
+}
 }

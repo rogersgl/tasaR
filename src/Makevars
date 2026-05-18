@@ -1,4 +1,5 @@
-.DEFAULT_GOAL := all
+# Default target
+all: config.h table.c table.h $(SHLIB)
 
 PKG_CPPFLAGS = -I. \
 	-DPANDA_LIB_COMPILING \
@@ -11,7 +12,7 @@ PKG_CPPFLAGS = -I. \
 
 PKG_LIBS = -lm -lltdl -lbz2 -lz
 
-all: config.h table.c table.h $(SHLIB)
+# all: config.h table.c table.h $(SHLIB)
 
 config.h:
 	@printf '%s\n' \

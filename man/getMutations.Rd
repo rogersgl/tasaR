@@ -5,17 +5,84 @@
 \alias{getMutations}
 \alias{getMutations,tasaR-method}
 \alias{getDNAMutations}
+\alias{getDNAMutations,tas.mutations-method}
+\alias{getDNAMutations,AmpliconSequencing-method}
 \alias{getMutationDistributionDNA}
+\alias{getMutationDistributionDNA,tas.mutations-method}
+\alias{getMutationDistributionDNA,AmpliconSequencing-method}
 \alias{getMutationDistributionCytosine}
+\alias{getMutationDistributionCytosine,tas.mutations-method}
+\alias{getMutationDistributionCytosine,AmpliconSequencing-method}
 \alias{getMutationDistributionNonCytosine}
+\alias{getMutationDistributionNonCytosine,tas.mutations-method}
+\alias{getMutationDistributionNonCytosine,AmpliconSequencing-method}
 \alias{getMutationMotifSums}
+\alias{getMutationMotifSums,tas.mutations-method}
+\alias{getMutationMotifSums,AmpliconSequencing-method}
 \alias{getMutationDistributionAA}
+\alias{getMutationDistributionAA,tas.mutations-method}
+\alias{getMutationDistributionAA,AmpliconSequencing-method}
 \alias{getMutationMatrixAA}
+\alias{getMutationMatrixAA,tas.mutations-method}
+\alias{getMutationMatrixAA,AmpliconSequencing-method}
 \alias{getAIDTables}
+\alias{getAIDTables,tas.mutations-method}
+\alias{getAIDTables,AmpliconSequencing-method}
 \alias{getWRCHTable}
+\alias{getWRCHTable,tas.mutations-method}
+\alias{getWRCHTable,AmpliconSequencing-method}
 \alias{getWRCYTable}
+\alias{getWRCYTable,tas.mutations-method}
+\alias{getWRCYTable,AmpliconSequencing-method}
 \alias{getAbMutations}
+\alias{getAbMutations,tas.mutations-method}
+\alias{getAbMutations,AmpliconSequencing-method}
 \title{Mutation retrieval methods}
+\usage{
+\S4method{getDNAMutations}{tas.mutations}(object)
+
+\S4method{getDNAMutations}{AmpliconSequencing}(object)
+
+\S4method{getMutationDistributionDNA}{tas.mutations}(object)
+
+\S4method{getMutationDistributionDNA}{AmpliconSequencing}(object)
+
+\S4method{getMutationDistributionCytosine}{tas.mutations}(object)
+
+\S4method{getMutationDistributionCytosine}{AmpliconSequencing}(object)
+
+\S4method{getMutationDistributionNonCytosine}{tas.mutations}(object)
+
+\S4method{getMutationDistributionNonCytosine}{AmpliconSequencing}(object)
+
+\S4method{getMutationMotifSums}{tas.mutations}(object)
+
+\S4method{getMutationMotifSums}{AmpliconSequencing}(object)
+
+\S4method{getMutationDistributionAA}{tas.mutations}(object)
+
+\S4method{getMutationDistributionAA}{AmpliconSequencing}(object)
+
+\S4method{getMutationMatrixAA}{tas.mutations}(object)
+
+\S4method{getMutationMatrixAA}{AmpliconSequencing}(object)
+
+\S4method{getAIDTables}{tas.mutations}(object)
+
+\S4method{getAIDTables}{AmpliconSequencing}(object)
+
+\S4method{getWRCHTable}{tas.mutations}(object)
+
+\S4method{getWRCHTable}{AmpliconSequencing}(object)
+
+\S4method{getWRCYTable}{tas.mutations}(object)
+
+\S4method{getWRCYTable}{AmpliconSequencing}(object)
+
+\S4method{getAbMutations}{tas.mutations}(object)
+
+\S4method{getAbMutations}{AmpliconSequencing}(object)
+}
 \arguments{
 \item{object}{An S4 object of class tas.mutations or AmpliconSequencing}
 }
@@ -48,15 +115,37 @@ Methods to retrieve mutation information from an object of class tas.mutations o
 
 }}
 \examples{
-getDNAMutations(object)
-getMutationDistributionDNA(object)
-getMutationDistributionCytosine(object)
-getMutationDistributionNonCytosine(object)
-getMutationMotifSums(object)
-getMutationDistributionAA(object)
-getMutationMatrixAA(object)
-getAIDTables(object)
-getWRCHTable(object)
-getWRCYTable(object)
-getAbMutations(object)
+\dontrun{
+  getDNAMutations(object)
+}
+\dontrun{
+  getMutationDistributionDNA(object)
+}
+\dontrun{
+  getMutationDistributionCytosine(object)
+}
+\dontrun{
+  getMutationDistributionNonCytosine(object)
+}
+\dontrun{
+  getMutationMotifSums(object)
+}
+\dontrun{
+  getMutationDistributionAA(object)
+}
+\dontrun{
+  getMutationMatrixAA(object)
+}
+\dontrun{
+  getAIDTables(object)
+}
+\dontrun{
+  getWRCHTable(object)
+}
+\dontrun{
+  getWRCYTable(object)
+}
+\dontrun{
+  getAbMutations(object)
+}
 }

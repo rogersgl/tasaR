@@ -6,13 +6,14 @@
 #' Writes a merged fastq file to disk with the given arguments.
 #'
 #'
-#' @param forward_fastq Character vector, file path to the forward (R1) read
-#' @param reverse_fastq Character vector, file path to the reverse (R2) read
+#' @param forward_fastq Character vector, file path to the forward (R1) read.
+#' @param reverse_fastq Character vector, file path to the reverse (R2) read.
 #' @param output_fastq Character vector, file path to write the merged read to. Sub-directories will be automatically created.
 #' @param log_file Character vector, file path for the log file to be written to. Sub-directories will be automatically created.
-#' @param min_length Numeric vector, minimum sequence length to allow
-#' @param max_length Numeric vector, maximum sequence length to allow
+#' @param min_length Numeric vector, minimum sequence length to allow.
+#' @param max_length Numeric vector, maximum sequence length to allow.
 #' @param extra_args Character vector, additional arguments are set with reasonable defaults. See PANDAseq manual for more details.
+#' @param verbose Logical vector, prints verbose output resulst from PANDAseq if TRUE.
 #'
 #' @returns NULL
 #' @export

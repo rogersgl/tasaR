@@ -29,14 +29,16 @@ PandaDebug panda_debug_flags = PANDA_DEBUG_DEFAULT;
 #if HAVE_PTHREAD
 
 #        define BUFFER(name, type, size) pthread_key_t PANDACONCAT(name, _key);
-#        include "buffer.list"
+			BUFFER(static, char, BUFFER_SIZE)
+			BUFFER(seqid, char, BUFFER_SIZE)
 #        undef BUFFER
 
 __attribute__ ((constructor))
 static void lib_init(
 	void) {
 #        define BUFFER(name, type, size) pthread_key_create(&PANDACONCAT(name, _key), free);
-#        include "buffer.list"
+			BUFFER(static, char, BUFFER_SIZE)
+			BUFFER(seqid, char, BUFFER_SIZE)
 #        undef BUFFER
 }
 
@@ -44,7 +46,8 @@ __attribute__ ((destructor))
 void lib_destroy(
 	void) {
 #        define BUFFER(name, type, size) free(pthread_getspecific(PANDACONCAT(name, _key))); pthread_key_delete(PANDACONCAT(name, _key));
-#        include "buffer.list"
+			BUFFER(static, char, BUFFER_SIZE)
+			BUFFER(seqid, char, BUFFER_SIZE)
 #        undef BUFFER
 }
 
@@ -60,11 +63,13 @@ static void *get_buffer(
 }
 
 #        define BUFFER(name, type, size) type *PANDACONCAT(name, _buffer)(void) { return get_buffer(PANDACONCAT(name, _key), sizeof(type) * size); }
-#        include "buffer.list"
+			BUFFER(static, char, BUFFER_SIZE)
+			BUFFER(seqid, char, BUFFER_SIZE)
 #        undef BUFFER
 #else
 #        define BUFFER(name, type, size) static type PANDACONCAT(name, buffer)[size]; type *PANDACONCAT(name, _buffer)(void) { return PANDACONCAT(name, buffer); }
-#        include "buffer.list"
+			BUFFER(static, char, BUFFER_SIZE)
+			BUFFER(seqid, char, BUFFER_SIZE)
 #        undef BUFFER
 #endif
 

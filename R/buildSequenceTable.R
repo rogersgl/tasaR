@@ -10,21 +10,16 @@
 #' Will use barcodes for sequence filtering/demultiplexing if provided. Will bin sequences and count by UMIs if provided (only supports 1 UMI currently). Otherwise, will bin sequences and filter based on the global setting tasGlobalSettings$read.frequency.limit (the minimum % to accept a sequence).
 #'
 #' @param settings An object of S4 class tas.settings
+#' @param ... Additional paramaters to be passed to sub-function \code{sequenceTable}. Also inherited from parent functions.
 #'
 #' @returns An S4 object of class tas.sequences
 #' @export
 #'
 #' @examples
-#' buildSequenceTable(settings)
-buildSequenceTable <- function(settings,
-                               # min.read.frequency = 0.1,
-                               # paired.analysis.ctrl = FALSE,
-                               # diploid = TRUE,
-                               ...
-                               # with.nuclease = FALSE,
-                               # gRNA.seq = NULL,
-                               # manual.cut.site = NULL
-                               ) {
+#' \dontrun{
+#'   buildSequenceTable(settings)
+#' }
+buildSequenceTable <- function(settings, ...) {
   filter.counts <- numeric()
   if (!file.exists(settings@MergedFASTQPath)) {stop("FASTQ file not found.")}
   cat("Reading .fastq file...\n")
@@ -36,17 +31,7 @@ buildSequenceTable <- function(settings,
   filter.counts <- c(filter.counts, Filtered = length(reads.filtered))
   reads <- NULL
   #cat("Building sequence table...\n")
-  sequenceTable(reads.filtered,
-                settings,
-                filter.counts,
-                # min.read.frequency = 0.1,
-                ...
-                # paired.analysis.ctrl,
-                # diploid,
-                # with.nuclease = FALSE,
-                # gRNA.seq = NULL,
-                # manual.cut.site = NULL
-                )
+  sequenceTable(reads.filtered, settings, filter.counts, ...)
 }
 
 
@@ -199,30 +184,6 @@ sequenceTable <- function(reads.filtered,
 
   Reference.Sequence.Protein <- suppressWarnings(lapply(Reference.Sequence.DNA, Biostrings::translate))
   Reads.Unique.Protein <- suppressWarnings(lapply(Reads.Unique.DNA, Biostrings::translate))
-
-  # TODO: thinking about putting the .nucleaseAlignmentCorrection here for pairedAnalyzeAmplicon
-  # add type = c("single", "paired") to arguments and flag upstream
-  #
-  # Pros: would fix issues with misaligned sequences around the cut site, which lead to incorrect results
-  # in the measureMutations by position function.
-  #
-  # Cons: would break the entire workflow since the object becomes a DNAMultipleAlignment instead of a
-  # PairwiseAlignmentsSingleSubject object. So everything downstream in measureMutations that uses
-  # the PairwiseAlignment would need to be adjusted.
-  #
-  # Seems like roughtly a wash - could insert it here and fix everything else downstream with
-  # multiple pathways, or could do it afterwards and redo/replace the analyses. That's wasted CPU cycles,
-  # but it might be easier.
-  #
-  # Alternatively, instead of diverging paths, could make an entirely new measureMutations function for the
-  # nuclease Paired alignments.
-
-  # if (type == "paired") {
-  #   Pairwise.Aligned.DNA <- lapply(Pairwise.Aligned.DNA, function(x) {
-  #
-  #   })
-  # }
-
 
   #############
 
@@ -384,6 +345,8 @@ sequenceTable <- function(reads.filtered,
   dt.dt <- rbindlist(dt.list)
   setorder(dt.dt, -N)
 
+  ### (Optional) Correct sequence alignments around nuclease cut site if appropriate (with.nuclease = TRUE) ###
+
   if (with.nuclease) {
     msa.dna <- lapply(seq_along(Pairwise.Aligned.DNA), function(x) {
       ref <- unique(as.character(pwalign::unaligned(pwalign::subject(Pairwise.Aligned.DNA[[x]]))))
@@ -407,6 +370,7 @@ sequenceTable <- function(reads.filtered,
     msa.dna <- list(Biostrings::DNAMultipleAlignment())
   }
 
+  ##########
 
   if (exists("filter.counts")) {
     if (all(is.na(filter.counts))) {

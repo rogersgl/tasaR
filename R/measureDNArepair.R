@@ -24,7 +24,9 @@
 #' @export
 #'
 #' @examples
-#' measureDNArepair(sequence.table, settings)
+#' \dontrun{
+#'   measureDNArepair(sequence.table, settings)
+#' }
 measureDNArepair <- function(sequence.table, settings) {
   config <- getSettings(settings)
   t <- getSequenceTable(sequence.table)

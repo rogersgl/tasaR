@@ -16,7 +16,9 @@ NULL
 #' @export
 #'
 #' @examples
-#' getSettings(object)
+#' \dontrun{
+#'   getSettings(object)
+#' }
 setGeneric("getSettings", function(object) standardGeneric("getSettings"))
 
 #' @describeIn getSettings Method for class tas.object.settings

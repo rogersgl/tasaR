@@ -14,7 +14,7 @@ write_texshade_msa(
   color_map = NULL,
   match_text_color = "A6A6A6",
   residues_per_line = 100L,
-  cut.sites = NULL,
+  cut.site = NULL,
   include_indels = TRUE,
   sanitize_names = TRUE,
   font_family = "inconsolata"
@@ -50,6 +50,9 @@ rows when displayed on a white background. May be a LaTeX color name or hex valu
 \item{residues_per_line}{Integer. Target number of residues per line in the
 TeXshade output. The actual rendered number may be lower depending on page
 width, font, and labels.}
+
+\item{cut.site}{Numeric. Points to the nt immediately to the left of the nuclease
+cut site within the windowed sub-sequence used for alignment printing.}
 
 \item{include_indels}{Logical. If \code{TRUE}, residues aligned opposite gaps in
 the reference are treated as mismatches and shaded accordingly.}

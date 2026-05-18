@@ -16,19 +16,21 @@ pandaseq_merge_files(
 )
 }
 \arguments{
-\item{forward_fastq}{Character vector, file path to the forward (R1) read}
+\item{forward_fastq}{Character vector, file path to the forward (R1) read.}
 
-\item{reverse_fastq}{Character vector, file path to the reverse (R2) read}
+\item{reverse_fastq}{Character vector, file path to the reverse (R2) read.}
 
 \item{output_fastq}{Character vector, file path to write the merged read to. Sub-directories will be automatically created.}
 
 \item{log_file}{Character vector, file path for the log file to be written to. Sub-directories will be automatically created.}
 
-\item{min_length}{Numeric vector, minimum sequence length to allow}
+\item{min_length}{Numeric vector, minimum sequence length to allow.}
 
-\item{max_length}{Numeric vector, maximum sequence length to allow}
+\item{max_length}{Numeric vector, maximum sequence length to allow.}
 
 \item{extra_args}{Character vector, additional arguments are set with reasonable defaults. See PANDAseq manual for more details.}
+
+\item{verbose}{Logical vector, prints verbose output resulst from PANDAseq if TRUE.}
 }
 \description{
 A function to merge paired end reads using an included installation of the software PANDAseq.

@@ -13,6 +13,8 @@ makeSettingsCSV(filedest)
 Write a .CSV file to input settings
 }
 \examples{
-makeSettingsCSV('/.../folder')
-makeSettingsCSV('/.../folder/file.csv')
+\dontrun{
+  makeSettingsCSV('/.../folder')
+  makeSettingsCSV('/.../folder/file.csv')
+}
 }

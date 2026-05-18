@@ -8,6 +8,8 @@ buildSequenceTable(settings, ...)
 }
 \arguments{
 \item{settings}{An object of S4 class tas.settings}
+
+\item{...}{Additional paramaters to be passed to sub-function \code{sequenceTable}. Also inherited from parent functions.}
 }
 \value{
 An S4 object of class tas.sequences
@@ -18,5 +20,7 @@ Uses the settings specified by a tas.settings object, including a file path to a
 Will use barcodes for sequence filtering/demultiplexing if provided. Will bin sequences and count by UMIs if provided (only supports 1 UMI currently). Otherwise, will bin sequences and filter based on the global setting tasGlobalSettings$read.frequency.limit (the minimum \% to accept a sequence).
 }
 \examples{
-buildSequenceTable(settings)
+\dontrun{
+  buildSequenceTable(settings)
+}
 }

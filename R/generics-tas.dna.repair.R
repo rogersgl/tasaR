@@ -16,7 +16,9 @@ NULL
 #' @export
 #'
 #' @examples
-#' getMutationTypes(object)
+#' \dontrun{
+#'   getMutationTypes(object)
+#' }
 setGeneric("getMutationTypes", function(object) standardGeneric("getMutationTypes"))
 
 #' @describeIn getMutationTypes Method for class tas.dna.repair

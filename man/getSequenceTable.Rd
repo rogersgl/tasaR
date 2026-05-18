@@ -35,7 +35,9 @@
 \item{object}{S4 object of class tas.sequences or AmpliconSequencing}
 }
 \description{
-Extracts a table (data.frame) of sequences, including sequence quantification and annotations of DNA and protein mutations detected from an S4 object of class tas.sequences or its parent class AmpliconSequencing.
+Extracts a table (data.frame) of sequences, including sequence quantification
+and annotations of DNA and protein mutations detected from an S4 object of
+class tas.sequences or its parent class AmpliconSequencing.
 }
 \section{Methods (by class)}{
 \itemize{
@@ -66,8 +68,16 @@ Extracts a table (data.frame) of sequences, including sequence quantification an
 
 }}
 \examples{
-getSequenceTable(object)
-getSequencesDNA(object)
-getSequencesAA(object)
-getSequenceSupplemental(object)
+\dontrun{
+  getSequenceTable(object)
+}
+\dontrun{
+  getSequencesDNA(object)
+}
+\dontrun{
+  getSequencesAA(object)
+}
+\dontrun{
+  getSequenceSupplemental(object)
+}
 }

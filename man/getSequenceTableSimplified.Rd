@@ -37,5 +37,7 @@ Sequence information is removed because it differs between paired alleles.
 
 }}
 \examples{
-getSequenceTableSimplified(object)
+\dontrun{
+  getSequenceTableSimplified(object)
+}
 }

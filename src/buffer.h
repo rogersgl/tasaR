@@ -22,7 +22,8 @@
 #        define BUFFER_SIZE 1024
 
 #        define BUFFER(name, type, length) type *PANDACONCAT(name, _buffer)(void);
-#        include "buffer.list"
+			BUFFER(static, char, BUFFER_SIZE)
+			BUFFER(seqid, char, BUFFER_SIZE)
 #        undef BUFFER
 
 void bufferprintf(
