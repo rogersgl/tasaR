@@ -1,0 +1,2 @@
+﻿Sample Name,Left (R1) File,Right (R2) File
+User-facing sample identifier,FASTQ filename for read 1 (prefer .fastq.gz),FASTQ filename for read 2 (prefer .fastq.gz)

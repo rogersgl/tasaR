@@ -1,0 +1,10 @@
+app_root <- normalizePath(file.path("..", ".."), mustWork = TRUE)
+
+source(file.path(app_root, "R", "00_packages.R"), local = TRUE)
+source(file.path(app_root, "R", "helpers_uploads.R"), local = TRUE)
+source(file.path(app_root, "R", "helpers_merge.R"), local = TRUE)
+source(file.path(app_root, "R", "helpers_queue.R"), local = TRUE)
+source(file.path(app_root, "R", "helpers_mutation.R"), local = TRUE)
+source(file.path(app_root, "R", "helpers_nuclease.R"), local = TRUE)
+source(file.path(app_root, "R", "helpers_manifests.R"), local = TRUE)
+source(file.path(app_root, "R", "helpers_messages.R"), local = TRUE)

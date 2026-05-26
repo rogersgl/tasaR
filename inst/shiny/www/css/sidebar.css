@@ -1,0 +1,391 @@
+.bslib-sidebar-resize-handle {
+  display: none !important;
+}
+
+
+.sidebar {
+  resize: none !important;
+}
+
+
+.sidebar {
+  background: linear-gradient(180deg, #0f2238 0%, #132b45 100%);
+  color: rgba(255,255,255,0.92);
+  border-right: 1px solid rgba(255,255,255,0.08);
+
+  box-shadow: inset -1px 0 0 rgba(255,255,255,0.03);
+}
+
+
+.sidebar .sidebar-title {
+  color: white;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+
+.sidebar .form-label,
+.sidebar p,
+.sidebar li {
+  color: rgba(255,255,255,0.86);
+}
+
+
+.sidebar .text-muted {
+  color: rgba(255,255,255,0.65) !important;
+}
+
+
+.sidebar hr {
+  border-top: 1px solid rgba(255,255,255,0.12);
+  opacity: 1;
+}
+
+
+.sidebar-checklist {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-top: 8px;
+}
+
+
+
+.sidebar-checklist h5 {
+  margin-bottom: 0.5rem;
+  color: white;
+  font-weight: 700;
+}
+
+
+.sidebar-checklist p,
+.sidebar-checklist li {
+  color: rgba(255,255,255,0.88);
+  margin-bottom: 0.35rem;
+}
+
+
+.sidebar-checklist ul {
+  padding-left: 1.2rem;
+  margin-bottom: 0;
+}
+
+
+.sidebar-checklist hr {
+  border-top: 1px solid rgba(255,255,255,0.12);
+  opacity: 1;
+  margin: 0.7rem 0;
+}
+
+
+.compact-hr {
+  border: none !important;
+  height: 1px !important;
+  background-color: rgba(255,255,255,0.28) !important;
+  opacity: 1 !important;
+  margin: 8px 0 !important;
+}
+
+
+.section-hr {
+   border: none !important;
+  height: 1px !important;
+  background-color: rgba(255,255,255,0.5) !important;
+  opacity: 1 !important;
+  margin: 14px 0 !important;
+}
+
+
+
+/* --- Merge sidebar text + widget overrides --- */
+.sidebar-controls,
+.sidebar-controls label,
+.sidebar-controls .control-label,
+.sidebar-controls h5,
+.sidebar-controls p,
+.sidebar-controls li,
+.sidebar-controls .text-muted {
+  color: rgba(255,255,255,0.92) !important;
+}
+
+
+.sidebar-controls hr {
+  border: none !important;
+  border-top: 1px solid rgba(255,255,255,0.12) !important;
+  height: 1px !important;
+  background-color: rgba(255,255,255,0.5) !important;
+  opacity: 1 !important;
+  margin: 14px 0 !important;
+}
+
+
+/* Select input */
+.sidebar-controls .selectize-control.single .selectize-input,
+.sidebar-controls .selectize-control.single .selectize-input input,
+.sidebar-controls .selectize-control.single .selectize-dropdown {
+  color: #102a43 !important;
+}
+
+
+.sidebar-controls .selectize-control.single .selectize-input {
+  background: #ffffff !important;
+  border: 1px solid rgba(255,255,255,0.35) !important;
+  box-shadow: none !important;
+}
+
+
+.sidebar-controls .selectize-dropdown {
+  background: #ffffff !important;
+  color: #102a43 !important;
+}
+
+
+/* Numeric input */
+.sidebar-controls .form-control {
+  color: #102a43 !important;
+  background: #ffffff !important;
+  border: 1px solid rgba(255,255,255,0.35) !important;
+  box-shadow: none !important;
+}
+
+
+.sidebar-controls .input-group-text,
+.sidebar-controls .spinner {
+  color: #102a43 !important;
+  background: #ffffff !important;
+  border-color: rgba(255,255,255,0.35) !important;
+}
+
+
+/* Checkbox labels */
+.sidebar-controls .shiny-options-group label,
+.sidebar-controls .checkbox label,
+.sidebar-controls .checkbox-inline label {
+  color: rgba(255,255,255,0.92) !important;
+}
+
+
+/* Slider labels / ticks */
+.sidebar-controls .irs-min,
+.sidebar-controls .irs-max,
+.sidebar-controls .irs-single,
+.sidebar-controls .irs-grid-text {
+  color: rgba(255,255,255,0.92) !important;
+}
+
+
+.sidebar-controls .irs-line {
+  background: rgba(255,255,255,0.18) !important;
+}
+
+
+.sidebar-controls .irs-bar {
+  background: #1188d6 !important;
+}
+
+
+.sidebar-controls .irs-handle > i:first-child {
+  background: #1188d6 !important;
+}
+
+
+/* Run status box from verbatimTextOutput */
+.sidebar-controls pre,
+.sidebar-controls .shiny-text-output,
+.sidebar-controls .shiny-text-output.form-control {
+  color: rgba(255,255,255,0.95) !important;
+  background: rgba(255,255,255,0.04) !important;
+  border: 1px solid rgba(255,255,255,0.45) !important;
+  border-radius: 8px !important;
+}
+
+
+/* Keep buttons readable */
+.sidebar-controls .btn-primary {
+  width: 100%;
+}
+
+
+/* Custom slider tick labels */
+
+
+.custom-slider-ticks {
+  position: relative;
+  height: 24px;
+  margin-top: 0px;
+  margin-left: 0;
+  margin-right: 0;
+  font-size: 12px;
+  user-select: none;
+}
+
+
+.custom-slider-ticks span {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  color: rgba(255,255,255,0.82);
+  white-space: nowrap;
+}
+
+
+.custom-slider-ticks span::before {
+  content: '';
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 1px;
+  height: 8px;
+  background: rgba(255,255,255,0.35);
+}
+
+
+.slider-input-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  width: 100%;
+  margin-bottom: 14px;
+}
+
+
+.numeric-col {
+  width: 35px;
+  margin-top: -2px;
+}
+
+
+.slider-col {
+  flex: 1;
+}
+
+
+
+/* Remove extra bottom spacing */
+.slider-col .shiny-input-container,
+.numeric-col .shiny-input-container {
+  margin-bottom: 0 !important;
+}
+
+
+#merge_similarity_num,
+#min_overlap_num,
+#min_length_num,
+#max_length_num,
+#merge_prefix {
+  height: 30px;
+  padding: 2px 6px;
+  font-size: 12px;
+}
+
+.sidebar-controls .control-label,
+.sidebar-controls .form-label {
+  font-size: 14px !important;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+
+.sidebar-controls .checkbox label {
+  font-size: 14px !important;
+}
+
+
+.sidebar-controls .selectize-input,
+.sidebar-controls .selectize-dropdown,
+.sidebar-controls .selectize-dropdown-content {
+  font-size: 12px !important;
+}
+
+
+.sidebar-controls .selectize-input {
+  min-height: 30px !important;
+  padding-top: 4px !important;
+  padding-bottom: 4px !important;
+}
+
+
+.sidebar-controls .selectize-control.single .selectize-input {
+  height: 32px !important;
+  min-height: 32px !important;
+  max-height: 32px !important;
+  padding-top: 4px !important;
+  padding-bottom: 4px !important;
+  display: flex !important;
+  align-items: center !important;
+  overflow: hidden !important;
+}
+
+
+.sidebar-controls .selectize-control {
+  height: 32px !important;
+}
+
+
+.sidebar-controls .irs-min,
+.sidebar-controls .irs-max {
+  display: none !important;
+}
+
+
+.sidebar-controls .irs-from,
+.sidebar-controls .irs-to {
+  display: none !important;
+}
+
+
+#forward_primer,
+#reverse_primer {
+  font-size: 12px !important;
+  height: 30px;
+  padding: 2px 6px;
+}
+
+#mutation_output_prefix::placeholder {
+  color: #9CA3AF;
+  opacity: 1;
+  font-style: italic;
+}
+
+
+.sidebar-controls .checkbox {
+  margin-bottom: 0 !important;
+}
+
+
+.sidebar-controls .checkbox input {
+  margin-top: 0 !important;
+}
+
+
+.sidebar-checkbox-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  column-gap: 10px;
+  margin-bottom: 14px;
+}
+
+
+.sidebar-checkbox-row .checkbox {
+  margin: 0 !important;
+  padding: 0 !important;
+  line-height: 1 !important;
+}
+
+
+.sidebar-checkbox-label {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1;
+  margin: 0;
+  color: rgba(255,255,255,0.92);
+  transform: translateY(-2px);
+}
+
+
+.sidebar-checkbox-row .checkbox input[type='checkbox'] {
+  margin-top: 0 !important;
+}
