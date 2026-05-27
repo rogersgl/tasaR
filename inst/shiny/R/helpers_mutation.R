@@ -108,7 +108,6 @@
     "Display Order" = seq_len(nrow(df)),
     "Sample Name" = df[["Sample Name"]],
     "Merged File" = df[["Merged File"]],
-    "Source" = if ("Source" %in% names(df)) df[["Source"]] else rep("single", nrow(df)),
     "Settings" = settings,
     "Status" = vapply(df[["Status"]], .sample_status_html, character(1)),
     "Actions" = actions,

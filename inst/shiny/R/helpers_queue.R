@@ -90,6 +90,21 @@
   "<span class='queue-drag-handle' title='Drag to reorder'>::</span>"
 }
 
+.queue_small_text_column_defs <- function(table_df, small_text_columns) {
+  if (is.null(table_df) || length(small_text_columns) == 0) {
+    return(list())
+  }
+
+  targets <- match(small_text_columns, names(table_df)) - 1L
+  targets <- targets[!is.na(targets)]
+
+  if (length(targets) == 0) {
+    return(list())
+  }
+
+  list(list(className = "queue-small-text", targets = targets))
+}
+
 .sample_status_html <- function(status) {
   status_class <- ifelse(
     identical(status, "Ready"),
@@ -104,15 +119,35 @@
   )
 }
 
-.sample_progress_html <- function(progress) {
+.sample_progress_html <- function(progress, download_href = NULL, download_filename = NULL) {
   progress <- tolower(trimws(as.character(progress)))
+  if (is.null(download_href)) download_href <- rep("", length(progress))
+  if (is.null(download_filename)) download_filename <- rep("", length(progress))
+  download_href <- rep_len(as.character(download_href), length(progress))
+  download_filename <- rep_len(as.character(download_filename), length(progress))
+  download_icon <- as.character(shiny::icon("download"))
 
-  vapply(progress, function(x) {
+  vapply(seq_along(progress), function(i) {
+    x <- progress[[i]]
     if (x %in% c("processing", "running", "in_progress")) {
       return("<span class='queue-progress-spinner' title='Processing' aria-label='Processing'></span>")
     }
 
     if (x %in% c("done", "complete", "completed", "success", "true")) {
+      if (nzchar(download_href[[i]])) {
+        return(sprintf(
+          paste0(
+            "<span class='queue-progress-complete'>",
+            "<span class='queue-progress-done' title='Complete' aria-label='Complete'>&#10003;</span>",
+            "<a class='queue-progress-download' href='%s' download='%s' title='Download merged file' aria-label='Download merged file'>%s</a>",
+            "</span>"
+          ),
+          htmltools::htmlEscape(download_href[[i]], attribute = TRUE),
+          htmltools::htmlEscape(download_filename[[i]], attribute = TRUE),
+          download_icon
+        ))
+      }
+
       return("<span class='queue-progress-done' title='Complete' aria-label='Complete'>&#10003;</span>")
     }
 
@@ -132,6 +167,8 @@
   }
 
   progress <- if ("Progress" %in% names(df)) df[["Progress"]] else rep("", nrow(df))
+  download_href <- if ("Download Href" %in% names(df)) df[["Download Href"]] else rep("", nrow(df))
+  download_filename <- if ("Output Path" %in% names(df)) basename(df[["Output Path"]]) else rep("", nrow(df))
   actions <- vapply(df[[id_col]], function(row_id) {
     .queue_actions_html(row_id, remove_input_id, move_up_input_id, move_down_input_id)
   }, character(1))
@@ -142,10 +179,9 @@
     "Sample Name" = df[["Sample Name"]],
     "Left (R1) File" = df[["Left (R1) File"]],
     "Right (R2) File" = df[["Right (R2) File"]],
-    "Source" = if ("Source" %in% names(df)) df[["Source"]] else rep("single", nrow(df)),
     "Status" = vapply(df[["Status"]], .sample_status_html, character(1)),
     "Actions" = actions,
-    "Progress" = .sample_progress_html(progress),
+    "Progress" = .sample_progress_html(progress, download_href, download_filename),
     "Sample ID" = df[[id_col]],
     check.names = FALSE
   )
@@ -162,7 +198,8 @@
     remove_input_id,
     move_up_input_id,
     move_down_input_id,
-    table_builder = .make_sample_table_data
+    table_builder = .make_sample_table_data,
+    small_text_columns = character()
 ) {
   output[[output_id]] <- DT::renderDT({
     df <- data_fn()
@@ -193,6 +230,22 @@
     )
     id_col_index <- match("Sample ID", names(table_df)) - 1L
     order_col_index <- match("Display Order", names(table_df)) - 1L
+    progress_col_index <- match("Progress", names(table_df)) - 1L
+    progress_col_def <- if (!is.na(progress_col_index)) {
+      list(list(className = "queue-progress-cell", targets = progress_col_index))
+    } else {
+      list()
+    }
+
+    column_defs <- c(
+      .queue_small_text_column_defs(table_df, small_text_columns),
+      progress_col_def,
+      list(
+        list(visible = FALSE, targets = id_col_index),
+        list(visible = FALSE, targets = order_col_index),
+        list(orderable = FALSE, targets = "_all")
+      )
+    )
 
     DT::datatable(
       table_df,
@@ -212,11 +265,7 @@
           dataSrc = order_col_index,
           selector = ".queue-drag-handle"
         ),
-        columnDefs = list(
-          list(visible = FALSE, targets = id_col_index),
-          list(visible = FALSE, targets = order_col_index),
-          list(orderable = FALSE, targets = "_all")
-        )
+        columnDefs = column_defs
       ),
       callback = DT::JS(sprintf(
         "table.on('row-reorder', function(e, diff, edit) {

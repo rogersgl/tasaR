@@ -29,7 +29,9 @@ Imports:
     purrr,
     tinytex,
     shiny,
-    shinyjs
+    shinyjs,
+    future,
+    promises
 Depends:
     data.table,
     R (>= 4.1.0)

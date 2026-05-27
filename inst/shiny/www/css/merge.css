@@ -509,6 +509,34 @@
   line-height: 1.2;
 }
 
+.queue-table tbody td.queue-small-text {
+  font-size: 12px !important;
+}
+
+.queue-table tbody td.queue-progress-cell,
+.queue-table thead th.queue-progress-cell {
+  text-align: center;
+}
+
+.queue-table tbody td.queue-progress-cell {
+  width: 72px;
+}
+
+.merge-download-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 16px;
+  max-width: 1100px;
+  margin: 10px 0 24px;
+}
+
+.merge-download-count {
+  color: #486581;
+  font-size: 13px;
+  font-weight: 600;
+}
+
 .queue-table tbody tr.selected > *,
 .queue-table tbody tr.selected:hover > * {
   background-color: #DCEAF4 !important;
@@ -571,12 +599,12 @@
 }
 
 .queue-move-btn {
-  color: #2C7DA0;
+  color: #7A9FB5;
   font-size: 13px;
 }
 
 .queue-move-btn:hover {
-  color: #1B4965;
+  color: #4F6D7A;
   background: rgba(44,125,160,0.08);
 }
 
@@ -617,11 +645,38 @@
 }
 
 .queue-progress-done {
-  color: #0072B2;
+  color: #2E8B57;
   display: inline-block;
   font-size: 18px;
   font-weight: 800;
   line-height: 1;
+}
+
+.queue-progress-complete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+
+.queue-progress-download {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  color: #147A8A;
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1;
+  text-decoration: none;
+}
+
+.queue-progress-download:hover {
+  background: rgba(44,125,160,0.10);
+  color: #1B4965;
+  text-decoration: none;
 }
 
 .queue-progress-empty {
@@ -629,6 +684,24 @@
   width: 16px;
   height: 16px;
 }
+
+.download-all-btn {
+  background: #FFFFFF;
+  color: #147A8A;
+  border: 2px solid #147A8A;
+  border-radius: 12px;
+  font-weight: 700;
+  padding: 10px 18px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  transition: all 0.18s ease;
+}
+
+.download-all-btn:hover {
+  background: rgba(20,122,138,0.08);
+  color: #0F5F6B;
+  border-color: #0F5F6B;
+}
+
 
 .mutation-upload-row {
   display: flex;

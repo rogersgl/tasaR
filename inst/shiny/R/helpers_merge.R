@@ -110,43 +110,94 @@
        )
 }
 
-# pandaseq_merge_files <- function(forward_fastq,
-#                                  reverse_fastq,
-#                                  output_fastq,
-#                                  log_file = NULL,
-#                                  min_length = NULL,
-#                                  max_length = NULL,
-#                                  extra_args = c("-F", "-d", "bFSrk"),
-#                                  verbose = FALSE)
-
-# merge_inputs
-# Sample_Name
-# R1_Path
-# R2_Path
-# Source
-.run_merge_pipeline <- function(merge_inputs, settings){
-  log.path <- file.path(tempdir(), "merge", stringr::str_c(merge_inputs$Sample_Name,"-log.txt"))
-  output.path <- file.path(tempdir(), "merge", stringr::str_c(if(nzchar(settings$merge_prefix)) stringr::str_c(settings$merge_prefix, "-"),
-                                                                         merge_inputs$Sample_Name,
-                                                                         if(settings$merge_filetype == "FASTQ"){".fastq"
-                                                                           } else if(settings$merge_filetype == "FASTA"){".fasta"
-                                                                             } else(stop("Merge file type unclear. Too confused to continue."))))
-
-  extra_args <- .pandaseq_extra_args(settings)
-  cat(extra_args)
-  for (i in 1:nrow(merge_inputs)) {
-    this_row <- merge_inputs[i,]
-    pandaseq_merge_files(forward_fastq = this_row$R1_Path,
-                         reverse_fastq = this_row$R2_Path,
-                         output_fastq = output.path,
-                         log_file = log.path,
-                         min_length = settings$min_length,
-                         max_length = settings$max_length,
-                         extra_args = extra_args,
-                         verbose = FALSE
-    )
+.merge_file_extension <- function(merge_filetype) {
+  if (identical(merge_filetype, "FASTQ")) {
+    return(".fastq")
   }
 
+  if (identical(merge_filetype, "FASTA")) {
+    return(".fasta")
+  }
+
+  stop("Merge file type unclear. Too confused to continue.", call. = FALSE)
+}
+
+.merge_output_paths <- function(sample_name, settings, output_dir = file.path(tempdir(), "merge")) {
+  prefix <- if (nzchar(settings$merge_prefix)) {
+    stringr::str_c(settings$merge_prefix, "-")
+  } else {
+    ""
+  }
+
+  list(
+    log_path = file.path(output_dir, stringr::str_c(sample_name, "-log.txt")),
+    output_path = file.path(
+      output_dir,
+      stringr::str_c(prefix, sample_name, .merge_file_extension(settings$merge_filetype))
+    )
+  )
+}
+
+.merge_job_rows <- function(ordered_queue, merge_inputs, settings, output_dir = file.path(tempdir(), "merge")) {
+  paths <- lapply(merge_inputs[["Sample_Name"]], .merge_output_paths, settings = settings, output_dir = output_dir)
+
+  cbind(
+    ordered_queue[, "Queue ID", drop = FALSE],
+    merge_inputs,
+    data.frame(
+      Output_Path = vapply(paths, `[[`, character(1), "output_path"),
+      Log_Path = vapply(paths, `[[`, character(1), "log_path"),
+      check.names = FALSE
+    )
+  )
+}
+
+.merge_result_error_message <- function(sample_name, result) {
+  details <- c(
+    paste("PANDAseq merge failed for", sample_name),
+    if (!is.null(result$phase) && nzchar(result$phase)) paste("phase:", result$phase),
+    if (!is.null(result$status)) paste("status:", result$status),
+    if (!is.null(result$stderr) && nzchar(result$stderr)) result$stderr
+  )
+
+  paste(details, collapse = "\n")
+}
+
+.run_single_merge_sample <- function(row, settings, merge_fun = pandaseq_merge_files) {
+  row <- as.data.frame(row, stringsAsFactors = FALSE, check.names = FALSE)
+  if (nrow(row) != 1L) {
+    stop("A single merge sample row is required.", call. = FALSE)
+  }
+
+  sample_name <- row[["Sample_Name"]]
+  paths <- if (all(c("Output_Path", "Log_Path") %in% names(row))) {
+    list(output_path = row[["Output_Path"]], log_path = row[["Log_Path"]])
+  } else {
+    .merge_output_paths(sample_name, settings)
+  }
+
+  result <- merge_fun(
+    forward_fastq = row[["R1_Path"]],
+    reverse_fastq = row[["R2_Path"]],
+    output_fastq = paths$output_path,
+    log_file = paths$log_path,
+    min_length = settings$min_length,
+    max_length = settings$max_length,
+    extra_args = .pandaseq_extra_args(settings),
+    verbose = FALSE
+  )
+
+  if (!isTRUE(result$ok)) {
+    stop(.merge_result_error_message(sample_name, result), call. = FALSE)
+  }
+
+  result
+}
+
+.run_merge_pipeline <- function(merge_inputs, settings, merge_fun = pandaseq_merge_files) {
+  lapply(seq_len(nrow(merge_inputs)), function(i) {
+    .run_single_merge_sample(merge_inputs[i, , drop = FALSE], settings, merge_fun = merge_fun)
+  })
 }
 
 
@@ -157,8 +208,7 @@
   # -q reverseprimer
   # -N
   # -d flags
-  c("-F",
-    "-o", settings$min_overlap,
+  c("-o", settings$min_overlap,
     "-t", settings$merge_similarity,
     if(any(settings$merge_seq_build_log,
                settings$merge_file_errors,
@@ -173,9 +223,8 @@
 
       )
     } else {character()},
-    if(nzchar(settings$forward_primer)) c("-p", "settings$forward_primer") else character(),
-    if(nzchar(settings$reverse_primer)) c("-q", "settings$reverse_primer") else character(),
+    if(nzchar(settings$forward_primer)) c("-p", settings$forward_primer) else character(),
+    if(nzchar(settings$reverse_primer)) c("-q", settings$reverse_primer) else character(),
     if(settings$merge_discard_ambig) "-N" else character()
     )
 }
-

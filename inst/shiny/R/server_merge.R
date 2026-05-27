@@ -1,9 +1,15 @@
 setup_merge_server <- function(input, output, session) {
   upload_root <- file.path(tempdir(), "tasaR_uploads", session$token)
+  merge_output_root <- file.path(tempdir(), "merge", session$token)
+  merge_resource_prefix <- paste0("merge-results-", gsub("[^A-Za-z0-9_-]", "_", session$token))
   dir.create(upload_root, recursive = TRUE, showWarnings = FALSE)
+  dir.create(merge_output_root, recursive = TRUE, showWarnings = FALSE)
+  shiny::addResourcePath(merge_resource_prefix, merge_output_root)
 
   session$onSessionEnded(function() {
     unlink(upload_root, recursive = TRUE, force = TRUE)
+    unlink(merge_output_root, recursive = TRUE, force = TRUE)
+    shiny::removeResourcePath(merge_resource_prefix)
   })
 
   merge_rv <- reactiveValues(
@@ -17,12 +23,15 @@ setup_merge_server <- function(input, output, session) {
       "Source" = character(),
       "Status" = character(),
       "Progress" = character(),
+      "Output Path" = character(),
+      "Download Href" = character(),
       check.names = FALSE
     ),
     sample_order = character(),
     r1_meta = NULL,
     r2_meta = NULL,
     files_ready = FALSE,
+    running = FALSE,
     message = NULL,
     message_type = NULL
   )
@@ -41,6 +50,53 @@ setup_merge_server <- function(input, output, session) {
 
   refresh_merge_status <- function() {
     merge_rv$queued <- .sample_table_with_status(merge_rv$queued)
+  }
+
+  set_merge_progress <- function(queue_id, progress) {
+    idx <- match(queue_id, merge_rv$queued[["Queue ID"]])
+    if (is.na(idx)) return(FALSE)
+
+    merge_rv$queued[idx, "Progress"] <- progress
+    TRUE
+  }
+
+  set_merge_result <- function(queue_id, output_path) {
+    idx <- match(queue_id, merge_rv$queued[["Queue ID"]])
+    if (is.na(idx)) return(FALSE)
+
+    filename <- basename(output_path)
+    merge_rv$queued[idx, "Output Path"] <- output_path
+    merge_rv$queued[idx, "Download Href"] <- paste0(
+      merge_resource_prefix,
+      "/",
+      utils::URLencode(filename, reserved = TRUE)
+    )
+    TRUE
+  }
+
+  reset_merge_progress <- function(queue_ids = merge_rv$queued[["Queue ID"]]) {
+    if (nrow(merge_rv$queued) == 0) return(invisible(FALSE))
+
+    idx <- match(queue_ids, merge_rv$queued[["Queue ID"]])
+    idx <- idx[!is.na(idx)]
+    if (length(idx) == 0) return(invisible(FALSE))
+
+    merge_rv$queued[idx, "Progress"] <- ""
+    merge_rv$queued[idx, "Output Path"] <- ""
+    merge_rv$queued[idx, "Download Href"] <- ""
+    invisible(TRUE)
+  }
+
+  downloadable_merge_rows <- function() {
+    df <- merge_rv$queued
+    if (is.null(df) || nrow(df) == 0 || !"Output Path" %in% names(df)) {
+      return(df[0, , drop = FALSE])
+    }
+
+    path <- df[["Output Path"]]
+    progress <- if ("Progress" %in% names(df)) df[["Progress"]] else rep("", nrow(df))
+    keep <- nzchar(path) & file.exists(path) & tolower(trimws(progress)) %in% c("done", "complete", "completed", "success", "true")
+    df[keep, , drop = FALSE]
   }
 
   reconcile_merge_order <- function() {
@@ -98,6 +154,8 @@ setup_merge_server <- function(input, output, session) {
         "Source" = "batch",
         "Status" = "",
         "Progress" = "",
+        "Output Path" = "",
+        "Download Href" = "",
         check.names = FALSE
       )
 
@@ -126,6 +184,12 @@ setup_merge_server <- function(input, output, session) {
   }, ignoreInit = TRUE)
 
   observeEvent(input$queue_sample, {
+    if (isTRUE(merge_rv$running)) {
+      merge_rv$message <- "A merge is already running."
+      merge_rv$message_type <- "error"
+      return()
+    }
+
     sample_name <- trimws(input$sample_name)
 
     if (!nzchar(sample_name)) {
@@ -153,6 +217,8 @@ setup_merge_server <- function(input, output, session) {
         "Source" = "single",
         "Status" = "",
         "Progress" = "",
+        "Output Path" = "",
+        "Download Href" = "",
         check.names = FALSE
       )
     )
@@ -187,6 +253,12 @@ setup_merge_server <- function(input, output, session) {
   }, ignoreInit = TRUE)
 
   observeEvent(input$queue_batch_samples, {
+    if (isTRUE(merge_rv$running)) {
+      batch_rv$message <- "A merge is already running."
+      batch_rv$message_type <- "error"
+      return()
+    }
+
     if (is.null(batch_rv$manifest_meta) || is.null(batch_rv$archive_meta)) {
       batch_rv$message <- "Upload the batch manifest and archive before adding samples."
       batch_rv$message_type <- "error"
@@ -197,6 +269,12 @@ setup_merge_server <- function(input, output, session) {
   }, ignoreInit = TRUE)
 
   observeEvent(input$clear_batch, {
+    if (isTRUE(merge_rv$running)) {
+      batch_rv$message <- "A merge is already running."
+      batch_rv$message_type <- "error"
+      return()
+    }
+
     .remove_managed_upload(batch_rv$manifest_meta)
     .remove_managed_upload(batch_rv$archive_meta)
 
@@ -212,6 +290,12 @@ setup_merge_server <- function(input, output, session) {
   }, ignoreInit = TRUE)
 
   observeEvent(input$remove_queue_id, {
+    if (isTRUE(merge_rv$running)) {
+      merge_rv$message <- "A merge is already running."
+      merge_rv$message_type <- "error"
+      return()
+    }
+
     res <- .remove_queued_sample(merge_rv$queued, input$remove_queue_id)
     if (!res$success) return()
 
@@ -245,6 +329,39 @@ setup_merge_server <- function(input, output, session) {
     .queue_upload_message(batch_rv$message, batch_rv$message_type)
   })
 
+  output$merge_downloads <- renderUI({
+    ready_count <- nrow(downloadable_merge_rows())
+    if (ready_count == 0L) return(NULL)
+
+    label <- paste(ready_count, if (ready_count == 1L) "file ready" else "files ready")
+    button <- downloadButton("download_all_merged", "Download All", class = "download-all-btn")
+
+    div(
+      class = "merge-download-row",
+      div(class = "merge-download-count", label),
+      div(class = "action-button-group", if (ready_count > 0L && !isTRUE(merge_rv$running)) button else shinyjs::disabled(button))
+    )
+  })
+
+  output$download_all_merged <- downloadHandler(
+    filename = function() {
+      paste0("merged_reads_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".zip")
+    },
+    content = function(file) {
+      rows <- downloadable_merge_rows()
+      paths <- rows[["Output Path"]]
+      paths <- paths[nzchar(paths) & file.exists(paths)]
+      if (length(paths) == 0L) {
+        stop("No completed merged files are available for download.", call. = FALSE)
+      }
+
+      old_wd <- getwd()
+      on.exit(setwd(old_wd), add = TRUE)
+      setwd(dirname(paths[[1]]))
+      utils::zip(zipfile = file, files = basename(paths))
+    }
+  )
+
   .setup_reorderable_sample_table(
     input = input,
     output = output,
@@ -253,15 +370,17 @@ setup_merge_server <- function(input, output, session) {
     id_col = "Queue ID",
     get_order = function() merge_rv$sample_order,
     set_order = function(order) {
+      if (isTRUE(merge_rv$running)) return()
       merge_rv$sample_order <- order
     },
     remove_input_id = "remove_queue_id",
     move_up_input_id = "merge_queued_samples_move_up",
-    move_down_input_id = "merge_queued_samples_move_down"
+    move_down_input_id = "merge_queued_samples_move_down",
+    small_text_columns = c("Left (R1) File", "Right (R2) File")
   )
 
   observe({
-    ready <- nrow(merge_rv$queued) > 0 && all(merge_rv$queued$Status == "Ready")
+    ready <- !isTRUE(merge_rv$running) && nrow(merge_rv$queued) > 0 && all(merge_rv$queued$Status == "Ready")
     if (ready) {
       shinyjs::enable("run_single_merge")
       shinyjs::enable("run_batch_merge")
@@ -272,7 +391,7 @@ setup_merge_server <- function(input, output, session) {
   })
 
   observe({
-    batch_ready <- !is.null(batch_rv$manifest_meta) && !is.null(batch_rv$archive_meta)
+    batch_ready <- !isTRUE(merge_rv$running) && !is.null(batch_rv$manifest_meta) && !is.null(batch_rv$archive_meta)
     if (batch_ready) {
       shinyjs::enable("queue_batch_samples")
     } else {
@@ -280,26 +399,80 @@ setup_merge_server <- function(input, output, session) {
     }
   })
 
-  run_unified_merge <- function() {
+  run_next_merge <- function(job_rows, settings, index = 1L) {
+    if (index > nrow(job_rows)) {
+      merge_rv$running <- FALSE
+      merge_rv$message <- paste("Merge complete for", nrow(job_rows), "queued samples.")
+      merge_rv$message_type <- "success"
+      return(invisible(TRUE))
+    }
 
-    # returns a data.frame
-        # Sample_Name
-        # R1_Path
-        # R2_Path
-        # Source
-    merge_inputs <- .prepare_merge_inputs(
-      mode = "single",
-      queued_df = .order_sample_df(
-        merge_rv$queued,
-        merge_rv$sample_order,
-        "Queue ID"
+    row <- job_rows[index, , drop = FALSE]
+    queue_id <- row[["Queue ID"]]
+    set_merge_progress(queue_id, "processing")
+
+    merge_job <- promises::future_promise({
+      .run_single_merge_sample(
+        row[, c("Sample_Name", "R1_Path", "R2_Path", "Source", "Output_Path", "Log_Path"), drop = FALSE],
+        settings = settings,
+        merge_fun = tasaR::pandaseq_merge_files
       )
+    })
+
+    promises::then(
+      merge_job,
+      onFulfilled = function(value) {
+        set_merge_progress(queue_id, "done")
+        set_merge_result(queue_id, row[["Output_Path"]])
+        run_next_merge(job_rows, settings, index + 1L)
+        invisible(value)
+      },
+      onRejected = function(reason) {
+        set_merge_progress(queue_id, "")
+        merge_rv$running <- FALSE
+        merge_rv$message <- conditionMessage(reason)
+        merge_rv$message_type <- "error"
+        invisible(NULL)
+      }
+    )
+  }
+
+  run_unified_merge <- function() {
+    if (isTRUE(merge_rv$running)) {
+      merge_rv$message <- "A merge is already running."
+      merge_rv$message_type <- "error"
+      return(invisible(FALSE))
+    }
+
+    ordered_queue <- .order_sample_df(
+      merge_rv$queued,
+      merge_rv$sample_order,
+      "Queue ID"
     )
 
-    .run_merge_pipeline(
-      merge_inputs,
-      settings = .get_merge_settings(input)
+    merge_inputs <- tryCatch(
+      .prepare_merge_inputs(mode = "single", queued_df = ordered_queue),
+      error = function(e) {
+        merge_rv$message <- conditionMessage(e)
+        merge_rv$message_type <- "error"
+        NULL
+      }
     )
+
+    if (is.null(merge_inputs)) return(invisible(FALSE))
+
+    settings <- .get_merge_settings(input)
+    job_rows <- .merge_job_rows(
+      ordered_queue = ordered_queue,
+      merge_inputs = merge_inputs,
+      settings = settings,
+      output_dir = merge_output_root
+    )
+
+    reset_merge_progress(job_rows[["Queue ID"]])
+    merge_rv$running <- TRUE
+    run_next_merge(job_rows, settings)
+    invisible(TRUE)
   }
 
   observeEvent(input$run_single_merge, {

@@ -397,7 +397,7 @@ sidebar_ui_for_nav <- function(nav) {
              checkboxInput(
                "merge_seq_build_log",
                label = NULL,
-               value = TRUE
+               value = FALSE
              ),
              tags$span(
                "Sequence build info",

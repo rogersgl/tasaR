@@ -91,7 +91,6 @@
     "Experimental File" = df[["Experimental File"]],
     "gRNA Sequence" = df[["gRNA Sequence"]],
     "Cut Position" = df[["Cut Position"]],
-    "Source" = if ("Source" %in% names(df)) df[["Source"]] else rep("single", nrow(df)),
     "Settings" = settings,
     "Status" = vapply(df[["Status"]], .sample_status_html, character(1)),
     "Actions" = actions,

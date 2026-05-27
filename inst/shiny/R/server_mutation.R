@@ -308,7 +308,8 @@ setup_mutation_server <- function(input, output, session) {
     remove_input_id = "mutation_remove_row",
     move_up_input_id = "mutation_queued_samples_move_up",
     move_down_input_id = "mutation_queued_samples_move_down",
-    table_builder = function(...) .make_mutation_table_data(..., settings_input_id = "mutation_open_settings")
+    table_builder = function(...) .make_mutation_table_data(..., settings_input_id = "mutation_open_settings"),
+    small_text_columns = c("Merged File")
   )
 
   open_settings_modal <- function(row_id) {

@@ -149,7 +149,8 @@ merge_page_ui <- function() {
         div(
           class = "queue-table-wrapper queue-table-section",
           DT::DTOutput("merge_queued_samples")
-        )
+        ),
+        uiOutput("merge_downloads")
       )
     )
   )
