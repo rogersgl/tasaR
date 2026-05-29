@@ -102,8 +102,6 @@ mutation_sequence_settings_ui <- function(prefix = "mutation", show_heading = TR
     if (show_heading) div(class = "mutation-settings-heading-spacer"),
     div(
       class = "mutation-settings-section mutation-sequence-section",
-      if (show_heading) h5("Sequence Definition", class = "mutation-section-title"),
-      if (show_heading) div(class = "mutation-section-rule"),
       div(
         class = "minimal-input-group mutation-setting-field mutation-reference-field",
         mutation_label("Reference Sequence", "mutation_reference_sequence"),
@@ -149,8 +147,6 @@ mutation_analysis_settings_ui <- function(prefix = "mutation", show_heading = TR
     if (show_heading) div(class = "mutation-settings-heading-spacer"),
     div(
       class = "mutation-settings-section mutation-analysis-section",
-      if (show_heading) h5("Analysis Parameters", class = "mutation-section-title"),
-      if (show_heading) div(class = "mutation-section-rule"),
       extension_settings_row(prefix, "forward", "mutation"),
       br(),
       extension_settings_row(prefix, "reverse", "mutation"),
@@ -177,7 +173,7 @@ mutation_analysis_settings_ui <- function(prefix = "mutation", show_heading = TR
               mutation_numeric_input_plain(paste0(prefix, "_fr2_start"), "FR2"),
               mutation_numeric_input_plain(paste0(prefix, "_cdr2_start"), "CDR2"),
               mutation_numeric_input_plain(paste0(prefix, "_fr3_start"), "FR3"),
-              mutation_numeric_input_plain(paste0(prefix, "_cdr4_start"), "CDR3"),
+              mutation_numeric_input_plain(paste0(prefix, "_cdr3_start"), "CDR3"),
               mutation_numeric_input_plain(paste0(prefix, "_fr4_start"), "FR4"),
               mutation_numeric_input_plain(paste0(prefix, "_fr4_end"), "End")
             )
@@ -250,6 +246,7 @@ mutation_page_ui <- function() {
                       ),
                       div(
                         class = "upload-row-action mutation-single-add-action",
+                        style = "padding-left: 35px",
                         actionButton("mutation_queue_sample", "Add Sample", class = "secondary-action-btn")
                       )
                     ),
@@ -352,7 +349,8 @@ mutation_page_ui <- function() {
         div(
           class = "queue-table-wrapper queue-table-section",
           DT::DTOutput("mutation_queued_samples")
-        )
+        ),
+        uiOutput("mutation_downloads")
       )
     )
   )

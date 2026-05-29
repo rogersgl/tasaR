@@ -453,8 +453,9 @@ sidebar_ui_for_nav <- function(nav) {
 
             tags$hr(class = "section-hr"),
 
-            h5("Sample Summary"),
-            verbatimTextOutput("mutation_run_summary"),
+	            h5("Sample Summary"),
+	            verbatimTextOutput("mutation_run_summary"),
+	            uiOutput("mutation_stop_control"),
 
 
 
@@ -464,16 +465,6 @@ sidebar_ui_for_nav <- function(nav) {
               h5("Additional Parameters"),
               div(
                 class = "mutation-sidebar-analysis",
-                div(
-                  class = "d-flex align-items-center justify-content-between",
-                  tags$label("Output prefix", class = "control-label"),
-                  tooltip(
-                    icon("circle-question"),
-                    "Prefix reserved for future mutation result files."
-                  )
-                ),
-                textInput("mutation_output_prefix", label = NULL, placeholder = "mutations"),
-                br(),
                 mutation_analysis_settings_ui("mutation", show_heading = FALSE)
               )
             )

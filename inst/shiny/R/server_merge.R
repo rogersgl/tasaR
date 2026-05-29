@@ -1,10 +1,13 @@
-setup_merge_server <- function(input, output, session) {
+setup_merge_server <- function(input, output, session, operation_rv = NULL) {
   upload_root <- file.path(tempdir(), "tasaR_uploads", session$token)
   merge_output_root <- file.path(tempdir(), "merge", session$token)
   merge_resource_prefix <- paste0("merge-results-", gsub("[^A-Za-z0-9_-]", "_", session$token))
   dir.create(upload_root, recursive = TRUE, showWarnings = FALSE)
   dir.create(merge_output_root, recursive = TRUE, showWarnings = FALSE)
   shiny::addResourcePath(merge_resource_prefix, merge_output_root)
+  if (is.null(operation_rv)) {
+    operation_rv <- reactiveValues(active = NULL)
+  }
 
   session$onSessionEnded(function() {
     unlink(upload_root, recursive = TRUE, force = TRUE)
@@ -50,6 +53,23 @@ setup_merge_server <- function(input, output, session) {
 
   refresh_merge_status <- function() {
     merge_rv$queued <- .sample_table_with_status(merge_rv$queued)
+  }
+
+  operation_active <- function() {
+    !is.null(operation_rv$active)
+  }
+
+  acquire_operation <- function(name) {
+    if (operation_active()) return(FALSE)
+    operation_rv$active <- name
+    TRUE
+  }
+
+  release_operation <- function(name) {
+    if (identical(operation_rv$active, name)) {
+      operation_rv$active <- NULL
+    }
+    invisible(TRUE)
   }
 
   set_merge_progress <- function(queue_id, progress) {
@@ -184,7 +204,7 @@ setup_merge_server <- function(input, output, session) {
   }, ignoreInit = TRUE)
 
   observeEvent(input$queue_sample, {
-    if (isTRUE(merge_rv$running)) {
+    if (isTRUE(merge_rv$running) || operation_active()) {
       merge_rv$message <- "A merge is already running."
       merge_rv$message_type <- "error"
       return()
@@ -253,7 +273,7 @@ setup_merge_server <- function(input, output, session) {
   }, ignoreInit = TRUE)
 
   observeEvent(input$queue_batch_samples, {
-    if (isTRUE(merge_rv$running)) {
+    if (isTRUE(merge_rv$running) || operation_active()) {
       batch_rv$message <- "A merge is already running."
       batch_rv$message_type <- "error"
       return()
@@ -269,7 +289,7 @@ setup_merge_server <- function(input, output, session) {
   }, ignoreInit = TRUE)
 
   observeEvent(input$clear_batch, {
-    if (isTRUE(merge_rv$running)) {
+    if (isTRUE(merge_rv$running) || operation_active()) {
       batch_rv$message <- "A merge is already running."
       batch_rv$message_type <- "error"
       return()
@@ -290,7 +310,7 @@ setup_merge_server <- function(input, output, session) {
   }, ignoreInit = TRUE)
 
   observeEvent(input$remove_queue_id, {
-    if (isTRUE(merge_rv$running)) {
+    if (isTRUE(merge_rv$running) || operation_active()) {
       merge_rv$message <- "A merge is already running."
       merge_rv$message_type <- "error"
       return()
@@ -358,7 +378,7 @@ setup_merge_server <- function(input, output, session) {
       old_wd <- getwd()
       on.exit(setwd(old_wd), add = TRUE)
       setwd(dirname(paths[[1]]))
-      utils::zip(zipfile = file, files = basename(paths))
+      utils::zip(zipfile = file, files = basename(paths), flags = "-qr9X")
     }
   )
 
@@ -370,7 +390,7 @@ setup_merge_server <- function(input, output, session) {
     id_col = "Queue ID",
     get_order = function() merge_rv$sample_order,
     set_order = function(order) {
-      if (isTRUE(merge_rv$running)) return()
+      if (isTRUE(merge_rv$running) || operation_active()) return()
       merge_rv$sample_order <- order
     },
     remove_input_id = "remove_queue_id",
@@ -380,7 +400,7 @@ setup_merge_server <- function(input, output, session) {
   )
 
   observe({
-    ready <- !isTRUE(merge_rv$running) && nrow(merge_rv$queued) > 0 && all(merge_rv$queued$Status == "Ready")
+    ready <- !isTRUE(merge_rv$running) && !operation_active() && nrow(merge_rv$queued) > 0 && all(merge_rv$queued$Status == "Ready")
     if (ready) {
       shinyjs::enable("run_single_merge")
       shinyjs::enable("run_batch_merge")
@@ -391,7 +411,7 @@ setup_merge_server <- function(input, output, session) {
   })
 
   observe({
-    batch_ready <- !isTRUE(merge_rv$running) && !is.null(batch_rv$manifest_meta) && !is.null(batch_rv$archive_meta)
+    batch_ready <- !isTRUE(merge_rv$running) && !operation_active() && !is.null(batch_rv$manifest_meta) && !is.null(batch_rv$archive_meta)
     if (batch_ready) {
       shinyjs::enable("queue_batch_samples")
     } else {
@@ -402,6 +422,7 @@ setup_merge_server <- function(input, output, session) {
   run_next_merge <- function(job_rows, settings, index = 1L) {
     if (index > nrow(job_rows)) {
       merge_rv$running <- FALSE
+      release_operation("merge")
       merge_rv$message <- paste("Merge complete for", nrow(job_rows), "queued samples.")
       merge_rv$message_type <- "success"
       return(invisible(TRUE))
@@ -417,7 +438,7 @@ setup_merge_server <- function(input, output, session) {
         settings = settings,
         merge_fun = tasaR::pandaseq_merge_files
       )
-    })
+    }, seed = TRUE)
 
     promises::then(
       merge_job,
@@ -430,6 +451,7 @@ setup_merge_server <- function(input, output, session) {
       onRejected = function(reason) {
         set_merge_progress(queue_id, "")
         merge_rv$running <- FALSE
+        release_operation("merge")
         merge_rv$message <- conditionMessage(reason)
         merge_rv$message_type <- "error"
         invisible(NULL)
@@ -440,6 +462,11 @@ setup_merge_server <- function(input, output, session) {
   run_unified_merge <- function() {
     if (isTRUE(merge_rv$running)) {
       merge_rv$message <- "A merge is already running."
+      merge_rv$message_type <- "error"
+      return(invisible(FALSE))
+    }
+    if (operation_active()) {
+      merge_rv$message <- "Another operation is already running."
       merge_rv$message_type <- "error"
       return(invisible(FALSE))
     }
@@ -468,6 +495,12 @@ setup_merge_server <- function(input, output, session) {
       settings = settings,
       output_dir = merge_output_root
     )
+
+    if (!acquire_operation("merge")) {
+      merge_rv$message <- "Another operation is already running."
+      merge_rv$message_type <- "error"
+      return(invisible(FALSE))
+    }
 
     reset_merge_progress(job_rows[["Queue ID"]])
     merge_rv$running <- TRUE

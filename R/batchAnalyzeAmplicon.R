@@ -11,6 +11,7 @@ NULL
 #'
 #'
 #' @param input.settings.list A character vector describing a path to a .csv file to read settings from. Alternatively, an R data.frame or list containing those settings.
+#' @param progress_callback Optional function receiving structured progress events during analysis
 #'
 #' @returns A list of AmpliconSequencing objects
 #'
@@ -25,7 +26,7 @@ NULL
 #'
 #' @section See also:
 #' \code{\link{batchSummarize}}
-batchAnalyzeAmplicon <- function(input.settings.list) {
+batchAnalyzeAmplicon <- function(input.settings.list, progress_callback = NULL) {
   settings.list <- list()
 
   # file path to .csv
@@ -75,7 +76,9 @@ batchAnalyzeAmplicon <- function(input.settings.list) {
   sample.names <- names(settings.list)
   results.list <- list()
   results.list <- S4Vectors::lapply(settings.list, function(x) {
-    analyzeAmplicon(x)
+    result <- analyzeAmplicon(x, progress_callback = progress_callback)
+    .emit_analysis_progress(progress_callback, x@Name, 5L, 5L, "Analysis complete", status = "analyzed")
+    result
   })
   names(results.list) <- sample.names
   return(results.list)
@@ -200,5 +203,3 @@ batchSummarize <- function(results.list, export = FALSE, path = NULL, suppressCo
     return(batsum)
   }
 }
-
-

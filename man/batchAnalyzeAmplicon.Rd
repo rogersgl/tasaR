@@ -4,10 +4,12 @@
 \alias{batchAnalyzeAmplicon}
 \title{Batch amplicon analysis}
 \usage{
-batchAnalyzeAmplicon(input.settings.list)
+batchAnalyzeAmplicon(input.settings.list, progress_callback = NULL)
 }
 \arguments{
 \item{input.settings.list}{A character vector describing a path to a .csv file to read settings from. Alternatively, an R data.frame or list containing those settings.}
+
+\item{progress_callback}{Optional function receiving structured progress events during analysis}
 }
 \value{
 A list of AmpliconSequencing objects

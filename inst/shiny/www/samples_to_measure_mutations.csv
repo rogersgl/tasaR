@@ -1,2 +1,2 @@
-Sample Name,Merged File,Antibody,Reference Sequence,Forward Primer,Reverse Primer,Amplicon Length,Insert Start Coordinate,Insert End Coordinate,Forward Extension Type,Forward Extension Sequence,Reverse Extension Type,Reverse Extension Sequence,FR1 Start,CDR1 Start,FR2 Start,CDR2 Start,FR3 Start,CDR4 Start,FR4 Start,FR4 End
-Sample_1,Sample_1_merged.fastq.gz,FALSE,ATGCATGCATGC,ACGT,TGCA,300,1,300,None,,None,,,,,,,,,
+Sample Name,Merged File,Antibody,Reference Sequence,Forward Primer,Reverse Primer,Amplicon Length,Insert Start Coordinate,Insert End Coordinate,Forward Extension Type,Forward Extension Sequence,Reverse Extension Type,Reverse Extension Sequence,FR1 Start,CDR1 Start,FR2 Start,CDR2 Start,FR3 Start,CDR3 Start,FR4 Start,FR4 End
+Sample_1,Sample_1_merged.fastq.gz,FALSE,ATGCATGCATGC,ACGT,TGCA,300,35,-39,None,,None,,,,,,,,,

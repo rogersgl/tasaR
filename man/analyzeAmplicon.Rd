@@ -4,12 +4,14 @@
 \alias{analyzeAmplicon}
 \title{Analyze NGS amplicons}
 \usage{
-analyzeAmplicon(input.settings, ...)
+analyzeAmplicon(input.settings, ..., progress_callback = NULL)
 }
 \arguments{
 \item{input.settings}{A set of tasaR settings. Can be either a directory path to a .csv file (see makeSettingsCSV)}
 
 \item{...}{additional arguments passed through to sub-functions}
+
+\item{progress_callback}{Optional function receiving structured progress events during analysis}
 }
 \value{
 An S4 object of class AmpliconSequencing

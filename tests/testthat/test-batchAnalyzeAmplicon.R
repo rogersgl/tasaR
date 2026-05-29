@@ -15,6 +15,22 @@ test_that("batchAnalyzeAmplicon accepts different input types and returns the ex
   }
 })
 
+test_that("batchAnalyzeAmplicon emits per-sample progress events", {
+  events <- list()
+  callback <- function(event) {
+    events[[length(events) + 1L]] <<- event
+  }
+
+  settings <- rbind(make.set.df(), make.set.df())
+  settings$Name <- c("sample_a", "sample_b")
+  expect_output(expect_no_error(batchAnalyzeAmplicon(settings, progress_callback = callback)))
+
+  sample_names <- vapply(events, `[[`, character(1), "sample_name")
+  statuses <- vapply(events, `[[`, character(1), "status")
+  expect_true(all(c("sample_a", "sample_b") %in% sample_names))
+  expect_equal(sum(statuses == "analyzed"), 2L)
+})
+
 
 test_that("batchSummarize obeys flags correctly and returns the expected data", {
   expect_output(results.list <- batchAnalyzeAmplicon(rbind(make.set.df(), make.set.df())))

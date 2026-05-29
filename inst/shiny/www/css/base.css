@@ -351,6 +351,8 @@ html, body {
   font-weight: 650 !important;
   letter-spacing: 0.2px;
   box-shadow: 0 4px 12px rgba(44,125,160,0.20);
+  overflow: hidden;
+  position: relative;
   transition: all 0.18s ease;
 }
 
@@ -358,6 +360,41 @@ html, body {
 .primary-action-btn:hover {
   box-shadow: 0 6px 16px rgba(44,125,160,0.28);
   background: linear-gradient(90deg, #163B52 0%, #256B8A 100%) !important;
+}
+
+.primary-action-btn.analysis-starting,
+.primary-action-btn.analysis-starting:disabled,
+.primary-action-btn.analysis-starting.disabled {
+  cursor: wait;
+  opacity: 0.78 !important;
+}
+
+.primary-action-btn.analysis-starting::after {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  content: "";
+  background: linear-gradient(
+    90deg,
+    rgba(255,255,255,0.10) 0%,
+    rgba(255,255,255,0.70) 45%,
+    rgba(255,255,255,0.18) 100%
+  );
+  transform: translateX(-100%);
+  animation: analysis-start-pulse 1.15s ease-in-out infinite;
+}
+
+@keyframes analysis-start-pulse {
+  0% {
+    transform: translateX(-100%);
+  }
+
+  55%,
+  100% {
+    transform: translateX(100%);
+  }
 }
 
 
@@ -377,5 +414,3 @@ html, body {
   background: rgba(16,42,67,0.10) !important;
   color: #102A43 !important;
 }
-
-

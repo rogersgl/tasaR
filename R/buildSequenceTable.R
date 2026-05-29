@@ -11,6 +11,7 @@
 #'
 #' @param settings An object of S4 class tas.settings
 #' @param ... Additional paramaters to be passed to sub-function \code{sequenceTable}. Also inherited from parent functions.
+#' @param progress_callback Optional function receiving structured progress events during sequence table construction
 #'
 #' @returns An S4 object of class tas.sequences
 #' @export
@@ -19,19 +20,21 @@
 #' \dontrun{
 #'   buildSequenceTable(settings)
 #' }
-buildSequenceTable <- function(settings, ...) {
+buildSequenceTable <- function(settings, ..., progress_callback = NULL) {
   filter.counts <- numeric()
   if (!file.exists(settings@MergedFASTQPath)) {stop("FASTQ file not found.")}
   cat("Reading .fastq file...\n")
+  .emit_analysis_progress(progress_callback, settings@Name, 1L, 5L, "Reading FASTQ")
   reads <- ShortRead::readFastq(settings@MergedFASTQPath)
   filter.counts <- c(filter.counts, Merged = length(reads))
   cat("Filtering reads...\n")
+  .emit_analysis_progress(progress_callback, settings@Name, 2L, 5L, "Filtering reads")
   reads.filtered <- filterSequences(reads, settings)
   if (length(reads.filtered) == 0) {stop("No reads after filtering. Check that your primer and extension sequences match your sample and that primers were not trimmed during merging.")}
   filter.counts <- c(filter.counts, Filtered = length(reads.filtered))
   reads <- NULL
   #cat("Building sequence table...\n")
-  sequenceTable(reads.filtered, settings, filter.counts, ...)
+  sequenceTable(reads.filtered, settings, filter.counts, ..., progress_callback = progress_callback)
 }
 
 
@@ -73,7 +76,8 @@ sequenceTable <- function(reads.filtered,
                           with.nuclease = FALSE,
                           gRNA.seq = NULL,
                           manual.cut.site = NULL,
-                          ...) {
+                          ...,
+                          progress_callback = NULL) {
 
 
   if (tolower(settings@ForwardExtensionType) == "umi" && tolower(settings@ReverseExtensionType) == "umi") {
@@ -93,6 +97,7 @@ sequenceTable <- function(reads.filtered,
       umi_temp <- ShortRead::sread(ShortRead::narrow(reads.filtered, start = umi.pos$start, end = umi.pos$end))
     }
     cat("Binning UMIs...\n")
+    .emit_analysis_progress(progress_callback, settings@Name, 3L, 5L, "Binning UMIs")
     # extract id, seq, umi from Reads.Filtered.List and remove any sequences containing N called nt's
     id_temp <- as.character(ShortRead::id(reads.filtered))
     seq_temp <- ShortRead::sread(ShortRead::narrow(reads.filtered, start = settings@InsertStart, end = settings@InsertEnd))
@@ -129,6 +134,7 @@ sequenceTable <- function(reads.filtered,
 
   } else { #make dt if no UMIs
     cat("Binning sequences...\n")
+    .emit_analysis_progress(progress_callback, settings@Name, 3L, 5L, "Binning sequences")
     id_temp <- as.character(ShortRead::id(reads.filtered))
     seq_temp <- ShortRead::sread(ShortRead::narrow(reads.filtered ,start = settings@InsertStart, end = settings@InsertEnd))
     n_idx <- which(S4Vectors::elementNROWS(Biostrings::vmatchPattern("n", seq_temp)) == 0)
@@ -161,6 +167,7 @@ sequenceTable <- function(reads.filtered,
   }
 
   cat("Labeling mutations...\n")
+  .emit_analysis_progress(progress_callback, settings@Name, 4L, 5L, "Labeling mutations")
 
   if (length(Reference.Sequence.DNA) > 1) {
     seqs <- Biostrings::DNAStringSet(dt$seq)
@@ -209,20 +216,42 @@ sequenceTable <- function(reads.filtered,
     end.del.start <- stringr::str_locate(as.character(pwalign::alignedPattern(dna.align[idx.end.del])), "-")[,"start"]
     dt.indel$dNum[idx.end.del] <- as.numeric(dt.indel$dNum[idx.end.del]) + 1
 
+    # find sequences with terminal insertions missed by width so they don't get mis-detected as WT
+    unaligned.char <- as.character(pwalign::unaligned(pwalign::pattern(dna.align)))
+    ins.end.check <- Biostrings::nchar(unaligned.char) - Biostrings::nchar(Reference.Sequence.DNA[[x]])
+    idx.end.ins <- which(len.check$pWidth < ins.end.check)
+    end.ins.size <- stringr::str_c("+", ins.end.check[idx.end.ins] - len.check$pWidth[idx.end.ins])
+    end.ins.wt.coord <- stringr::str_locate(unaligned.char[idx.end.ins], as.character(Reference.Sequence.DNA[[x]]))
+
+    ###########################
+    # TODO: will this fns below always give insertions at the 3' end of the sequence because of number
+    # counting starting from 1 regardless of sequence length??
+    ###########################
+    end.ins.locate <- lapply(idx.end.ins, function(n) {
+      seq_len(nchar(unaligned.char[n]))[!seq_len(nchar(unaligned.char[n])) %in% end.ins.wt.coord]
+    })
+    end.ins.start <- sapply(end.ins.locate, min)
+    end.ins.size <- sapply(end.ins.locate, length)
+    dt.indel$iNum[idx.end.ins] <- as.numeric(dt.indel$iNum[idx.end.ins]) + 1
+
     # concatenate multiple insertions
     ins.temp <- pwalign::insertion(dna.align)
     ins.midx <- which(dt.indel$iNum>1)
-    dt.indel$iSize[ins.midx] <- S4Vectors::lapply(ins.midx, function(x){
-      stringr::str_flatten(stringr::str_c("+", ins.temp[[x]]@width), collapse = ", ")
+    dt.indel$iSize[ins.midx] <- S4Vectors::lapply(ins.midx, function(y){
+      s <- stringr::str_flatten(stringr::str_c("+", ins.temp[[y]]@width), collapse = ", ")
+      if (y %in% idx.end.ins) {
+        s <- stringr::str_c(s, end.ins.size[y == idx.end.ins], collapse = ", ")
+      }
+      return(s)
     })
 
     # concatenate multilple deletions, including from ends
     del.temp <- pwalign::deletion(dna.align)
     del.midx <- c(which(dt.indel$dNum>1), idx.end.del)
-    dt.indel$dSize[del.midx] <- S4Vectors::lapply(del.midx, function(x){
-      s <- stringr::str_flatten(stringr::str_c("-", del.temp[[x]]@width), collapse = ", ")
-      if (x %in% idx.end.del) {
-        s <- stringr::str_c(s, end.del.size[x == idx.end.del], collapse = ", ")
+    dt.indel$dSize[del.midx] <- S4Vectors::lapply(del.midx, function(y){
+      s <- stringr::str_flatten(stringr::str_c("-", del.temp[[y]]@width), collapse = ", ")
+      if (y %in% idx.end.del) {
+        s <- stringr::str_c(s, end.del.size[y == idx.end.del], collapse = ", ")
       }
       return(s)
     })
@@ -232,23 +261,23 @@ sequenceTable <- function(reads.filtered,
     dt.indel$dSize[dt.indel$dNum == 0] <- ""
 
     # concatenate insertions & deletions together into a single output string
-    str.indel <- BiocGenerics::unlist(sapply(1:(nrow(dt.indel)), function(x){
-      if (dt.indel$iNum[x] == 0 && dt.indel$dNum[x] == 0){
+    str.indel <- BiocGenerics::unlist(sapply(1:(nrow(dt.indel)), function(y){
+      if (dt.indel$iNum[y] == 0 && dt.indel$dNum[y] == 0){
         return("")
-      } else if (dt.indel$iNum[x] == 0 && dt.indel$dNum[x] != 0){
-        return(dt.indel$dSize[x])
-      } else if (dt.indel$iNum[x] != 0 && dt.indel$dNum[x] == 0) {
-        return(dt.indel$iSize[x])
+      } else if (dt.indel$iNum[y] == 0 && dt.indel$dNum[y] != 0){
+        return(dt.indel$dSize[y])
+      } else if (dt.indel$iNum[y] != 0 && dt.indel$dNum[y] == 0) {
+        return(dt.indel$iSize[y])
       } else {
-        stringr::str_c(dt.indel$iSize[x], dt.indel$dSize[x], sep = ", ")
+        stringr::str_c(dt.indel$iSize[[y]], dt.indel$dSize[[y]], sep = ", ")
       }
     }))
 
     # table of mismatches
     dt.mm <- data.table(pwalign::mismatchTable(dna.align))[, .N, by = PatternId]
-    vec.mm <- BiocGenerics::unlist(sapply(1:length(dna.align), function(x){
-      if (x %in% dt.mm$PatternId){
-        return(dt.mm$N[dt.mm$PatternId == x])
+    vec.mm <- BiocGenerics::unlist(sapply(1:length(dna.align), function(y){
+      if (y %in% dt.mm$PatternId){
+        return(dt.mm$N[dt.mm$PatternId == y])
       } else {
         return(0)
       }
@@ -291,15 +320,15 @@ sequenceTable <- function(reads.filtered,
     prot.reads <- as.character(Reads.Unique.Protein[[x]])
 
     # truncate at first indel
-    prot.trunc <- sapply(1:nrow(indel.start.dt), function(x) {
-      if (is.na(indel.start.dt$minStart[x])) {
-        return(prot.reads[x])
+    prot.trunc <- sapply(1:nrow(indel.start.dt), function(y) {
+      if (is.na(indel.start.dt$minStart[y])) {
+        return(prot.reads[y])
       } else {
-        trunc <- ceiling(indel.start.dt$minStart[x]/3) - 1
-        st <- stringr::str_trunc(prot.reads[x], trunc, ellipsis = "")
-        if (indel.start.dt$type[x] == "deletion") {
+        trunc <- ceiling(indel.start.dt$minStart[y]/3) - 1
+        st <- stringr::str_trunc(prot.reads[y], trunc, ellipsis = "")
+        if (indel.start.dt$type[y] == "deletion") {
           return(stringr::str_c(st, "-"))
-        } else if (indel.start.dt$type[x] == "insertion") {
+        } else if (indel.start.dt$type[y] == "insertion") {
           return(stringr::str_c(st, "+"))
         }
       }
@@ -308,8 +337,8 @@ sequenceTable <- function(reads.filtered,
     # detect any non-indel nonsense mutations
     idx_ns <- which(stringr::str_detect(prot.trunc, "[*]"))
     ns.pos <- stats::na.omit(stringr::str_locate(prot.trunc, "[*]")[,"start"])
-    prot.trunc[idx_ns] <- BiocGenerics::unlist(sapply(seq_along(idx_ns), function(x) {
-      stringr::str_trunc(prot.trunc[idx_ns[x]], (ns.pos[x]), ellipsis = "")
+    prot.trunc[idx_ns] <- BiocGenerics::unlist(sapply(seq_along(idx_ns), function(y) {
+      stringr::str_trunc(prot.trunc[idx_ns[y]], (ns.pos[y]), ellipsis = "")
     }))
 
     prot.align <- pwalign::pairwiseAlignment(Biostrings::AAStringSet(prot.trunc), prot.wt)

@@ -53,6 +53,26 @@ test_that("queue progress HTML renders processing and complete states", {
   expect_match(html[[3]], "queue-progress-empty", fixed = TRUE)
 })
 
+test_that("queue progress HTML renders structured analysis progress", {
+  html <- .sample_progress_html(c(
+    "step|3|5|Binning sequences",
+    "exporting|Writing summary files",
+    "finalizing|Compressing results",
+    "analyzed|Analysis complete"
+  ))
+
+  expect_match(html[[1]], "queue-progress-step", fixed = TRUE)
+  expect_match(html[[1]], "3/5", fixed = TRUE)
+  expect_match(html[[1]], "Binning sequences", fixed = TRUE)
+  expect_match(html[[2]], "queue-progress-exporting", fixed = TRUE)
+  expect_match(html[[2]], "Exporting", fixed = TRUE)
+  expect_match(html[[3]], "queue-progress-finalizing", fixed = TRUE)
+  expect_match(html[[3]], "Finalizing", fixed = TRUE)
+  expect_match(html[[4]], "queue-progress-analyzed", fixed = TRUE)
+  expect_match(html[[4]], "Analyzed", fixed = TRUE)
+  expect_false(grepl("queue-progress-mini-spinner", html[[4]], fixed = TRUE))
+})
+
 test_that("queue progress HTML renders row download links for completed files", {
   html <- .sample_progress_html(
     "done",
@@ -136,6 +156,8 @@ test_that("queue small text column defs target the expected visible columns", {
   )
   expect_equal(nuclease_defs[[1]]$targets, c(3L, 4L))
   expect_false("Source" %in% names(nuclease_df))
+  expect_false(any(c("Settings", "gRNA Sequence", "Cut Position") %in% names(nuclease_df)))
+  expect_true("Target" %in% names(nuclease_df))
 })
 
 test_that("queue table can target progress column for centered styling", {

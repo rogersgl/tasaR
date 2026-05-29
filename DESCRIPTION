@@ -31,7 +31,8 @@ Imports:
     shiny,
     shinyjs,
     future,
-    promises
+    promises,
+    zip
 Depends:
     data.table,
     R (>= 4.1.0)

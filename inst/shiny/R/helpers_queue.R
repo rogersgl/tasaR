@@ -120,7 +120,7 @@
 }
 
 .sample_progress_html <- function(progress, download_href = NULL, download_filename = NULL) {
-  progress <- tolower(trimws(as.character(progress)))
+  progress <- trimws(as.character(progress))
   if (is.null(download_href)) download_href <- rep("", length(progress))
   if (is.null(download_filename)) download_filename <- rep("", length(progress))
   download_href <- rep_len(as.character(download_href), length(progress))
@@ -129,11 +129,86 @@
 
   vapply(seq_along(progress), function(i) {
     x <- progress[[i]]
-    if (x %in% c("processing", "running", "in_progress")) {
+    x_norm <- tolower(x)
+
+    if (startsWith(x, "step|")) {
+      parts <- strsplit(x, "|", fixed = TRUE)[[1]]
+      step <- if (length(parts) >= 2L) suppressWarnings(as.integer(parts[[2]])) else NA_integer_
+      total <- if (length(parts) >= 3L) suppressWarnings(as.integer(parts[[3]])) else NA_integer_
+      label <- if (length(parts) >= 4L) paste(parts[4:length(parts)], collapse = "|") else "Processing"
+      if (is.na(step) || is.na(total) || total <= 0L) {
+        step <- 0L
+        total <- 1L
+      }
+      pct <- max(0, min(100, round(100 * step / total)))
+      title <- sprintf("%s (%s/%s)", label, step, total)
+
+      return(sprintf(
+        paste0(
+          "<span class='queue-progress-step' title='%s' aria-label='%s'>",
+          "<span class='queue-progress-mini-spinner'></span>",
+          "<span class='queue-progress-step-text'>%s/%s</span>",
+          "<span class='queue-progress-step-bar'><span style='width:%s%%'></span></span>",
+          "</span>"
+        ),
+        htmltools::htmlEscape(title, attribute = TRUE),
+        htmltools::htmlEscape(title, attribute = TRUE),
+        htmltools::htmlEscape(step),
+        htmltools::htmlEscape(total),
+        pct
+      ))
+    }
+
+    if (startsWith(x, "exporting|")) {
+      parts <- strsplit(x, "|", fixed = TRUE)[[1]]
+      label <- if (length(parts) >= 2L) paste(parts[2:length(parts)], collapse = "|") else "Exporting"
+      return(sprintf(
+        paste0(
+          "<span class='queue-progress-exporting' title='%s' aria-label='%s'>",
+          "<span class='queue-progress-mini-spinner'></span>",
+          "<span>Exporting</span>",
+          "</span>"
+        ),
+        htmltools::htmlEscape(label, attribute = TRUE),
+        htmltools::htmlEscape(label, attribute = TRUE)
+      ))
+    }
+
+    if (startsWith(x, "finalizing|")) {
+      parts <- strsplit(x, "|", fixed = TRUE)[[1]]
+      label <- if (length(parts) >= 2L) paste(parts[2:length(parts)], collapse = "|") else "Finalizing"
+      return(sprintf(
+        paste0(
+          "<span class='queue-progress-finalizing' title='%s' aria-label='%s'>",
+          "<span class='queue-progress-mini-spinner'></span>",
+          "<span>Finalizing</span>",
+          "</span>"
+        ),
+        htmltools::htmlEscape(label, attribute = TRUE),
+        htmltools::htmlEscape(label, attribute = TRUE)
+      ))
+    }
+
+    if (startsWith(x, "analyzed|")) {
+      parts <- strsplit(x, "|", fixed = TRUE)[[1]]
+      label <- if (length(parts) >= 2L) paste(parts[2:length(parts)], collapse = "|") else "Analysis complete"
+      return(sprintf(
+        paste0(
+          "<span class='queue-progress-analyzed' title='%s' aria-label='%s'>",
+          "<span class='queue-progress-analyzed-icon'>&#10003;</span>",
+          "<span>Analyzed</span>",
+          "</span>"
+        ),
+        htmltools::htmlEscape(label, attribute = TRUE),
+        htmltools::htmlEscape(label, attribute = TRUE)
+      ))
+    }
+
+    if (x_norm %in% c("processing", "running", "in_progress")) {
       return("<span class='queue-progress-spinner' title='Processing' aria-label='Processing'></span>")
     }
 
-    if (x %in% c("done", "complete", "completed", "success", "true")) {
+    if (x_norm %in% c("done", "complete", "completed", "success", "true")) {
       if (nzchar(download_href[[i]])) {
         return(sprintf(
           paste0(

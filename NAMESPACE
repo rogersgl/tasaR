@@ -3,6 +3,7 @@
 S3method(as.data.frame,tas.dna.repair)
 S3method(as.list,tas.object.settings)
 S3method(print,pandaseq_result)
+export(Summarize)
 export(analyzeAmplicon)
 export(batchAnalyzeAmplicon)
 export(batchSummarize)

@@ -89,7 +89,7 @@
 
 
 .section-hr {
-   border: none !important;
+  border: none !important;
   height: 1px !important;
   background-color: rgba(255,255,255,0.5) !important;
   opacity: 1 !important;
@@ -117,6 +117,45 @@
   background-color: rgba(255,255,255,0.5) !important;
   opacity: 1 !important;
   margin: 14px 0 !important;
+}
+
+.sidebar-controls .recalculating,
+.sidebar-controls .shiny-bound-output.recalculating {
+  opacity: 1 !important;
+}
+
+.mutation-stop-row {
+  margin-top: 10px;
+  display: flex;
+  justify-content: center;
+}
+
+.mutation-stop-btn {
+    background: transparent;
+    border: 2px solid #dc3545;
+    color: #ffffff;
+    border-radius: 10px;
+    font-weight: 450;
+    font-size: 16px;
+    width: 60%;
+    padding-top: 4px;
+    padding-bottom: 4px;
+}
+
+.mutation-stop-btn:hover {
+    background: rgba(220, 53, 69, 0.15);
+    border-color: #ff5c6c;
+}
+
+.mutation-stop-btn:disabled {
+  cursor: wait;
+  opacity: 0.72;
+}
+
+.mutation-stop-btn:disabled:hover {
+  background: rgba(180,52,65,0.20) !important;
+  border-color: rgba(255,255,255,0.35) !important;
+  color: rgba(255,255,255,0.95) !important;
 }
 
 
@@ -342,13 +381,6 @@
   height: 30px;
   padding: 2px 6px;
 }
-
-#mutation_output_prefix::placeholder {
-  color: #9CA3AF;
-  opacity: 1;
-  font-style: italic;
-}
-
 
 .sidebar-controls .checkbox {
   margin-bottom: 0 !important;

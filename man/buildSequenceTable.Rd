@@ -4,12 +4,14 @@
 \alias{buildSequenceTable}
 \title{Make a labeled table of sequences}
 \usage{
-buildSequenceTable(settings, ...)
+buildSequenceTable(settings, ..., progress_callback = NULL)
 }
 \arguments{
 \item{settings}{An object of S4 class tas.settings}
 
 \item{...}{Additional paramaters to be passed to sub-function \code{sequenceTable}. Also inherited from parent functions.}
+
+\item{progress_callback}{Optional function receiving structured progress events during sequence table construction}
 }
 \value{
 An S4 object of class tas.sequences

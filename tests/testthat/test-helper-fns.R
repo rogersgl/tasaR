@@ -87,3 +87,25 @@ test_that("Nuclease alignment correction handles cases as expected", {
 
 
 })
+
+test_that("analysis progress callback errors are non-fatal", {
+  callback <- function(event) {
+    stop("callback failed")
+  }
+
+  expect_no_error(.emit_analysis_progress(callback, "sample_1", 1L, 5L, "Reading FASTQ"))
+})
+
+test_that("analysis progress cancellation conditions are rethrown", {
+  callback <- function(event) {
+    stop(structure(
+      list(message = "Mutation analysis canceled.", call = NULL),
+      class = c("tasaR_analysis_canceled", "error", "condition")
+    ))
+  }
+
+  expect_error(
+    .emit_analysis_progress(callback, "sample_1", 1L, 5L, "Reading FASTQ"),
+    class = "tasaR_analysis_canceled"
+  )
+})

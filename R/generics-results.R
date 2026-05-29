@@ -68,14 +68,14 @@ setMethod("graphResults", signature = "AmpliconSequencing", function(results, ou
   match.arg(mutationTypes, c("bar", "pie", "donut"))
 
   if (output == "all"){
-    o <- list(gg.dna.pos(results),
-              gg.dna.pos.cyt(results),
-              gg.aa.pos(results),
-              gg.aa.pos.cyt(results),
-              gg.aid.box(results),
-              gg.aa.muts.stacked(results),
-              gg.dna.mut.types(results, mutationTypes),
-              gg.dna.mut.count.hist(results))
+    o <- list("DNA Mutation Distribution" = gg.dna.pos(results),
+              "DNA Mutation Distribution labeled cytosines" = gg.dna.pos.cyt(results),
+              "AA Mutation Distribution" = gg.aa.pos(results),
+              "AA Mutation Distribution labeled cytosines" = gg.aa.pos.cyt(results),
+              "Mutation at cytosines boxplot" = gg.aid.box(results),
+              "All AA Mutations" = gg.aa.muts.stacked(results),
+              "DNA Repair Types" = gg.dna.mut.types(results, mutationTypes),
+              "Mutations per read histogram" = gg.dna.mut.count.hist(results))
   } else {
   o <- list(switch(output, "dna.positions" = gg.dna.pos(results),
          "dna.positions.labeled" = gg.dna.pos.cyt(results),

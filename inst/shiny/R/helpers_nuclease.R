@@ -35,6 +35,17 @@
   as.data.frame(setNames(rep(list(character()), length(cols)), cols), check.names = FALSE)
 }
 
+.parse_nuclease_grna <- function(x) {
+  x <- as.character(x)
+  x[is.na(x)] <- ""
+  chartr("U", "T", toupper(trimws(x)))
+}
+
+.valid_nuclease_grna <- function(x) {
+  x <- .parse_nuclease_grna(x)
+  nzchar(x) & grepl("^[ATCG]{20}$", x)
+}
+
 .normalize_nuclease_row <- function(row) {
   defaults <- .nuclease_default_settings()
   for (nm in names(defaults)) {
@@ -49,6 +60,8 @@
     row[[nm]][is.na(row[[nm]])] <- ""
   }
 
+  row[["gRNA Sequence"]] <- .parse_nuclease_grna(row[["gRNA Sequence"]])
+
   row
 }
 
@@ -59,6 +72,38 @@
     paste0("Cut:", ifelse(nzchar(row[["Cut Position"]]), row[["Cut Position"]], "-")),
     paste0("gRNA:", ifelse(nzchar(row[["gRNA Sequence"]]), row[["gRNA Sequence"]], "-")),
     paste0("Ext:", ext)
+  )
+}
+
+.nuclease_target_display <- function(row) {
+  row <- .normalize_nuclease_row(row)
+  cut_position <- trimws(row[["Cut Position"]])
+  grna <- trimws(row[["gRNA Sequence"]])
+
+  if (nzchar(cut_position)) {
+    cut_position
+  } else if (nzchar(grna)) {
+    grna
+  } else {
+    "auto"
+  }
+}
+
+.nuclease_target_cell <- function(row, row_id, input_id = "nuclease_open_settings") {
+  target <- .nuclease_target_display(row)
+  sprintf(
+    paste0(
+      "<div class='nuclease-target-cell'>",
+      "<span class='nuclease-target-value'>%s</span>",
+      "<button type='button' class='queue-icon-btn queue-settings-edit-btn' title='Edit settings' aria-label='Edit settings' ",
+      "onclick=\"Shiny.setInputValue('%s', '%s', {priority: 'event'})\">%s</button>",
+      "</div>"
+    ),
+    htmltools::htmlEscape(target),
+    .js_string(input_id),
+    .js_string(row_id),
+    div(style = "color: #1f3b53; font-weight: 700;",
+        shiny::icon("pencil"))
   )
 }
 
@@ -79,8 +124,8 @@
     .queue_actions_html(row_id, remove_input_id, move_up_input_id, move_down_input_id)
   }, character(1))
 
-  settings <- vapply(seq_len(nrow(df)), function(i) {
-    .mutation_settings_button(df[[id_col]][i], settings_input_id, .nuclease_settings_summary(df[i, , drop = FALSE]))
+  target <- vapply(seq_len(nrow(df)), function(i) {
+    .nuclease_target_cell(df[i, , drop = FALSE], df[[id_col]][i], settings_input_id)
   }, character(1))
 
   data.frame(
@@ -89,9 +134,7 @@
     "Sample Name" = df[["Sample Name"]],
     "Control File" = df[["Control File"]],
     "Experimental File" = df[["Experimental File"]],
-    "gRNA Sequence" = df[["gRNA Sequence"]],
-    "Cut Position" = df[["Cut Position"]],
-    "Settings" = settings,
+    "Target" = target,
     "Status" = vapply(df[["Status"]], .sample_status_html, character(1)),
     "Actions" = actions,
     "Progress" = .sample_progress_html(progress),
@@ -107,15 +150,18 @@
   experimental_file <- trimws(row[["Experimental File"]])
   grna <- trimws(row[["gRNA Sequence"]])
   cut_position <- trimws(row[["Cut Position"]])
+  has_cut_position <- nzchar(cut_position)
+  valid_cut_position <- has_cut_position && !is.na(suppressWarnings(as.numeric(cut_position)))
+  valid_grna <- nzchar(grna) && isTRUE(.valid_nuclease_grna(grna))
 
   issues <- c(
     if (!nzchar(sample_name)) "Missing sample name",
     if (nzchar(sample_name) && sum(all_samples == sample_name, na.rm = TRUE) > 1) "Duplicate name",
     if (!.fastq_merged_ok(control_file)) "Invalid control FASTQ",
     if (!.fastq_merged_ok(experimental_file)) "Invalid experimental FASTQ",
-    if (!nzchar(grna)) "Missing gRNA sequence",
-    if (!nzchar(cut_position)) "Missing cut position",
-    if (nzchar(cut_position) && is.na(suppressWarnings(as.numeric(cut_position)))) "Invalid cut position",
+    if (!nzchar(grna) && !has_cut_position) "Missing gRNA sequence or cut position",
+    if (!has_cut_position && nzchar(grna) && !valid_grna) "Invalid gRNA sequence",
+    if (has_cut_position && !valid_cut_position) "Invalid cut position",
     if (!nzchar(trimws(row[["Forward Primer"]]))) "Missing forward primer",
     if (!nzchar(trimws(row[["Reverse Primer"]]))) "Missing reverse primer"
   )
@@ -144,6 +190,7 @@
 .nuclease_queue_with_status <- function(df) {
   if (is.null(df) || nrow(df) == 0 || "Note" %in% names(df)) return(df)
   df <- as.data.frame(df, stringsAsFactors = FALSE, check.names = FALSE)
+  df <- .normalize_nuclease_row(df)
   samples <- df[["Sample Name"]]
   df$Status <- vapply(seq_len(nrow(df)), function(i) {
     .nuclease_status_for_row(df[i, , drop = FALSE], samples)

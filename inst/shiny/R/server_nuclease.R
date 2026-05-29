@@ -1,6 +1,9 @@
-setup_nuclease_server <- function(input, output, session) {
+setup_nuclease_server <- function(input, output, session, operation_rv = NULL) {
   upload_root <- file.path(tempdir(), "tasaR_nuclease_uploads", session$token)
   dir.create(upload_root, recursive = TRUE, showWarnings = FALSE)
+  if (is.null(operation_rv)) {
+    operation_rv <- reactiveValues(active = NULL)
+  }
 
   session$onSessionEnded(function() {
     unlink(upload_root, recursive = TRUE, force = TRUE)
@@ -83,6 +86,10 @@ setup_nuclease_server <- function(input, output, session) {
 
   refresh_nuclease_status <- function() {
     nuclease_rv$queued <- .nuclease_queue_with_status(nuclease_rv$queued)
+  }
+
+  operation_active <- function() {
+    !is.null(operation_rv$active)
   }
 
   reconcile_nuclease_order <- function() {
@@ -188,6 +195,12 @@ setup_nuclease_server <- function(input, output, session) {
   }, ignoreInit = TRUE)
 
   observeEvent(input$nuclease_queue_sample, {
+    if (operation_active()) {
+      nuclease_rv$message <- "Another operation is already running."
+      nuclease_rv$message_type <- "error"
+      return()
+    }
+
     sample_name <- trimws(input$nuclease_sample_name)
     if (is.null(nuclease_rv$control_meta) || is.null(nuclease_rv$experimental_meta)) {
       nuclease_rv$message <- "Please upload both FASTQ files."
@@ -225,6 +238,12 @@ setup_nuclease_server <- function(input, output, session) {
   })
 
   observeEvent(input$nuclease_clear_settings, {
+    if (operation_active()) {
+      nuclease_rv$message <- "Another operation is already running."
+      nuclease_rv$message_type <- "error"
+      return()
+    }
+
     reset_main_settings()
     nuclease_rv$message <- "Nuclease settings reset."
     nuclease_rv$message_type <- "info"
@@ -246,6 +265,12 @@ setup_nuclease_server <- function(input, output, session) {
   }, ignoreInit = TRUE)
 
   observeEvent(input$nuclease_queue_batch_samples, {
+    if (operation_active()) {
+      batch_rv$message <- "Another operation is already running."
+      batch_rv$message_type <- "error"
+      return()
+    }
+
     if (is.null(batch_rv$manifest_meta) || is.null(batch_rv$archive_meta)) {
       batch_rv$message <- "Upload the batch manifest and archive before adding samples."
       batch_rv$message_type <- "error"
@@ -256,6 +281,12 @@ setup_nuclease_server <- function(input, output, session) {
   }, ignoreInit = TRUE)
 
   observeEvent(input$nuclease_clear_batch, {
+    if (operation_active()) {
+      batch_rv$message <- "Another operation is already running."
+      batch_rv$message_type <- "error"
+      return()
+    }
+
     .remove_managed_upload(batch_rv$manifest_meta)
     .remove_managed_upload(batch_rv$archive_meta)
 
@@ -271,6 +302,12 @@ setup_nuclease_server <- function(input, output, session) {
   }, ignoreInit = TRUE)
 
   observeEvent(input$nuclease_remove_row, {
+    if (operation_active()) {
+      nuclease_rv$message <- "Another operation is already running."
+      nuclease_rv$message_type <- "error"
+      return()
+    }
+
     res <- .remove_batch_row_by_id(nuclease_rv$queued, input$nuclease_remove_row, id_col = "Nuclease Queue ID")
     if (!res$success) return()
 
@@ -310,6 +347,7 @@ setup_nuclease_server <- function(input, output, session) {
     id_col = "Nuclease Queue ID",
     get_order = function() nuclease_rv$sample_order,
     set_order = function(order) {
+      if (operation_active()) return()
       nuclease_rv$sample_order <- order
       refresh_nuclease_status()
     },
@@ -321,6 +359,12 @@ setup_nuclease_server <- function(input, output, session) {
   )
 
   open_settings_modal <- function(row_id) {
+    if (operation_active()) {
+      nuclease_rv$message <- "Another operation is already running."
+      nuclease_rv$message_type <- "error"
+      return()
+    }
+
     idx <- match(row_id, nuclease_rv$queued[["Nuclease Queue ID"]])
     if (is.na(idx)) return()
 
@@ -344,6 +388,13 @@ setup_nuclease_server <- function(input, output, session) {
   }, ignoreInit = TRUE)
 
   observeEvent(input$nuclease_modal_save, {
+    if (operation_active()) {
+      nuclease_rv$message <- "Another operation is already running."
+      nuclease_rv$message_type <- "error"
+      removeModal()
+      return()
+    }
+
     req(!is.null(nuclease_rv$active_settings_id))
     idx <- match(nuclease_rv$active_settings_id, nuclease_rv$queued[["Nuclease Queue ID"]])
     if (!is.na(idx)) {
@@ -373,7 +424,7 @@ setup_nuclease_server <- function(input, output, session) {
   })
 
   observe({
-    ready <- nrow(nuclease_rv$queued) > 0 && all(nuclease_rv$queued$Status == "Ready")
+    ready <- !operation_active() && nrow(nuclease_rv$queued) > 0 && all(nuclease_rv$queued$Status == "Ready")
     if (ready) {
       shinyjs::enable("run_single_nuclease")
       shinyjs::enable("run_batch_nuclease")
@@ -382,7 +433,7 @@ setup_nuclease_server <- function(input, output, session) {
       shinyjs::disable("run_batch_nuclease")
     }
 
-    batch_ready <- !is.null(batch_rv$manifest_meta) && !is.null(batch_rv$archive_meta)
+    batch_ready <- !operation_active() && !is.null(batch_rv$manifest_meta) && !is.null(batch_rv$archive_meta)
     if (batch_ready) {
       shinyjs::enable("nuclease_queue_batch_samples")
     } else {

@@ -36,6 +36,37 @@
   }
 }
 
+.emit_analysis_progress <- function(progress_callback = NULL,
+                                    sample_name = NULL,
+                                    step = NA_integer_,
+                                    total = 5L,
+                                    label = "",
+                                    status = "step") {
+  if (!is.function(progress_callback)) {
+    return(invisible(FALSE))
+  }
+
+  event <- list(
+    sample_name = as.character(if (is.null(sample_name)) "" else sample_name),
+    step = as.integer(step),
+    total = as.integer(total),
+    label = as.character(label),
+    status = as.character(status),
+    timestamp = Sys.time()
+  )
+
+  tryCatch(
+    progress_callback(event),
+    error = function(e) {
+      if (inherits(e, "tasaR_analysis_canceled")) {
+        stop(e)
+      }
+      NULL
+    }
+  )
+  invisible(TRUE)
+}
+
 
 # adjust mutation frequencies of separate reference alignments based on their proportions and sum corrected %'s
 
@@ -488,9 +519,6 @@
 # --------------
 
 .pt <- 72.27 / 25.4  # points per mm
-
-
-
 
 
 

@@ -3,8 +3,6 @@ nuclease_parameters_ui <- function(prefix = "nuclease", show_heading = TRUE, sid
     if (show_heading) div(class = "mutation-settings-heading-spacer"),
     div(
       class = "mutation-settings-section mutation-analysis-section",
-      if (show_heading) h5("Analysis Parameters", class = "mutation-section-title"),
-      if (show_heading) div(class = "mutation-section-rule"),
       mutation_text_input(paste0(prefix, "_forward_primer"), "Forward primer", "nuclease_forward_primer"),
       if (sidebar_breaks) br(),
       mutation_text_input(paste0(prefix, "_reverse_primer"), "Reverse primer", "nuclease_reverse_primer"),
@@ -21,8 +19,6 @@ nuclease_sample_settings_ui <- function(prefix = "nuclease_modal") {
   tagList(
     div(
       class = "mutation-settings-section mutation-sequence-section",
-      h5("Nuclease Target", class = "mutation-section-title"),
-      div(class = "mutation-section-rule"),
       div(
         class = "mutation-primer-row",
         div(
@@ -33,7 +29,7 @@ nuclease_sample_settings_ui <- function(prefix = "nuclease_modal") {
             "DNA   (5'-          -3')"
           )
         ),
-        mutation_numeric_inline_input(paste0(prefix, "_cut_position"), "Cut Position", "nuclease_cut_position")
+        mutation_numeric_inline_input(paste0(prefix, "_cut_position"), "Cut Position", "nuclease_cut_position", placeholder = "auto")
       )
     ),
     nuclease_parameters_ui(prefix, show_heading = TRUE)
@@ -128,7 +124,7 @@ nuclease_page_ui <- function() {
                               "DNA   (5'-          -3')"
                             )
                           ),
-                          mutation_numeric_inline_input("nuclease_cut_position", "Cut Position", "nuclease_cut_position")
+                          mutation_numeric_inline_input("nuclease_cut_position", "Cut Position", "nuclease_cut_position", placeholder = "auto")
                         ),
                         div(
                           class = "clear-action-box-footer",
